@@ -97,7 +97,7 @@ import {
   saveOnlineSeat,
 } from "@/lib/multiplayer";
 import { premoveOptionsFor, premoveSelfChecks, previewMovesFor } from "@/lib/premoves";
-import { isMuted, playCapture, playChallenge, playCheck, playError, playGameStart, playMove as playMoveSfx, playNerf, setMuted } from "@/lib/sounds";
+import { isMuted, playChallenge, playCheck, playDrawOffer, playError, playGameStart, playMove as playMoveSfx, playMoveCue, playNerf, setMuted } from "@/lib/sounds";
 import { Button } from "@/components/ui/Button";
 
 // Mirrors the server's start-of-game grace: each side's first move gets this
@@ -935,15 +935,16 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
   // Immediate audio feedback for a move we just sent: the board already shows
   // it optimistically, so the sound must not wait for the server ack either.
   const playMoveSound = (move: Move, base: BoardState) => {
-    if (move.captured) playCapture();
-    else playMoveSfx();
+    playMoveCue(move);
     const after = makeMove(cloneBoard(base), move);
     // Run the buff-aware test against a view of the live game holding the
     // optimistic board, so a check delivered only through buff-granted
     // movement still sounds; without game context fall back to the plain test.
     const g = gameRef.current;
     const inCheck = g ? gameInCheck({ ...g, board: after }, after.turn) : isInCheck(after, after.turn);
-    if (inCheck) later(playCheck, 80);
+    // This path only ever voices a move WE just sent, so a check here is one we
+    // just gave, never one we are in.
+    if (inCheck) later(() => playCheck({ onMe: false }), 80);
   };
 
   // Fire the queued premove the instant it becomes our turn. No artificial
@@ -1210,9 +1211,8 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           }
         }
         if (!alreadySounded) {
-          if (lm.captured) playCapture();
-          else playMoveSfx();
-          if (gameInCheck(next, next.board.turn)) later(playCheck, 80);
+          playMoveCue(lm, { opponent: lm.color !== myColor, premove: wasAwaitingPremove && lm.color === myColor });
+          if (gameInCheck(next, next.board.turn)) later(() => playCheck({ onMe: next.board.turn === myColor }), 80);
         }
         // Our turn again (opponent moved, or our premove landed and the next
         // queued one already applies): fire the queued premove immediately.
@@ -1245,6 +1245,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       } else if (e.type === "draw-offer") {
         setError(null);
         setDrawOfferBy(e.color);
+        if (e.color !== myColor) playDrawOffer();
         setDrawOfferStatus(e.color === myColor ? "offering" : "idle");
       } else if (e.type === "abort-warning") {
         setAbortNotice({

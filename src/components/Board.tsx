@@ -196,11 +196,13 @@ import {
   playExplosion,
   playExtinction,
   playFreeze,
+  playIllegal,
   playLightning,
   playMassFreeze,
   playNova,
   playPetrifiedForest,
   playPetrify,
+  playPremoveSet,
   playRampage,
   playSelect,
   playShades,
@@ -3949,6 +3951,7 @@ export function Board({
         );
         if (premoveMode || autoQueen || capturesKing) {
           const q = candidates.find((c) => c.promotion === "q") ?? candidates[0];
+          if (premoveMode) playPremoveSet();
           onMove(q);
           setSelected(null);
           return true;
@@ -3956,6 +3959,7 @@ export function Board({
         setPromotionMove(candidates);
         return true;
       }
+      if (premoveMode) playPremoveSet();
       onMove(candidates[0]);
       setSelected(null);
       return true;
@@ -3986,6 +3990,7 @@ export function Board({
   // (Settings anim-off / reduced motion) drops the shake while the ring stays
   // as a brief static indicator (reduced motion never means zero feedback).
   const flagInvalid = (ringSq: Square, shakeSq?: Square | null) => {
+    playIllegal();
     invalidKeyRef.current += 1;
     setInvalidFx({ sq: ringSq, key: invalidKeyRef.current });
     if (motionOff()) return;
