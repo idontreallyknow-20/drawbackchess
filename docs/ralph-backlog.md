@@ -169,6 +169,10 @@ Measured, with file:line. These are the concrete C2 work items.
 | C25 | `scripts/check-buttons.ts` carries a 61-file baseline of surfaces still using hand-rolled buttons. `--strict` only catches new offenders, so the debt is invisible. Work the baseline down | M | TODO |
 | C26 | Weakest system-state pages, from the audit: `analysis` (no error/empty/loading), `achievements` (no empty), `history/[id]` (no error, no empty), `game/page.tsx` (16 loading markers, 0 error), `codex/suggest` (0 loading), `mod/page.tsx` (0 error). `tv/page.tsx` is the reference implementation to copy: it distinguishes "unreachable and nothing cached" from "first snapshot loading" | M | TODO |
 | C27 | The `clip/studio/*` subtree (~1,900 lines) has one width query and is otherwise unresponsive | S | TODO |
+| C28 | **Uppercase labels violate section 11** ("Sentence case everywhere... allcaps survive only in the LIVE badge"). Seen on the main nav (PLAY, WATCH, COMMUNITY, LEADERBOARD, RULES) and every quick-settings section head (BACKGROUND, BOARD, PIECES, BOARD SIZE, SOUND). Section 3 also retired the letterspaced-smallcaps pattern sitewide, so these are the survivors | S | TODO |
+| C29 | **Light-mode piece previews are near-invisible.** In the quick-settings piece picker under the light theme, several white-piece thumbnails render as white on the near-white raised surface. Found by looking at a screenshot, not by any guard | S | TODO |
+| C30 | **`--text-secondary` fails AA in light** on every surface: 3.71:1 on the page, 4.42:1 on a panel, 4.15:1 on raised. The round-2 contrast pass fixed the muted rung and did not touch this one | S | TODO |
+| C31 | The surface ladder is fixed and now documented, but `--bg-hover` still measures 3.94:1 for `parchment-400` by design. Audit for muted text that sits permanently on a hover fill, which is the case that makes that number a real defect rather than an accepted one | S | TODO |
 
 ## D. Motion and graphics
 

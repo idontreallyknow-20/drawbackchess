@@ -26,8 +26,22 @@ body {
   --site-hue: 37deg;
   --bg-base: hsl(var(--site-hue) 10% 8%);     /* page   (Lichess --c-bg-page) */
   --bg-panel: hsl(var(--site-hue) 7% 14%);    /* box    (--c-bg) */
-  --bg-raised: hsl(var(--site-hue) 7% 22%);   /* low    (--c-bg-low) */
-  --bg-hover: hsl(var(--site-hue) 7% 27%);    /* a menu row under the pointer: one rung above raised */
+  /* Raised was 22% lightness, which is NOT what design-system.md section 1
+     documents (#302e2c). Base and panel matched their documented values
+     exactly; only this rung had drifted, and it drifted in the direction that
+     costs contrast. Muted body text on a raised surface measured 3.94:1
+     against #3c3934 and measures 4.63:1 against the documented value, so the
+     drift alone was the difference between passing and failing AA on every
+     menu, modal, popover and hovered row in the app. The doc says a page that
+     deviates is wrong and either the page or the doc must change; the doc was
+     right, so the code moves. */
+  --bg-raised: hsl(var(--site-hue) 7% 18%);   /* low    (--c-bg-low), #302e2c */
+  /* Hover follows it down by the same amount, keeping the one-rung step that
+     makes a hovered row readable AS hovered. It is deliberately still short of
+     AA for muted text (3.94:1): a hover fill is transient and the text sitting
+     on it is body weight, not muted. Muted text on a permanently hovered
+     surface would be the bug, and the token cannot prevent that on its own. */
+  --bg-hover: hsl(var(--site-hue) 7% 22%);    /* a menu row under the pointer: one rung above raised */
   --bg-zebra: hsl(var(--site-hue) 5% 19%);    /* zebra  (--c-bg-zebra) */
   --border-subtle: hsl(0 0% 25%);             /* --c-border */
   --border-light: hsl(0 0% 40%);              /* --c-border-light */
@@ -256,8 +270,10 @@ html[data-theme="midnight"] {
   --site-hue: 218deg;
   --bg-base: hsl(218 30% 8%);
   --bg-panel: hsl(218 24% 14%);
-  --bg-raised: hsl(218 20% 22%);
-  --bg-hover: hsl(218 20% 27%);
+  /* Same correction as the warm dark ladder above: midnight is that ladder on
+     a navy hue, so it drifted by exactly the same amount. */
+  --bg-raised: hsl(218 20% 18%);
+  --bg-hover: hsl(218 20% 22%);
   --bg-zebra: hsl(218 20% 18%);
   --border-subtle: hsl(218 16% 26%);
   --border-light: hsl(218 14% 40%);
@@ -290,8 +306,15 @@ html[data-theme="midnight"] {
 html[data-theme="light"] {
   --bg-base: hsl(var(--site-hue) 10% 92%);
   --bg-panel: hsl(0 0% 100%);
-  --bg-raised: hsl(0 0% 89%);
-  --bg-hover: hsl(0 0% 94%);
+  /* Light had drifted further than the dark ladder, and in a way that broke
+     the ordering rather than just the value. design-system.md documents
+     #f7f6f5 for raised; the code shipped 89%, which is DARKER than the 92%
+     page, so a raised surface sat below the ground it was supposed to rise
+     from, while hover at 94% sat above it. The rungs were out of order.
+     Light is the dark ladder in reverse, so raised and hover both step AWAY
+     from the white panel rather than toward it, one rung each. */
+  --bg-raised: hsl(var(--site-hue) 10% 97%);  /* #f7f6f5 */
+  --bg-hover: hsl(var(--site-hue) 10% 94%);
   --bg-zebra: hsl(var(--site-hue) 12% 96.5%);
   --border-subtle: hsl(0 0% 85%);
   --border-light: hsl(0 0% 80%);

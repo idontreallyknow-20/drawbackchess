@@ -25,7 +25,8 @@ the one override block, `html[data-theme="light"]`, and it sets the same names.
 | --- | --- | --- |
 | `--bg-base` (page) | `#161512` | `#edebe9` |
 | `--bg-panel` (box) | `#262421` | `#ffffff` |
-| `--bg-raised` (raised, hover) | `#302e2c` | `#f7f6f5` |
+| `--bg-raised` (raised) | `#302e2c` | `#f7f6f5` |
+| `--bg-hover` (a row under the pointer) | `#3c3934` | `#f1f0ee` |
 | `--border-subtle` | `#404040` | `#d9d9d9` |
 | `--text-primary` | `#bababa` | `#4d4d4d` |
 | `--text-heading` | `#cccccc` | `#333333` |
