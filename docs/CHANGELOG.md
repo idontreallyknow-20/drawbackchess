@@ -2019,3 +2019,183 @@ in a browser. Durable Objects do not run under `next dev`, so a live match
 cannot be reached at all, and the strip is gated behind `game.result` on top of
 that. It typechecks and lints. The same component is verified on the other three
 surfaces at five widths in both themes.
+
+---
+
+## 2026-09-07 20:00 UTC
+
+Round 9. Search budgets made honest, three accessibility root causes, the
+parser taught to read delayed removal, and the 13px floor worked by shape.
+
+### Search budgets mean what they say now
+
+`negamax` hard-deadlines at the number the caller asked for. It used to abort at
+`budget * 2`, and the deepening loop only checks the clock after a whole depth
+completes, so every caller paid a hidden 2x that was invisible at the call site.
+
+The decision was an experiment, not a preference. The argument FOR the old
+headroom is that aborting mid-depth throws that depth's work away, so it was
+measured over 27 midgame positions from three openings:
+
+| asked | abort | wall mean | x asked | depth mean |
+|---|---|---|---|---|
+| 60 | 2x | 108.8ms | **2.0x** | 3.1 |
+| 60 | 1x | 60.8ms | 1.1x | 2.9 |
+| **120** | **1x** | 120.6ms | 1.0x | **3.1** |
+| 2000 | 2x | 3845.1ms | **2.0x** | 5.2 |
+| **4000** | **1x** | 4000.6ms | 1.0x | **5.2** |
+
+The bold rows are the fair comparison: at an equal wall ceiling the hard
+deadline reaches exactly the same depth. The headroom bought nothing. And it
+was not headroom occasionally used: **52 of 54 samples ran past the asked
+number and the max landed on the 2x abort exactly.**
+
+`LEVELS.budgetMs` doubled, so the real think times are unchanged and only the
+label moved. Zero searches returned depth 0 in 162 samples, so no "always
+finish depth 1" exemption was needed.
+
+**The house bots needed the same treatment, and this is the part that would
+have gone wrong silently.** `bots.ts` sized all 20 tiers around the hidden
+multiplier and said so: "actual wall time runs 1.5-2.5x the nominal budgetMs".
+With the deadline honest, every tier would have searched half as long as it
+used to, about half a ply off the top, and nothing would have failed. So all 20
+profile budgets doubled, `WEAKEN_CLAMP.budgetMs` went `[10,900]` to
+`[10,1800]`, and `engine-service`'s `REMOTE_SEARCH_CEILING_MS` went 900 to
+1800, without which the doubling would have been clamped straight back. The
+2200 tier is now a **bounded** ~1.8s plus network where it was a measured
+1.8-2.25s, so there is more margin below the worker's 3000ms timeout, not less.
+
+The Workers path is proved unchanged: with the clock frozen the way the
+win-rate harness freezes it, old and new visit **identical** node counts and
+reach identical depths at every budget the DO fallback sees. `test:desync`
+sample hash `5579b1a5`, unchanged.
+
+### `/game/[id]` could strand a viewer forever
+
+`spectate()`'s catch block was an unawaited async function, so anything that
+threw inside it was swallowed and the page never left `{kind: "loading"}`.
+Reproduced before it was fixed: **still connecting after 30000ms** with an
+unhandled `pageerror`; after, out of the skeleton in **1926ms** onto a terminal
+state carrying the thrown message. `isArenaGameLive` is now called as
+`.catch(() => false)`, so its documented fail-soft is enforced at the call site
+rather than assumed of the helper.
+
+### The eval search runs in a worker
+
+Longest task on a quiet page **110ms to 58-90ms**, and the 110ms was the idle
+ladder's deepest rung exactly, so the search *was* the longest task. Two
+caveats kept rather than buried: at about one keypress a second, before and
+after both record **zero** long tasks, so that run says nothing; and at a held
+arrow key the numbers overlap, because the analysis page's own per-ply render
+is 50-120ms under `next dev` and swamps the eval.
+
+Round 8's 32/111/817 figures are **not comparable** to these, and its "engine
+off" baseline row was an artefact: pressing the Engine toggle itself adds 23 to
+39 long tasks.
+
+### Three accessibility root causes, all previously worked around
+
+**The card face is no longer a `<button>`.** The choice was between that and
+making glossary terms non-interactive on picker surfaces, and the AX tree
+settled it: a term inside a card button returns `{role: "button", name:
+"castle", ignored: false, focusable: true}` and its keyboard path works today,
+so the other option would have deleted a working path rather than removing dead
+markup. The control is now a stretched `.card-pick-target` as the face's first
+child at `z-index: 1`, with `aria-labelledby` pointing back at the face so the
+name still computes over the whole subtree and the `SrSep` punctuation survives.
+Nested `button button, button [role=button]`: **3 to 4 per card, now 0.**
+
+`GlossaryTerm` keeps its `stopPropagation`, which was never the bug: reading a
+word must not activate the surface underneath, since a second click on a chosen
+draft card commits the draft and in the dock it spends the card.
+
+**Cards no longer announce in caps.** `.rule-ornament` uppercased the tier
+label, and Chrome applies `text-transform` when computing accessible names, so
+a card announced `"Tier II , EASY"` and now announces `"Tier I , Trivial"`.
+`check-case.ts` deliberately does not track `text-transform`, so no guard could
+have caught it.
+
+**Rarity chips: 9 of 12 theme/rarity combinations carried a contrast failure,
+0 do now**, with the 0.7 locked opacity composited in and the compositing model
+first validated against real screenshot pixels (12/12 within 1/255). Light
+common 1.42 to 4.60, light legendary 1.37 to 4.61, dark epic 2.72 to 4.63.
+Locked stays below unlocked in all 12 rows, so the locked state still reads as
+the dimmer one. Two of the handed-over values were wrong and were re-solved:
+they measure 4.45 and 4.47 on dark, and **dark legendary was at 4.37, a failure
+the handoff did not list at all.**
+
+### The parser reads delayed and conditional removal
+
+Nine of the fourteen unreadable-material cards, coverage in the material
+categories **190/284 to 202/284**, and **16 cards moved of 1665 with 0
+unintended**. They failed for six different reasons rather than one:
+`mass_mind_control` on a QUALIFIER ("of any type below **queen**" left `queen`
+in the mention list, forming a second noun group, which correctly fired the
+two-candidate guard), `lightning_strike` because its later clause does contain
+a noun so the `!hasNoun` test excluded it, `reality_warp` on a missing
+transform bridge and a hard-coded count, the rest on missing verbs, a missing
+modifier and a missing repeat gate.
+
+Three refusals worth as much as the fixes. `detonate` is a one-line change that
+was not made: the sacrifice override reaches past the governing verb, so
+"Sacrifice one pawn **to clear** all pieces on its adjacent squares" scores the
+enemy pieces as the holder's own cost, and fixing it reads +2.9 against a t3
+card, so `--check` exits 1 the moment it lands. `bn4_endless_militia` is
+blocked by two deliberate refusals, one carrying a comment naming that exact
+sentence, and the engine disagrees with the comment; overturning a written
+refusal silently is not a worker's call. And widening the lookahead window was
+**measured**: it still does not reach the target card, moves six unrelated
+ones, and pushes `blood_pact` above its floor.
+
+### The 13px floor, by shape
+
+Thirteen shared components and call sites, every one a text-size change only.
+The rule applied, stated so it can be argued with: **raise** anything
+sentence-shaped, plus the naming or describing line of a control or link;
+**leave at 12px** anything whose whole content is a bare token (a number,
+count, rating, timestamp, state word, or a chip with chip chrome).
+
+Measured across 15 re-swept routes: **1833 findings to 663, 114 unique elements
+to 38.** `/settings` 31 unique to 0, `/settings/appearance` 7 to 0,
+`/tournaments/[id]` 5 to 0, `/inbox` 2 to 0. Projected sitewide (the `Guest`
+element alone is one shared `SiteHeader` instance worth 274 findings across 27
+routes): **219 to about 114 unique, a 48% cut**; strip the 72 tier chips that
+were deliberately kept and the real movement is **147 to 42, a 71% cut**.
+
+Density measured rather than eyeballed, A/B on the same page with a stylesheet
+forcing exactly the raised elements back to 12px: the densest surface
+(`/settings`, 22 hints) grew 0.8% at 1440 and 2.7% at 360, four other surfaces
+grew 0px, and nothing wrapped, truncated or overflowed.
+
+### C49 measured, and left for its own round
+
+Hydration to the draft overlay being in the DOM: **332ms median over five
+runs**, decomposed rather than guessed at.
+
+| segment | median | what it is |
+|---|---|---|
+| board paint to its passive effects flushing | 132ms | commit 2's tail |
+| effects to the overlay's render starting | 46ms | `queueMicrotask(setPhase)` reaching the scheduler |
+| overlay render, commit and paint | 155ms | DraftOverlay's own first mount |
+
+The cause of the first 178ms: `useDraftSequence` starts its machine at
+`ANIMATIONS_PLAYING` and only steps to `CARDS_PREPARING` inside an effect,
+reaching React through `queueMicrotask(setPhase)`. At game start `sigBusy` is
+false from the very first render, so **there is nothing to wait for and the
+overlay is forced into a second commit anyway**. The "Resolving effects" chip
+is painted for exactly that window, every run, while nothing is resolving.
+
+Not fixed this round, deliberately. Deriving `overlayVisible` during the first
+render of a new offer on a quiet board would collapse it to one commit, but the
+machine has two traps: child effects run before parent effects, so an overlay
+mounted in the same commit fires `onCardsReady` before the machine sets its
+key, `reportCardsReady` drops the stale key, and the 12s cap fires instead; and
+`phase === "DRAFT_COMPLETE"` is also the state after a draft resolves, so a
+naive derivation flashes the overlay back on. `e2e/draft-timing.spec.ts` exists
+because this machine has deadlocked before. It gets a round where it is the
+only thing in flight.
+
+Dev-only inflation, recorded so nobody chases a ghost: `reactStrictMode`
+double-renders everything, and four or five Turbopack chunks are fetched inside
+that window on every run. Both vanish in a production build; the structural
+extra commit does not.
