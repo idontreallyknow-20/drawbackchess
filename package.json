@@ -34,6 +34,7 @@
     "test:reduced-motion": "node scripts/check-reduced-motion.cjs",
     "test:emdash": "npx -y tsx scripts/check-emdash.ts",
     "test:rounded": "npx -y tsx scripts/check-rounded.ts",
+    "test:case": "npx -y tsx scripts/check-case.ts --strict",
     "test:buttons": "npx -y tsx scripts/check-buttons.ts --strict",
     "test:sound": "node scripts/check-sound-coverage.cjs",
     "test:card-registry": "npx -y tsx scripts/gen-card-registry.ts --check",

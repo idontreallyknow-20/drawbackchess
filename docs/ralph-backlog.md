@@ -57,8 +57,10 @@ which is why nothing caught it.
 |---|---|---|---|
 | A1 | `scripts/material-model.ts`: score every active card for effective material, fit a tier floor against measured win rate, report violations | M | DONE (round 1) |
 | A2 | Full-library win-rate sweep, 3 niced shards, `--games 10`, writing `docs/card-winrate.shard{0,1,2}.json` | L | WIP (suspended mid-shard; resume with `pkill -CONT -f sim-card-winrate`) |
-| A3 | Apply the 28 retiers through `hand-audit.json` + `npm run gen:retiers` + `CARD_HISTORY` | M | TODO (next) |
-| A4 | Pin the material ladder as an invariant so a later blanket pass cannot undo it | S | TODO (next) |
+| A3 | Apply the retiers through `hand-audit.json` + `npm run gen:retiers` + `CARD_HISTORY` | M | DONE (round 2): 18 moved, 10 of the original 28 were parser misreads and are fixed or held out |
+| A4 | Pin the material ladder as an invariant so a later blanket pass cannot undo it | S | DONE (round 2): section 1b of `scripts/test-balance-pass-2026-09.ts` |
+| A8 | The pocket discount is probably backwards: a crazyhouse drop lands anywhere, dodges every nerf filter, and breaks stalemate, so it is worth MORE than the same piece in your own half, not 0.95 of it. Measure the family, then move the multiplier | M | TODO |
+| A9 | Two parser holes left, held out by name in `KNOWN_MISREAD`: a replacement (`X ... and Y returns in its place`) is a transform written the long way round (`seance`), and a later sentence re-describing an already-scored piece is a gloss, not a second body (`wc_lost_and_found`) | S | TODO |
 | A5 | Rework, not just retier, cards that are cheap AND boring (pure "+3 material, no decision") | M | TODO |
 | A6 | `amazon_army` t7 measures -25 points: a play-policy bug, not a tier problem. Root cause in `/dev/lab` | S | TODO |
 | A7 | Work the `pending-review` backlog in `docs/card-audit.md`: 266 duplicate-signature, 211 near-duplicate, 90 dominated | L | TODO |
@@ -96,24 +98,79 @@ tier 4, amazon-class is tier 7). The line through those two points is
 | 12 | t8 | queen and rook; the tier ceiling starts binding |
 | 18 | t9 | apex |
 
-**28 violations**, 23 one tier under and 5 two tiers under. `wa_conjure_bishop`,
-the card that started this, scores M=3.00 and moves t3 to t4, landing exactly on
-the minor anchor beside the cards that already do the same thing.
+### What round 2 did with it
 
-Parser coverage is **67 percent** of the 284 cards in a material effect
-category, with 10 refused outright (gambling ladders whose branch odds are
-stated only in total). The gaps are work, not noise: 18 of 40 mass-removal cards
-score nothing, and three of the strongest measured cards in the library
+Round 1 reported **28 violations**. Reading them one at a time found that ten
+were the parser's fault, not the library's, so the fix went into the parser
+first and the tiers second:
+
+- an unstated promotion target was assumed to be a **queen**, which priced a
+  minor's worth of upgrade at eight points (`bw3_heir_apparent`, and three more
+  that were never violations but were scored four times too high). It is now
+  priced at the cheapest promotion the game allows.
+- a stated **plural** target was missed entirely, so "promote to knights" fell
+  through to the same queen default (`promotion_storm`).
+- a lease only counted when the card said "**then** vanishes", so "appears there
+  **and** vanishes after 4 of your turns" was read as permanent (`phantom_rook`,
+  `ww_mercenary_queen`: a four-turn rook and a three-turn queen priced as real
+  ones).
+- a **cost clause** reached by a conjunction was billed to nobody: "one of your
+  own pawns bursts in the mess **and is lost** too" (`wc_pinata`), and the same
+  hole hid the minor Apotheosis spends and the piece Funeral Pyre lights.
+- an "**up to N**" in front of a list was applied to the first member only, so
+  "up to two of your knights and bishops" bought three pieces
+  (`bw2_queens_testament`) and "up to two ... knights or bishops" lost the
+  discount altogether (`ww_last_reserves`).
+- a **roulette table** with odds on no branch was scored as if the winning
+  branch were certain (`cs_roulette`); it is refused now, like the other
+  gambling ladders.
+- a **pronoun** was bound to an antecedent two sentences back, and to a whole
+  sentence rather than to a clause. Both are now one sentence and one clause.
+
+That left **18 real violations**, and all 18 moved. `wa_conjure_bishop`, the
+card that started this, scores M=3.00 and moved t3 to t4, landing exactly on the
+minor anchor beside the cards that already do the same thing.
+
+Two rows the parser still reads wrong are held out **by name** in
+`KNOWN_MISREAD`, with the line of the engine that settles each and the parser
+fix that would retire the entry (A9). Neither was moved.
+
+Parser coverage is **67 percent** of the cards in a material effect category,
+with 10 refused outright (gambling ladders whose branch odds are stated only in
+total). The gaps are work, not noise: 18 of 40 mass-removal cards score nothing,
+and three of the strongest measured cards in the library
 (`bn4_endless_militia` +35.0, `total_atomic` +33.3, `atomic_captures` +31.8) sit
-in that gap.
+in that gap. The invariant is therefore an explicit **table of hand-checked
+cards**, not a blanket "every card clears its model floor", so it cannot enforce
+the parser's blind spots as design rules.
 
-Three model-versus-measurement conflicts to resolve before acting on those rows:
-`bn4_care_package` measures +41.7 at M=1.90 (the model says t3 is right, so its
-power comes from somewhere the model does not look), `queens_rampage` measures
--13.6 at t7 with M=3.90, and `legendary_forge` measures -16.7 while the model
-wants to promote it. Known over-counts, recorded rather than papered over:
-`apotheosis` ignores the minor it spends, `wc_sacrificial_bishop` scores +3
-without the bishop it feeds to the volcano.
+### The three model-versus-measurement conflicts, settled
+
+- **`bn4_care_package` +41.7 +-14.9 at M=1.90 (2.8 sigma, the only one of the
+  three that resolves).** The model is right that the tier is t3, and the power
+  it cannot see is the POCKET. `legalMoves` appends drops after every nerf and
+  effect filter, onto any empty square on the whole board, and counts them for
+  stalemate resolution: a pocketed knight can appear on a fork square with no
+  travel and nothing able to stop it. The model charges 0.95 for that, a
+  discount. That multiplier is backwards, and it is A8.
+- **`queens_rampage` -13.6 +-13.6 at t7 (1.00 sigma: not a measurement).** The
+  card is fine and stays at t7, well above its M=3.90 floor. The sign comes from
+  the bot: `aiSquareScore` ranks an enemy-occupied square at 1000+ and an empty
+  one at 7, so the sweep always ENDS on the most valuable enemy piece in line;
+  the activation path never consults move safety the way a real move does; and
+  the gate only asks for a minor's worth of target. So the bot trades a queen
+  for a knight into a defended square and then hands over the turn. A play-policy
+  bug, filed beside A6.
+- **`legendary_forge` -16.7 +-16.7 (1.00 sigma: not a measurement).** Moved t3
+  to t4 anyway. Its payload is `Bodyguard`'s exactly (a minor into the pocket,
+  one later turn to drop it), `Bodyguard` is t4, and `Bodyguard` measured
+  **+15.0 +-13.0** on the same harness. A 32-point spread between two identical
+  payloads is the error bar, not the cards.
+
+Round 1's two recorded over-counts are closed: `apotheosis` now reads the minor
+it spends (M 8.55 to 5.70, which puts it exactly at its tier and removes it from
+the list), and `wc_sacrificial_bishop` already nets to zero, so the note was
+stale. Both are pinned in the parser's self-check.
 
 ## B. Feel: the practice-games loop
 
@@ -170,7 +227,7 @@ Measured, with file:line. These are the concrete C2 work items.
 | C26 | Weakest system-state pages, from the audit: `analysis` (no error/empty/loading), `achievements` (no empty), `history/[id]` (no error, no empty), `game/page.tsx` (16 loading markers, 0 error), `codex/suggest` (0 loading), `mod/page.tsx` (0 error). `tv/page.tsx` is the reference implementation to copy: it distinguishes "unreachable and nothing cached" from "first snapshot loading" | M | TODO |
 | C27 | The `clip/studio/*` subtree (~1,900 lines) has one width query and is otherwise unresponsive | S | TODO |
 | C28 | **Uppercase labels violate section 11** ("Sentence case everywhere... allcaps survive only in the LIVE badge"). Seen on the main nav (PLAY, WATCH, COMMUNITY, LEADERBOARD, RULES) and every quick-settings section head (BACKGROUND, BOARD, PIECES, BOARD SIZE, SOUND). Section 3 also retired the letterspaced-smallcaps pattern sitewide, so these are the survivors | S | TODO |
-| C29 | **Light-mode piece previews are near-invisible.** In the quick-settings piece picker under the light theme, several white-piece thumbnails render as white on the near-white raised surface. Found by looking at a screenshot, not by any guard | S | TODO |
+| C29 | **One light-mode piece preview is near-invisible.** In the quick-settings piece picker under the light theme, the tenth thumbnail (second row, fourth) renders as a faint outline on the near-white raised surface. Its white fill has nothing to sit against. The other ten are fine, so this is one theme's fill choice, not the picker. Worth checking the same set on a light board theme, where the same collision would happen in a real game. Found by looking at a screenshot; no guard covers it | S | TODO |
 | C30 | **`--text-secondary` fails AA in light** on every surface: 3.71:1 on the page, 4.42:1 on a panel, 4.15:1 on raised. The round-2 contrast pass fixed the muted rung and did not touch this one | S | TODO |
 | C31 | The surface ladder is fixed and now documented, but `--bg-hover` still measures 3.94:1 for `parchment-400` by design. Audit for muted text that sits permanently on a hover fill, which is the case that makes that number a real defect rather than an accepted one | S | TODO |
 

@@ -18,10 +18,12 @@ nav.site-nav {
 .site-nav-link {
   position: relative;
   font-size: 15px;
-  font-weight: 500;
+  /* Sentence case, and weight rather than letter-spacing for the hierarchy.
+     Section 11 allows allcaps only on the LIVE badge, and section 3 retires
+     the letterspaced device sitewide and says never to do hierarchy with
+     letter-spacing alone. The nav was the most visible survivor of both. */
+  font-weight: 600;
   line-height: 1.2;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   color: var(--text-secondary);
   transition: color 0.15s ease, background-color 0.15s ease;
 }

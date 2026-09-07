@@ -429,10 +429,11 @@ body {
 .font-body    { font-family: var(--font-body), system-ui, sans-serif; }
 .font-mono    { font-family: var(--font-mono), ui-monospace, monospace; }
 
-.allcaps {
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
+/* .allcaps is gone. It was the retired letterspaced-smallcaps device kept
+   alive as a utility with zero call sites, which is exactly how a retired
+   pattern comes back: the next person reaches for the class that already
+   exists. Section 3 retired .smallcaps, .eyebrow and .kicker for the same
+   reason; this one was missed. */
 
 /* Page title, Lichess's size: 1.6rem, regular weight, heading colour. Every
    route's h1 wears this; there is no display slam anywhere on the site. */

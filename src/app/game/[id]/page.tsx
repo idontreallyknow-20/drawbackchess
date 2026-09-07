@@ -1521,7 +1521,7 @@ function GameShell({
         Live
       </span>
     ) : headerState === "final" ? (
-      <span className="inline-flex items-center rounded-[1px] border border-[color:var(--edge-strong)] bg-white/[0.04] px-2 py-0.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-parchment-300">
+      <span className="inline-flex items-center rounded-[1px] border border-[color:var(--edge-strong)] bg-white/[0.04] px-2 py-0.5 text-[12px] font-semibold text-parchment-300">
         Final
       </span>
     ) : (

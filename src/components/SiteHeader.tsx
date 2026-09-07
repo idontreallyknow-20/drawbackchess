@@ -492,7 +492,7 @@ export function SiteHeader({ active }: { active?: string }) {
         ) : !user ? (
           <Link
             href="/login"
-            className="ml-1 px-3 py-2 text-[13px] uppercase tracking-[0.05em] text-parchment-300 no-underline transition-colors hover:text-parchment-50"
+            className="ml-1 px-3 py-2 text-[13px] font-semibold text-parchment-300 no-underline transition-colors hover:text-parchment-50"
           >
             Sign in
           </Link>
@@ -529,7 +529,7 @@ export function SiteHeader({ active }: { active?: string }) {
                   <span aria-hidden className="hidden text-parchment-500 sm:inline">·</span>
                   <Link
                     href="/login"
-                    className="hidden px-2 py-1.5 text-[13px] uppercase tracking-[0.05em] text-gold-leaf no-underline transition-colors hover:text-parchment-50 sm:inline-flex"
+                    className="hidden px-2 py-1.5 text-[13px] font-semibold text-gold-leaf no-underline transition-colors hover:text-parchment-50 sm:inline-flex"
                   >
                     Sign in
                   </Link>

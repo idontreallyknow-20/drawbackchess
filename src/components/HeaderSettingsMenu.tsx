@@ -80,8 +80,10 @@ function KnightPreview({ theme, color, size = 20 }: { theme: PieceTheme; color: 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="mb-1.5 text-[12px] font-semibold uppercase tracking-[0.08em]"
-      style={{ color: "var(--text-muted)" }}
+      // Section 3: "A section label is a plain bold heading at the body size,
+      // not an uppercase tracked-out device." This was the device.
+      className="mb-1.5 text-[12px] font-semibold"
+      style={{ color: "var(--text-secondary)" }}
     >
       {children}
     </div>
