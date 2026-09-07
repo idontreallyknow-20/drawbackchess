@@ -12,7 +12,8 @@ draft your way back to power. The comeback is the game.
    chaos; reveal buffs like *Extra Glance* / *Watchtower* exist to buy the
    information back).
 2. **Buff cadence**: drafts are simultaneous. A shared move counter fires
-   every **6** full moves and hands both players an offer at the same moment
+   every **5** of your own moves (`DEFAULT_CADENCE` and `NERF_MODE_CADENCE`
+   in `src/engine/draft.ts`) and hands both players an offer at the same moment
    (two cards, pick one), so neither side ever runs a draft ahead of the
    other. Buff offers, picks, and held buffs are **public**: both players can
    see them (the opponent's current offer is only shown to you if you drafted
@@ -44,10 +45,13 @@ RNG stored in the match state, so replays and snapshots are deterministic.
 - `src/engine/buffs/helpers.ts` — factories (move-gen helpers, targeted
   removal/placement/revival/freeze/shield/steal builders) so most cards are a
   few lines each.
-- `src/engine/buffs/library.ts` — the full library: 263 cards (8 tiers ×
-  ~32, plus the cross-cutting nerf-modifier set). ~160 are mechanically
-  implemented; the rest are cataloged stubs (`implemented: false`) that never
-  appear in drafts, mirroring how unimplemented nerfs work.
+- `src/engine/buffs/library.ts` — the barrel that merges every themed module
+  into `ALL_BUFFS`. As of 2026-09: 2,112 buffs defined, **1,423 active** in the
+  draft pools (the rest are retired via `src/engine/retired.ts` or are
+  cataloged stubs with `implemented: false`, and neither ever appears in a
+  draft). Nerfs run the same way: 368 defined, 242 active. 1,665 active cards
+  in total. These counts move with every balance pass, so regenerate them with
+  `npm run gen:card-registry` rather than trusting this line.
 - `src/engine/draft.ts` — tier rolling, offer generation, banking.
 - `src/engine/game.ts` — integration: `enableDraftMode`, the legal-move
   pipeline (freeze → buff augments → nerf filter → opponent

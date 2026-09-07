@@ -48,7 +48,7 @@ export default function ChessRoguelikePage() {
         <p>
           What gives Nerf Chess its roguelike feel is the escalation. Cards are graded into eight
           difficulty <Link href="/guide/glossary#tier" className="underline">tiers</Link>
-          <GlossaryText text=", from I (Trivial) to VIII (Unhinged), and the draft climbs that curve as the game goes on, round by round the offers roll around tiers I, II, III, V, then VII. Early offers are mild; late-game offers can be board-warping. You can skip a draft to bank it and roll your next offer one tier higher, a timing gamble that rewards patience. The top tiers are deliberately rare (every level above VI can slip back down), and the legendary bands (apex at tier 9 and mythic at tier 10) never roll in the normal draft at all: they must be earned, by banking a tier-8 offer, winning a Chess Diff, or gambling on a Jackpot." />
+          <GlossaryText text=", from I (Trivial) to VIII (Unhinged), and the draft climbs that curve as the game goes on: the offers roll around tiers I, II, III, V, then VII and up to the VIII cap. Early offers are mild; late-game offers can be board-warping. One shared wobble of plus or minus one tier is rolled per round (18 percent each way), so both players always see the same tier. You can skip a draft to bank it and roll your next offer one tier higher, a timing gamble that rewards patience. The legendary bands (apex at tier 9 and mythic at tier 10) never roll in the normal draft at all: they must be earned, by banking a tier-8 offer, winning a Chess Diff, or gambling on a Jackpot." />
         </p>
       </InfoSection>
 
