@@ -470,10 +470,41 @@ async function probe(page: Page, interactiveSelector: string): Promise<DomReport
       // artefact of the layout, not a design that missed the target.
       if (r.width >= 43.5 && r.height >= 43.5) return;
       const cs = getComputedStyle(el);
+      // An inline control sitting inside running prose is exempt: the design
+      // system's own glossary terms are exactly this, and giving one a 44px
+      // box would push the line it lives in apart. Deliberately NOT limited to
+      // <a>: GlossaryText renders a focusable <span>, and an earlier version
+      // of this check tested `tagName === "A"` and so reported 241 of them as
+      // defects across the guide and codex pages. They were the single largest
+      // cluster in the whole sweep and none of them was real.
       const inlineInProse =
-        el.tagName === "A" &&
         cs.display.startsWith("inline") &&
         !!el.closest("p, li, blockquote, dd, figcaption");
+
+      // A control that FILLS a row which is itself a 44px target is not a
+      // small target: the row is the target, and every pixel of it triggers
+      // the control. The codex list is built this way on purpose (a 44px row
+      // whose link stretches to the row's content box), and reporting the
+      // link's own 42px box counted a correct pattern as 120 defects.
+      //
+      // "Fills it" is measured, not assumed: the parent must reach 44px, and
+      // the gap between them must be only the parent's own border and padding.
+      // A link floating inside a tall row with real dead space around it is
+      // still a defect and still reported.
+      const parent = el.parentElement;
+      let filledByRow = false;
+      if (parent) {
+        const pr = parent.getBoundingClientRect();
+        const ps = getComputedStyle(parent);
+        const chrome =
+          parseFloat(ps.borderTopWidth) +
+          parseFloat(ps.borderBottomWidth) +
+          parseFloat(ps.paddingTop) +
+          parseFloat(ps.paddingBottom);
+        const dead = pr.height - chrome - r.height;
+        filledByRow = pr.height >= 43.5 && dead <= 0.5 && r.width >= 43.5;
+      }
+      if (filledByRow) return;
       smallTargets.push({
         selector: cssPath(el),
         w: Math.round(r.width * 10) / 10,
