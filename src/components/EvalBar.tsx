@@ -128,11 +128,12 @@ type IdleWindow = Window & {
 };
 
 /**
- * Runs the ladder over `board`, one rung per idle callback, publishing each
- * rung's result as it lands. Returns null until the first usable rung arrives
- * and whenever the held reading belongs to a different position: a score
- * searched from the previous board is not a weaker answer here, it is the
- * wrong one, so it is withheld rather than re-signed.
+ * Runs the ladder over `board` — one rung per worker round-trip, or per idle
+ * callback where there is no worker — publishing each rung's result as it
+ * lands. Returns null until the first usable rung arrives and whenever the held
+ * reading belongs to a different position: a score searched from the previous
+ * board is not a weaker answer here, it is the wrong one, so it is withheld
+ * rather than re-signed.
  *
  * `ladder` must be a stable reference (use the exported constants).
  */

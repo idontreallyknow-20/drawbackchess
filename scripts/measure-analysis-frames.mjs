@@ -1,6 +1,6 @@
 // A18: what does the eval bar cost the main thread on /analysis?
 //
-//   node scripts/measure-analysis-frames.mjs [--engine off] [--label after]
+//   node scripts/measure-analysis-frames.mjs --label after [--step 120] [--passes 4]
 //
 // Same instrument as the round-8 measurement this is compared against:
 // a PerformanceObserver on 'longtask' plus a requestAnimationFrame sampler,
@@ -11,6 +11,13 @@
 //
 // total blocking = the standard Total Blocking Time: the part of each long task
 // beyond 50ms, summed.
+//
+// READ THE STEP RATE BEFORE READING THE NUMBERS. At --step 900 (about one key
+// press a second) neither the old idle ladder nor the worker drops a single
+// frame, so the run says nothing. At --step 120 (an arrow key held down) the
+// eval's cost is real but so is the analysis page's own per-ply render, which
+// in `next dev` is 50-120ms and swamps it. The clean read of what one eval
+// costs is a single ply on a quiet page — see the round-9 notes.
 import fs from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
@@ -44,6 +51,7 @@ const clicks = Number(arg("--clicks", "0"));
 // The step delay has to be long enough for a ladder to finish, or the
 // measurement is of an interrupted ladder rather than a completed one.
 const stepMs = Number(arg("--step", "900"));
+const passes = Number(arg("--passes", "1"));
 
 // A real 12-move line (24 plies): the Italian, played into a genuine middlegame.
 const LINE =
@@ -92,10 +100,26 @@ await page.evaluate(() => {
   window.__perf.recording = true;
 });
 
-// Walk the line one ply at a time, exactly as a reviewer does.
-for (let i = 0; i < PLIES; i++) {
-  await page.keyboard.press("ArrowRight");
-  await page.waitForTimeout(stepMs);
+// Walk the line one ply at a time, exactly as a reviewer does. `--passes`
+// repeats the walk so a fast step rate still gives a long enough window.
+//
+// `readings` counts the steps where the bar actually had a score for the
+// position on screen by the time the next key went down. A ladder that keeps
+// the main thread free by never getting to run is not a fix, so the cost of the
+// eval and the presence of the eval have to be read off the same run.
+let readings = 0;
+let steps = 0;
+for (let pass = 0; pass < passes; pass++) {
+  if (pass > 0) {
+    await page.keyboard.press("ArrowUp");
+    await page.waitForTimeout(stepMs);
+  }
+  for (let i = 0; i < PLIES; i++) {
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(stepMs);
+    steps++;
+    if (await page.evaluate(() => !!document.querySelector("[data-eval-depth]"))) readings++;
+  }
 }
 await page.evaluate(() => {
   window.__perf.recording = false;
@@ -115,6 +139,13 @@ const perf = await page.evaluate(() => {
 const tbt = perf.tasks.reduce((a, d) => a + Math.max(0, d - 50), 0);
 const longest = perf.tasks.length ? Math.max(...perf.tasks) : 0;
 const slowFrames = perf.frames.filter((f) => f > 100).length;
+// A second, independent reading of the same thing. The longtask entries turned
+// out to vary wildly run to run on this box (the same build measured 0 and 104
+// long tasks), so the frame gaps the rAF sampler recorded are reported
+// alongside them: a frame that arrives 110ms after the last one is a frame the
+// viewer lost, whether or not the browser filed a longtask entry for it.
+const gapBlocking = perf.frames.reduce((a, f) => a + Math.max(0, f - 50), 0);
+const maxGap = perf.frames.length ? Math.max(...perf.frames) : 0;
 
 console.log(
   JSON.stringify(
@@ -123,11 +154,17 @@ console.log(
       engine: clicks % 2 === 1 ? "off" : "on",
       toggleClicks: clicks,
       plies: PLIES,
+      passes,
+      stepMs,
+      steps,
+      stepsWithAReading: readings,
       longTasks: perf.tasks.length,
       longestMs: Math.round(longest),
       totalBlockingMs: Math.round(tbt),
       framesOver100ms: slowFrames,
       frames: perf.frames.length,
+      maxFrameGapMs: Math.round(maxGap),
+      frameGapBlockingMs: Math.round(gapBlocking),
       finalDepth: perf.depth,
       finalRungCostMs: perf.cost,
       thread: perf.thread,

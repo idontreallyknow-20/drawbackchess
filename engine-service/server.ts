@@ -29,7 +29,15 @@ const PORT = Number(process.env.PORT ?? "8787");
 // latency is the per-tier budgetMs values, sized (and measured against the
 // public URL) to leave margin under the Worker's HOUSE_ENGINE_TIMEOUT_MS
 // (3000ms).
-const REMOTE_SEARCH_CEILING_MS = 900;
+// Doubled from 900 with the 2026-09 deadline change. negamax used to abort at
+// `budget * 2`, so a 900ms request really spent 1.8-2.25s; it now hard-deadlines
+// at the ask, so 900 would have halved every house tier's think time. 1800 here
+// is the same real spend these tiers always had, and it is now a BOUND rather
+// than a midpoint, which is more margin below the worker's 3000ms
+// HOUSE_ENGINE_TIMEOUT_MS than before. Moves in lockstep with
+// HOUSE_SKILL_PROFILES and WEAKEN_CLAMP.budgetMs in src/lib/server/bots.ts;
+// a ceiling only ever clamps down, so the two sides can deploy in any order.
+const REMOTE_SEARCH_CEILING_MS = 1800;
 // Derived from the roster's profile map so the accepted tiers never drift out
 // of sync with bots.ts when the skill tiers change.
 const VALID_SKILLS = new Set<HouseSkill>(

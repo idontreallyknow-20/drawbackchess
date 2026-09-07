@@ -150,12 +150,19 @@ function AnalysisInner() {
     [moves, viewPly],
   );
 
-  // The engine still runs on the main thread, but no longer in one block. The
-  // old call here was `analyzeBoard(board, 300)` behind a 120ms timeout, which
-  // measured at ~600ms of blocked main thread after every move: negamax aborts
-  // at `budget * 2`, and the deepening loop only checks the clock once a whole
-  // depth has finished. useBoardEval climbs a ladder of short searches in idle
-  // callbacks instead, publishing each rung as it lands.
+  // The engine runs in a WORKER now, and the main-thread ladder is the
+  // fallback for browsers without one (every rung clamped to 24ms there).
+  // `data-eval-thread` says which path actually ran.
+  //
+  // The history, because both halves of it were surprises. The old call here
+  // was `analyzeBoard(board, 300)` behind a 120ms timeout, which measured at
+  // ~600ms of blocked main thread after every move: negamax aborted at
+  // `budget * 2` and the deepening loop only checked the clock once a whole
+  // depth had finished. That abort is now a hard deadline at the ask (see
+  // ai.ts), so the same call would block ~300ms; moving it off the thread
+  // removes the block rather than halving it. On a quiet page the longest task
+  // went 110ms to 58-90ms, and the 110ms was the ladder's deepest rung exactly,
+  // i.e. the search WAS the longest task.
   const current = useBoardEval(board, engineOn, EVAL_LADDER_ANALYSIS);
 
   // Arrow-key navigation through the line, plus `f` for the flip button beside

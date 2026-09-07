@@ -35,17 +35,34 @@ export const HOUSE_SEARCH_CEILING_MS = 80;
 // DO. Roughly geometric growth: each rating step needs increasingly more
 // search time for the same strength gain (diminishing Elo per ply).
 //
-// IMPORTANT: negamax's own timeout check only fires once elapsed time exceeds
-// `budget * 2` (see ai.ts's TIMEOUT_SENTINEL check) -- it's a per-node safety
-// net, not a tight deadline. Measured against engine.nerfchess.com/move (the
-// real public path -- localhost-on-the-box measurements alone understated
-// this by ~600ms of tunnel/network overhead), actual wall time runs
-// 1.5-2.5x the nominal budgetMs. These numbers are sized so the slowest tier
-// (2200) lands around ~2.2-2.4s over the public path, leaving real margin
-// below the Worker's 3000ms HOUSE_ENGINE_TIMEOUT_MS. Re-measure against the
-// public URL (not just localhost:8787 on the box) before raising any of
-// these -- don't trust the nominal number, and don't trust a localhost-only
-// measurement either.
+// BUDGETS ARE NOW WALL TIME, AND THAT IS WHY THESE NUMBERS DOUBLED.
+//
+// This block used to say negamax's timeout fires at `budget * 2`, so actual
+// wall time ran 1.5-2.5x the nominal budgetMs, and these tiers were sized
+// around that hidden multiplier. As of the 2026-09 deadline change negamax
+// hard-deadlines at the number the caller asked for: measured over 27 midgame
+// positions, wall time is 1.0-1.1x the ask at every budget, where it had been
+// 2.0x in 52 of 54 samples.
+//
+// So every tier here was DOUBLED, and the real think time is unchanged. Only
+// the label moved. That was measured rather than assumed: at an equal wall
+// ceiling the hard deadline reaches the same depth (asked 120 at 1x reaches
+// depth 3.1, exactly what asked 60 at 2x reached), so the old headroom was
+// buying nothing except an unpredictable number at every call site.
+//
+// The slowest tier (2200) is now a BOUNDED ~1.8s plus network rather than a
+// measured 1.8-2.25s, which is more margin below the Worker's 3000ms
+// HOUSE_ENGINE_TIMEOUT_MS than before, not less.
+//
+// Two ceilings gate these and both had to move together:
+// engine-service/server.ts's REMOTE_SEARCH_CEILING_MS (900 -> 1800) and
+// WEAKEN_CLAMP.budgetMs below. Either one alone is harmless -- a ceiling only
+// ever clamps down -- so the two can deploy in any order, but the tiers are
+// not at full strength until both have.
+//
+// Still true: measure against engine.nerfchess.com/move rather than
+// localhost:8787 before raising any of these. A localhost-only measurement
+// understated the old numbers by about 600ms of tunnel and network overhead.
 export type HouseSkill =
   | 800
   | 900
@@ -106,44 +123,46 @@ export type ResolvedSkillProfile = {
 // The DO local fallback still clamps to HOUSE_SEARCH_CEILING_MS, so these
 // budgets only bite on the OCI engine path; budgets stay within
 // WEAKEN_CLAMP.budgetMs and under the worker's 3000ms engine timeout
-// (nominal x1.5-2.5 measured wall time — see the note above).
+// (nominal x1.0-1.1 measured wall time since the deadline change — see the
+// note above; it was x1.5-2.5 when these tiers were first sized).
 //
 // The 900-1200 tiers are new with the 2026-07 roster expansion: genuinely
 // beginner-strength bots (shallow search, baked move-quality noise, frequent
 // blunders) so low-rated humans finally have peers. Their displayed rating
 // matches their strength directly (no legacy uplift stack — see houseSeedBase).
 export const HOUSE_SKILL_PROFILES: Record<HouseSkill, SkillProfile> = {
-  800: { level: "easy", budgetMs: 12, blunderChance: 0.28, maxDepth: 2, topK: 7, temperatureCp: 320, evalNoiseCp: 150, extendedEval: false },
-  900: { level: "easy", budgetMs: 15, blunderChance: 0.22, maxDepth: 2, topK: 6, temperatureCp: 260, evalNoiseCp: 120, extendedEval: false },
-  1050: { level: "easy", budgetMs: 20, blunderChance: 0.16, maxDepth: 2, topK: 5, temperatureCp: 200, evalNoiseCp: 90, extendedEval: false },
-  1200: { level: "medium", budgetMs: 20, blunderChance: 0.12, maxDepth: 3, topK: 4, temperatureCp: 150, evalNoiseCp: 70, extendedEval: false },
-  1350: { level: "medium", budgetMs: 60, blunderChance: 0.05 },
-  1450: { level: "medium", budgetMs: 90, blunderChance: 0.035 },
-  1550: { level: "hard", budgetMs: 120, blunderChance: 0.02 },
-  1650: { level: "hard", budgetMs: 200, blunderChance: 0.01 },
-  1750: { level: "hard", budgetMs: 300, blunderChance: 0.003 },
-  1900: { level: "hard", budgetMs: 380, blunderChance: 0.002 },
-  1950: { level: "hard", budgetMs: 480, blunderChance: 0.002 },
-  2000: { level: "hard", budgetMs: 580, blunderChance: 0.001 },
-  2050: { level: "hard", budgetMs: 680, blunderChance: 0.001 },
-  2100: { level: "hard", budgetMs: 760, blunderChance: 0.001 },
-  2150: { level: "hard", budgetMs: 840, blunderChance: 0.0005 },
-  2200: { level: "hard", budgetMs: 900, blunderChance: 0.0005 },
+  800: { level: "easy", budgetMs: 24, blunderChance: 0.28, maxDepth: 2, topK: 7, temperatureCp: 320, evalNoiseCp: 150, extendedEval: false },
+  900: { level: "easy", budgetMs: 30, blunderChance: 0.22, maxDepth: 2, topK: 6, temperatureCp: 260, evalNoiseCp: 120, extendedEval: false },
+  1050: { level: "easy", budgetMs: 40, blunderChance: 0.16, maxDepth: 2, topK: 5, temperatureCp: 200, evalNoiseCp: 90, extendedEval: false },
+  1200: { level: "medium", budgetMs: 40, blunderChance: 0.12, maxDepth: 3, topK: 4, temperatureCp: 150, evalNoiseCp: 70, extendedEval: false },
+  1350: { level: "medium", budgetMs: 120, blunderChance: 0.05 },
+  1450: { level: "medium", budgetMs: 180, blunderChance: 0.035 },
+  1550: { level: "hard", budgetMs: 240, blunderChance: 0.02 },
+  1650: { level: "hard", budgetMs: 400, blunderChance: 0.01 },
+  1750: { level: "hard", budgetMs: 600, blunderChance: 0.003 },
+  1900: { level: "hard", budgetMs: 760, blunderChance: 0.002 },
+  1950: { level: "hard", budgetMs: 960, blunderChance: 0.002 },
+  2000: { level: "hard", budgetMs: 1160, blunderChance: 0.001 },
+  2050: { level: "hard", budgetMs: 1360, blunderChance: 0.001 },
+  2100: { level: "hard", budgetMs: 1520, blunderChance: 0.001 },
+  2150: { level: "hard", budgetMs: 1680, blunderChance: 0.0005 },
+  2200: { level: "hard", budgetMs: 1800, blunderChance: 0.0005 },
   // The 2400+ band, added with the 2026-07 rating spread so the roster has a
   // credible elite tail (about 10% of it). HONEST LIMITATION: budgetMs cannot
   // usefully climb past 900 today. The remote engine clamps every request to
-  // REMOTE_SEARCH_CEILING_MS (engine-service/server.ts) and measured wall time
-  // runs 1.5-2.5x the nominal budget, so 900 already sits close to the Worker's
+  // REMOTE_SEARCH_CEILING_MS (engine-service/server.ts), now 1800, and wall
+  // time is 1.0x the nominal budget since the deadline change, so 1800 sits at
+  // roughly the same real spend these tiers always had against the Worker's
   // 3000ms HOUSE_ENGINE_TIMEOUT_MS. These tiers therefore differ from 2200 only
   // by having no forced blunder at all, which means they ADVERTISE more strength
   // than the engine can currently back. Their live ratings will drift down
   // toward what they actually play, which is the self-correcting outcome. Making
   // them genuinely 2400+ needs a bigger service ceiling AND a raised worker
   // timeout, measured against the public URL first (see the note above).
-  2400: { level: "hard", budgetMs: 900, blunderChance: 0.0002 },
-  2500: { level: "hard", budgetMs: 900, blunderChance: 0.0001 },
-  2600: { level: "hard", budgetMs: 900, blunderChance: 0 },
-  2700: { level: "hard", budgetMs: 900, blunderChance: 0 },
+  2400: { level: "hard", budgetMs: 1800, blunderChance: 0.0002 },
+  2500: { level: "hard", budgetMs: 1800, blunderChance: 0.0001 },
+  2600: { level: "hard", budgetMs: 1800, blunderChance: 0 },
+  2700: { level: "hard", budgetMs: 1800, blunderChance: 0 },
 };
 
 // ---------------------------------------------------------------------------
@@ -163,7 +182,7 @@ export const HOUSE_SKILL_PROFILES: Record<HouseSkill, SkillProfile> = {
 // service (which independently re-clamps whatever the DO sends) stays in lockstep
 // with these bounds from the shared module rather than a hand-copied constant.
 export const WEAKEN_CLAMP = {
-  budgetMs: [10, 900],
+  budgetMs: [10, 1800],
   blunderChance: [0, 0.25],
   maxDepth: [1, 12],
   topK: [1, 8],

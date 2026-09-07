@@ -273,7 +273,7 @@ if (liveThrough.some((n) => n !== EXPECT_GRANTED_PLY2)) {
 //
 //    So this asserts the SIZE of the cost rather than pretending it is zero.
 //    One ply at the 60ms floor is the known price of no longer being blind;
-//    two would be a new regression, and any loss at medium's real 700ms budget
+//    two would be a new regression, and any loss at 700ms, which was medium's whole budget before the deadline change doubled the label to 1400
 //    would mean the augment step had become far more expensive than measured.
 //
 //    The 60ms floor only binds when a bot is under 600ms on its clock
@@ -319,12 +319,12 @@ console.log(
 );
 if (buffed700.depth < plain700.depth) {
   bad(
-    `the wider tree costs depth at medium's real 700ms budget too ` +
+    `the wider tree costs depth at 700ms, which was medium's whole budget before the deadline change doubled the label to 1400 too ` +
       `(${plain700.depth} -> ${buffed700.depth}). It did not when this was measured, so the ` +
       "augment step has got much more expensive than the ~0% per-node overhead recorded.",
   );
 } else {
-  ok(`no depth is lost at medium's real 700ms budget (depth ${buffed700.depth})`);
+  ok(`no depth is lost at 700ms, which was medium's whole budget before the deadline change doubled the label to 1400 (depth ${buffed700.depth})`);
 }
 
 if (failures) {
