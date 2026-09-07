@@ -1,4 +1,4 @@
-import { test, expect, type APIRequestContext, type Page } from "@playwright/test";
+import { test, expect, type APIRequestContext, type Browser, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -313,6 +313,68 @@ const INTERACTIVE_SELECTOR =
   'a[href], button, input:not([type="hidden"]), select, textarea, summary, ' +
   '[role="button"], [role="link"], [role="tab"], [role="switch"], [role="checkbox"], ' +
   '[role="menuitem"], [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Widths at which the 44px rule is checked. Phones AND the tablet band: a
+ * 1024px tablet is a coarse pointer with no keyboard, and it was outside the
+ * old <=390 window entirely.
+ */
+const TOUCH_WIDTHS = new Set([360, 390, 768, 1024]);
+
+/**
+ * Measure the 44px rule the way a finger would experience it.
+ *
+ * This exists because the sweep was measuring the wrong thing. Playwright's
+ * default context is a desktop mouse, so `pointer: fine` matches, so every
+ * `[@media(pointer:fine)]:min-h-*` step-down applies, so a control CORRECTLY
+ * fixed to 44px-on-touch was still counted as a defect. Measured on one tree:
+ * 258 findings at 360 with a fine pointer against 81 with a coarse one. The
+ * design rule is "44px on a coarse pointer", so the fine number is not a
+ * weaker version of the right answer, it is an answer to a different question,
+ * and `sweep-baseline.json` encoded it.
+ *
+ * The pointer type is fixed when the CONTEXT is created (`hasTouch`), which is
+ * why this needs its own page rather than a flag flipped mid-cell. CDP's
+ * `Emulation.setEmulatedMedia` looks like it should do it and does not: with
+ * `{name:"pointer", value:"coarse"}` sent, `matchMedia("(pointer: coarse)")`
+ * still reports false, so a sweep built on it would have gone on reporting
+ * fine-pointer numbers under a coarse-pointer label. Verified both ways before
+ * this was written.
+ *
+ * Theme is not a parameter: a hit area does not change colour. So this runs
+ * once per route across the touch widths, not once per cell.
+ */
+async function touchTargetPass(
+  browser: Browser,
+  url: string,
+  emit: (width: number, t: SmallTarget) => void,
+) {
+  const context = await browser.newContext({
+    viewport: { width: 360, height: 900 },
+    hasTouch: true,
+    reducedMotion: "reduce",
+  });
+  try {
+    const page = await context.newPage();
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await page.waitForTimeout(1_200);
+    // Widest first, same reasoning as the main sweep: a resize re-runs the
+    // media queries but not a component that measured itself on mount, so the
+    // risk of a stale layout is kept on the narrow end where the mobile rules
+    // are the ones that own the page.
+    for (const width of [...TOUCH_WIDTHS].sort((a, b) => b - a)) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.waitForTimeout(250);
+      const report = await probe(page, INTERACTIVE_SELECTOR);
+      for (const t of report.smallTargets) {
+        if (t.inlineInProse) continue;
+        emit(width, t);
+      }
+    }
+  } finally {
+    await context.close();
+  }
+}
 
 async function probe(page: Page, interactiveSelector: string): Promise<DomReport> {
   return page.evaluate((SEL: string): DomReport => {
@@ -760,7 +822,7 @@ test("seed: fixtures for the dynamic routes", async ({ request }) => {
 // ---------------------------------------------------------------------------
 
 for (const route of routes()) {
-  test(`sweep ${route.url}`, async ({ page, request }, testInfo) => {
+  test(`sweep ${route.url}`, async ({ page, request, browser }, testInfo) => {
     // 18 full page loads per route on a four-core box with three niced
     // simulations running, against a dev server that compiles each route on
     // first hit. The default 150s cap is for the game test, not for this.
@@ -1044,19 +1106,8 @@ for (const route of routes()) {
           });
         }
 
-        // 6. Touch targets, phones only.
-        if (width <= 390) {
-          for (const t of report.smallTargets) {
-            if (t.inlineInProse) continue;
-            record({
-              ...cell,
-              kind: "touch-target",
-              severity: t.w < 32 || t.h < 32 ? "high" : "medium",
-              selector: t.selector,
-              detail: `<${t.tag}> hit area is ${t.w}x${t.h}, below the 44x44 mobile minimum. Label: "${t.label}"`,
-            });
-          }
-        }
+        // 6. Touch targets run once per route, on a real coarse pointer.
+        //    See touchTargetPass, below the theme loop.
 
         // 5a. Icon-only buttons without a name. The DOM differs between the
         // mobile and desktop chrome, so check at one narrow and one wide cell
@@ -1139,6 +1190,18 @@ for (const route of routes()) {
         record({ ...themeCell, kind: "request-failed", severity: "medium", detail: r });
       }
     }
+
+    await touchTargetPass(browser, url, (width, t) => {
+      record({
+        route: url,
+        width,
+        theme: null,
+        kind: "touch-target",
+        severity: t.w < 32 || t.h < 32 ? "high" : "medium",
+        selector: t.selector,
+        detail: `<${t.tag}> hit area is ${t.w}x${t.h} on a COARSE pointer, below the 44x44 minimum. Label: "${t.label}"`,
+      });
+    });
 
     const elapsed = Date.now() - started;
     TIMINGS.push({ route: url, ms: elapsed });
@@ -1331,7 +1394,7 @@ test("report: write the defect list", async () => {
   const all = [...parts.findings, ...FINDINGS];
   const grouped = new Map<string, Defect>();
   for (const f of all) {
-    const key = `${f.route} ${f.kind} ${f.selector || ""} ${f.detail}`;
+    const key = `${f.route}\0${f.kind}\0${f.selector || ""}\0${f.detail}`;
     const cell =
       f.width === null ? (f.theme ? `load/${f.theme}` : "static") : `${f.width}/${f.theme}`;
     const hit = grouped.get(key);
