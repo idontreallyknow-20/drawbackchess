@@ -230,7 +230,7 @@ function PersonaRow({
         )}
         {edited && (
           <span
-            className="text-[11px] px-2 py-0.5 rounded-none border border-[color:var(--edge-strong)] text-parchment-50"
+            className="text-[12px] px-2 py-0.5 rounded-none border border-[color:var(--edge-strong)] text-parchment-50"
             title={`Default: ${persona.defaults.username}`}
           >
             edited
@@ -292,7 +292,7 @@ function PersonaRow({
               className="px-3 py-1 text-parchment-50">
               Upload image…
             </Button>
-            <span className="text-[11px] text-parchment-500">PNG, JPEG, or WebP. Max 1 MB, 1024px.</span>
+            <span className="text-[12px] text-parchment-500">PNG, JPEG, or WebP. Max 1 MB, 1024px.</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
           {avatars.map((id) => (

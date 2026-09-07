@@ -15,6 +15,7 @@ import {
 import { Board } from "@/components/Board";
 import { SiteHeader } from "@/components/SiteHeader";
 import { useZenHotkey } from "@/lib/useZenMode";
+import { typingInField } from "@/lib/boardKeymap";
 import { BoardAnalysis, analyzeBoard } from "@/engine/ai";
 import { generateMoves, makeMove, moveToSAN, movesToSAN, moveToUCI } from "@/engine/board";
 import { initialBoard } from "@/engine/board";
@@ -170,15 +171,25 @@ function AnalysisInner() {
     };
   }, [board, engineOn]);
 
-  // Arrow-key navigation through the line.
+  // Arrow-key navigation through the line, plus `f` for the flip button beside
+  // it. `f` is bound here rather than through useBoardKeys because this board's
+  // orientation is LOCAL state, not the `flipBoard` setting: the keymap hook
+  // writes the global preference, and pressing a key on the analysis board must
+  // not reorient the player's games. Same key, same meaning, same table row
+  // (boardKeymap.ts documents `f`), different owner.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (typingInField(e.target)) return;
       if (e.key === "ArrowLeft") setViewPly((p) => Math.max(0, p - 1));
       else if (e.key === "ArrowRight") setViewPly((p) => Math.min(moves.length, p + 1));
       else if (e.key === "ArrowUp") setViewPly(0);
       else if (e.key === "ArrowDown") setViewPly(moves.length);
-      else return;
+      else if (e.key === "f" || e.key === "F") {
+        // Ctrl/Cmd+F is the browser's find. Every other chord belongs to the
+        // browser too, so a modifier means this is not our key.
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        setFlipped((v) => !v);
+      } else return;
       e.preventDefault();
     };
     window.addEventListener("keydown", onKey);
@@ -232,7 +243,15 @@ function AnalysisInner() {
     URL.revokeObjectURL(url);
   };
 
-  const navBtn = "btn-ghost press grid h-9 w-9 place-items-center disabled:opacity-30";
+  // 44px square on a coarse pointer, stepped DOWN to the compact 9-scale square
+  // only where a mouse is driving. It used to be `h-9 w-9` outright, which is
+  // 31.5px in both axes under this app's 14px root — the height was rescued on
+  // phones by the max-width rule on .btn-ghost in globals.css, but that is a
+  // width test, not a pointer test, and it never touched the width at all. So a
+  // tablet got a 31.5px target and every device got a 31.5px-wide one.
+  const navBtn =
+    "btn-ghost press grid h-[44px] w-[44px] place-items-center disabled:opacity-30 " +
+    "[@media(pointer:fine)]:h-9 [@media(pointer:fine)]:w-9";
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
@@ -290,7 +309,13 @@ function AnalysisInner() {
               <button className={navBtn} onClick={() => setViewPly(moves.length)} disabled={viewPly >= moves.length} aria-label="Last move">
                 <ChevronLast size={16} />
               </button>
-              <button className={navBtn} onClick={() => setFlipped((f) => !f)} aria-label="Flip board" title="Flip board">
+              <button
+                className={navBtn}
+                onClick={() => setFlipped((f) => !f)}
+                aria-label="Flip board"
+                aria-pressed={flipped}
+                title="Flip board (f)"
+              >
                 <RefreshCw size={15} />
               </button>
               <button className={navBtn} onClick={reset} aria-label="Reset board" title="Reset board">
@@ -375,7 +400,9 @@ function AnalysisInner() {
               readOnly
               value={fen}
               onFocus={(e) => e.currentTarget.select()}
-              className="mt-1.5 w-full border border-[color:var(--edge)] bg-[color:var(--bg-base)] px-2 py-1.5 font-mono text-[12px] text-parchment-300"
+              // A read-only field is still focusable and still selects on focus,
+              // which is the whole point of it: it is how you copy the position.
+              className="mt-1.5 min-h-[44px] w-full border border-[color:var(--edge)] bg-[color:var(--bg-base)] px-2 py-1.5 font-mono text-[12px] text-parchment-300 [@media(pointer:fine)]:min-h-0"
             />
             <div className="mt-2 flex gap-2">
               <input

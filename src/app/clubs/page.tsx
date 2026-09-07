@@ -6,9 +6,10 @@ import { AccountUser, fetchMe } from "@/lib/authClient";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { ChevronRight, Plus, Search, Users, X } from "lucide-react";
+import { ChevronRight, Plus, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/Button";
+import { SearchInput } from "@/components/ui/SearchInput";
 
 interface Club {
   id: string;
@@ -198,25 +199,13 @@ export default function ClubsPage() {
         <div className="mt-6 min-w-0 space-y-4">
           {/* Search: filters the whole directory in place, like lichess's
               team search box at the top of the teams list. */}
-          <div className="plate flex items-center gap-2.5 px-4 py-2.5">
-            <Search size={16} className="shrink-0 text-parchment-400" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search clubs by name, owner, or description"
-              aria-label="Search clubs"
-              className="w-full bg-transparent text-[13px] text-parchment placeholder:text-parchment-500 focus:outline-none"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                className="shrink-0 text-[12px] font-medium text-parchment-400 hover:text-parchment-100"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+          <SearchInput
+            variant="plate"
+            value={query}
+            onChange={setQuery}
+            label="Search clubs"
+            placeholder="Search clubs by name, owner, or description"
+          />
 
           {/* Your clubs: the memberships this account already holds, lifted
               to the top the way lichess surfaces "Your teams". */}

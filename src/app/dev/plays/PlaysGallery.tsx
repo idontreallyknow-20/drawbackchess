@@ -14,10 +14,10 @@ import { ALL_BUFFS } from "@/engine/buffs/library";
 import { TIER_ROMAN } from "@/lib/tiers";
 import {
   SIGNATURES,
-  SignatureOverlay,
   prefetchSignatureVisuals,
   type SigVisual,
 } from "@/components/effects/BoardEffects";
+import { SignatureCut } from "@/components/board/SignatureCut";
 import { PLUGIN_ID_SET, PLUGIN_SIGNATURES } from "@/components/effects/sigPlugins";
 import {
   boardAnchoredGeo,
@@ -162,7 +162,12 @@ function BoardProbe({ row, sq, runKey }: { row: Row; sq: number; runKey: number 
         style={{ left: `${col * 12.5}%`, top: `${r * 12.5}%`, width: "12.5%", height: "12.5%", ...geo } as React.CSSProperties}
       >
         <span className="absolute inset-0 z-30 block" style={shift}>
-          <SignatureOverlay visual={row.visual as SigVisual} role="lead" delayMs={0} />
+          {/* `cut`, not `role`: the effects library's prop means "which cut of
+              the sequence", and spelling it `role` at a call site is one
+              careless `{...props}` away from putting an invalid ARIA role into
+              the DOM. Board.tsx goes through the same wrapper; this was the
+              last call site still spelling it the dangerous way. */}
+          <SignatureCut visual={row.visual as SigVisual} cut="lead" delayMs={0} />
         </span>
       </span>
     </div>

@@ -181,7 +181,7 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           cards only: a dock row or a compact pick shows the rule and nothing
           else. */}
       {!compact && buff.tip && (
-        <p className="mt-2 text-[10.5px] leading-snug text-parchment-400">
+        <p className="mt-2 text-[12px] leading-snug text-parchment-400">
           <span className="text-parchment-300">Tip</span>{" "}
           <GlossaryText text={buff.tip} />
         </p>
@@ -193,7 +193,7 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           not from a rejected move. Keyed off the description so future shield
           cards inherit the note with zero per-card work. */}
       {!compact && /uncapturable|cannot be captured|can't be captured|shield|sanctuary|warded/i.test(buff.description) && (
-        <p className="mt-2 text-[10.5px] leading-snug text-parchment-400">
+        <p className="mt-2 text-[12px] leading-snug text-parchment-400">
           Note: a piece that cannot be captured may not capture the king while its
           protection lasts. You must expose a piece to win.
         </p>
@@ -202,7 +202,7 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           card from these families while you hold another unspent one, and the
           rule must be readable on the card face, never silent. */}
       {!compact && (COMBO_TAGS[buff.id]?.length ?? 0) > 0 && (
-        <p className="mt-2 text-[10.5px] leading-snug text-parchment-400">
+        <p className="mt-2 text-[12px] leading-snug text-parchment-400">
           Exclusive: {COMBO_TAGS[buff.id]!.map((t) => COMBO_TAG_LABELS[t] ?? t).join(", ")}. While
           you hold this unspent, no other card of the same family is offered to you.
         </p>

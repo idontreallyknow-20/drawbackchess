@@ -18,7 +18,7 @@ const ClipModal = dynamic(() => import("@/components/clip/ClipModal").then((m) =
   ssr: false,
 });
 import { MobileMatchStack } from "@/components/MobileMatchStack";
-import { BoardTools } from "@/components/board/BoardTools";
+import { BoardTools, FlipBoardButton } from "@/components/board/BoardTools";
 import { FxToggleButton } from "@/components/FxToggleButton";
 import { MoveList } from "@/components/MoveList";
 import { PlayerNerfCard } from "@/components/PlayerNerfCard";
@@ -2217,6 +2217,13 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
                     compact
                   />
                 )}
+                {/* Flip, on the surface that cannot press `f`. The rail below
+                    carries the same button plus the keymap, but the rail is
+                    display:none on a phone, so this was the one layout where
+                    the flip setting was still three levels into Settings —
+                    which is the whole complaint the rail button answered. The
+                    keys stay bound once, in the rail's BoardTools. */}
+                <FlipBoardButton className="zen-hide shrink-0" />
               </div>
               <MobileMatchStack
                 actions={historyActions}

@@ -507,7 +507,8 @@ function AchievementsContent() {
               </LinkButton>
               <Link
                 href="/login?next=/achievements"
-                className="text-[13px] text-gold-leaf hover:underline"
+                // 41.3x19.5: the one call to action on the signed-out banner.
+                className="-my-3 inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-[13px] text-gold-leaf hover:underline [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:min-w-0"
               >
                 Sign in
               </Link>

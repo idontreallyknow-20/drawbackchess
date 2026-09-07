@@ -325,7 +325,11 @@ export const SECTIONS: SectionConfig[] = [
     rows: [
       {
         id: "siteTheme",
-        label: "Theme",
+        // "Site theme", not "Theme": the group eyebrow above it is already
+        // called Theme, so the two stacked and the page read "Theme / Theme".
+        // Only the display label changes; the row id and the setting key are
+        // untouched, so nothing persisted under dc:settings-v1 moves.
+        label: "Site theme",
         group: "Theme",
         control: { kind: "siteTheme" },
       },
@@ -369,7 +373,12 @@ export const SECTIONS: SectionConfig[] = [
     // below points there rather than restating them as a third copy.
     id: "accessibility",
     title: "Accessibility",
-    blurb: "Reduced motion",
+    // Every other blurb lists what is inside; this one used to be the word
+    // "Motion", then the label of its first row, which told a reader nothing
+    // they could not see. It now names both rows, and it has a second job as
+    // of the /settings route: it is this section's meta description and the
+    // intro line on /settings/accessibility.
+    blurb: "Reduced motion, and following your device",
     icon: Accessibility,
     rows: [
       {

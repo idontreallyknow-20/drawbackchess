@@ -42,7 +42,21 @@ body {
      on it is body weight, not muted. Muted text on a permanently hovered
      surface would be the bug, and the token cannot prevent that on its own. */
   --bg-hover: hsl(var(--site-hue) 7% 22%);    /* a menu row under the pointer: one rung above raised */
-  --bg-zebra: hsl(var(--site-hue) 5% 19%);    /* zebra  (--c-bg-zebra) */
+  /* Zebra is the alternating row/tile tint, and it had the same drift the
+     raised rung had, in the same costly direction: it shipped at 19% lightness,
+     ABOVE the 18% raised rung it is supposed to sit under, so a tinted tile was
+     lighter than the menus and modals of the app. Measured on the running site,
+     that one percent was the largest single contrast failure left: muted body
+     text (`parchment-400`, the floor named in section 10 of the design system)
+     measured 4.44:1 on it across 269 rendered elements — the codex rows, the
+     lobby chips, every glossary <details> — a hair under AA, everywhere at
+     once. Dropped one rung to sit BETWEEN the panel and the raised step, which
+     is where a zebra tint belongs (page 8 < panel 14 < zebra 16 < raised 18 <
+     hover 22). The same text now measures 4.95:1 on it, and no rung moved past
+     another. Every zebra surface in the codebase carries its own
+     `border-[color:var(--edge)]` hairline, so the box is separated by its edge
+     rather than by lightness alone and nothing reads flatter for the move. */
+  --bg-zebra: hsl(var(--site-hue) 5% 16%);    /* zebra  (--c-bg-zebra) */
   --border-subtle: hsl(0 0% 25%);             /* --c-border */
   --border-light: hsl(0 0% 40%);              /* --c-border-light */
   /* Geometry. Lichess ships a roundness option; we run it square (boxes 0,
@@ -354,9 +368,19 @@ html[data-theme="light"] {
   --c-metal-bottom-hover: hsl(0 0% 95%);
   --c-body-gradient: hsl(var(--site-hue) 12% 84%);
   --c-metal-text-shadow: none;
-  --brag: hsl(var(--site-hue) 74% 48%);
+  /* Brass is a TEXT colour here (dates, ranks, medals, the `text-brag` label on
+     every /updates entry), and brass on paper has to go dark for the same
+     reason the semantic three above do. At 48% lightness it measured 2.93:1 on
+     both the white panel and the page across 34 rendered elements — 12px
+     uppercase labels, so the 4.5:1 body threshold applies, not the 3:1 large
+     one. 31% measures 5.77:1 on the panel and 4.65:1 on the page. The hue and
+     the saturation are untouched: this is the same brass, set for ink on
+     paper. --brag-hi stays the LIGHTER of the pair here because on paper the
+     hover of a dark label lifts toward the ground, and it is decorative fill
+     rather than text. */
+  --brag: hsl(var(--site-hue) 74% 31%);
   --brag-hi: hsl(var(--site-hue) 74% 40%);
-  --brag-rgb: 204 137 31;
+  --brag-rgb: 138 93 21;
 }
 
 /* Paper-scheme treatments (plate fills, the ink text ramp, border alphas) hang
@@ -375,9 +399,50 @@ html[data-light] .text-parchment-200 { color: var(--text-primary); }
 html[data-light] .text-parchment-300 { color: color-mix(in srgb, var(--text-primary) 55%, var(--text-secondary)); }
 html[data-light] .text-parchment-400 { color: color-mix(in srgb, var(--text-secondary) 55%, var(--text-muted)); }
 html[data-light] .text-parchment-500 { color: var(--text-muted); }
-/* Alpha variants of these utilities (text-parchment-400/60 and the like) never
-   matched the selectors above, so on paper they kept the dark hex and measured
-   as low as 1.34:1. They are retired: a dimmer tone names a lower rung. */
+/* The five rules above match the BARE utility class and nothing else. Tailwind
+   compiles every other spelling of the same colour to its own class name, so
+   none of these was ever retinted for paper and all of them kept the DARK ramp
+   on a white ground:
+
+     hover:text-parchment-100   ->  .hover\:text-parchment-100:hover
+     group-hover:text-parchment-200 -> .group:hover .group-hover\:text-parchment-200
+     text-parchment-400/60      ->  .text-parchment-400\/60
+
+   Measured on the running site with a real pointer, not by reading hex out of
+   the CSS: the header's "Sign in" went from 2.75:1 at rest to 1.03:1 the moment
+   it was hovered, and /tv's icon button from 10.86:1 to 1.71:1 — the label
+   disappeared into the page under the pointer. Across the bundle that is 77
+   hover call sites and 10 alpha ones.
+
+   The selector list below is the set the compiled stylesheet actually emits,
+   read out of the built CSS rather than guessed, so a spelling that exists is
+   covered and one that does not costs nothing. */
+html[data-light] .hover\:text-parchment:hover,
+html[data-light] .hover\:text-parchment-50:hover,
+html[data-light] .hover\:text-parchment-100:hover,
+html[data-light] .hover\:text-parchment-200:hover,
+html[data-light] .disabled\:hover\:text-parchment-200:hover:disabled,
+html[data-light] .group:hover .group-hover\:text-parchment-200 {
+  /* Hover lifts on paper the way it lifts on ink: one rung PAST the resting
+     body colour. On paper that direction is darker, not lighter. */
+  color: var(--text-heading);
+}
+html[data-light] .hover\:text-parchment-300:hover { color: var(--text-primary); }
+/* Alpha modifiers compound the same miss twice over: 60% of the dark #979797
+   over white measures 1.75:1, and even re-tinted to the paper rung a 60% wash
+   only reaches 2.6:1. So they resolve to a SOLID lower rung instead, which is
+   what the ramp is for — a dimmer tone names a lower rung, it does not dilute a
+   higher one. Applied in both schemes, because the dark side fails too:
+   text-parchment-400/60 measures 2.7:1 on the dark panel and
+   text-parchment-300/60 3.36:1. The remaining call sites (Board.tsx and the mod
+   sections) should drop the modifier and name the rung; until they do, this
+   keeps them legible. */
+.text-parchment-100\/90 { color: var(--text-primary); }
+.text-parchment-300\/60 { color: var(--text-secondary); }
+.text-parchment-400\/60 { color: var(--text-muted); }
+html[data-light] .text-parchment-100\/90 { color: var(--text-primary); }
+html[data-light] .text-parchment-300\/60 { color: color-mix(in srgb, var(--text-primary) 55%, var(--text-secondary)); }
+html[data-light] .text-parchment-400\/60 { color: var(--text-muted); }
 
 /* The canvas fill, flat like Lichess: no gradient wash, no atmosphere layer.
    Propagated to the viewport, so the page is never white before paint. */
@@ -1827,8 +1892,48 @@ html[data-anim="off"] .walnut-root { animation: none !important; transform: none
 html[data-anim="off"] .sq-walnut::after { animation: none !important; opacity: 0 !important; }
 html[data-anim="off"] * { transition: none !important; }
 
-@media (max-width: 640px) {
-  .btn-leaf, .btn-ghost, .btn-glass, .btn-cta { min-height: 44px; }
+/* A 44px touch target is a question about the POINTER, and this rule used to
+   ask about the width. A 1024px tablet has a coarse pointer and no keyboard,
+   and it was getting the desktop 31.5px ghost button; a narrow desktop window
+   was getting the phone one. `Button.tsx` already sizes correctly
+   (`min-h-[44px]` with `[@media(pointer:fine)]:min-h-[36px]`), so for anything
+   routed through the primitive this rule is redundant either way. It is kept
+   rather than deleted because ~18 call sites still spell `btn-ghost` /
+   `btn-leaf` / `btn-glass` straight onto an element and have no other floor;
+   asked about the pointer, it covers them on every touch device instead of only
+   on the narrow ones.
+
+   The unconditional 36px underneath it is the other half of the same defect.
+   Section 7 asks for 44x44 on touch AND 36px on a mouse, and those bespoke call
+   sites measured 29.5px on a fine pointer at EVERY width (31.5px for
+   /analysis's board tools) — the width query had only ever hidden that below
+   640.
+
+   `:not([class*="min-h-"])` is load-bearing and was added after measuring, not
+   before. A bare `.btn-ghost { min-height: 44px }` has the same specificity as
+   Tailwind's `.min-h-\[52px\]` and comes later in the bundle, so it does not
+   raise a floor, it REPLACES a height: with the plain selector the home and
+   lobby primary CTAs measured 52px -> 45px, i.e. this rule shrank the biggest
+   buttons on the site. (The old width query did the same thing below 640, so
+   phones have been getting clamped `lg` CTAs all along.) Excluding anything
+   that spells its own `min-h-` utility means the floor can only ever fill a gap
+   and can never contradict a size the call site or the Button primitive chose. */
+.btn-leaf:not([class*="min-h-"]),
+.btn-ghost:not([class*="min-h-"]),
+.btn-glass:not([class*="min-h-"]),
+.btn-cta:not([class*="min-h-"]) { min-height: 36px; }
+/* The touch floor excludes only the sizes that already CLEAR it (Button.tsx's
+   44 / 48 / 52), so it still lifts a call site that pinned itself to the 36px
+   desktop size and then shipped to a phone — the home page's two "Play" chips
+   were exactly that, and a blanket `:not([class*="min-h-"])` dropped them from
+   44px to 36px on touch, which the measurement caught. */
+@media (pointer: coarse) {
+  .btn-leaf:not([class*="min-h-[44px]"]):not([class*="min-h-[48px]"]):not([class*="min-h-[52px]"]),
+  .btn-ghost:not([class*="min-h-[44px]"]):not([class*="min-h-[48px]"]):not([class*="min-h-[52px]"]),
+  .btn-glass:not([class*="min-h-[44px]"]):not([class*="min-h-[48px]"]):not([class*="min-h-[52px]"]),
+  .btn-cta:not([class*="min-h-[44px]"]):not([class*="min-h-[48px]"]):not([class*="min-h-[52px]"]) {
+    min-height: 44px;
+  }
 }
 
 ::selection { background: rgb(var(--accent-gold-rgb) / 0.4); color: var(--text-on-accent); }
@@ -1936,8 +2041,16 @@ html[data-light] textarea,
 html[data-light] select {
   color: #2b2822;
 }
+/* This catch-all outranks every `placeholder:text-parchment-*` utility (13 call
+   sites), so it is the ONLY thing that decides what a placeholder looks like on
+   paper — and #86816f measured 3.90:1 on a white field and 3.14:1 on a field
+   sitting on the page. Placeholder text is text: it carries the only
+   description some fields have, so it takes the 4.5:1 body threshold. The muted
+   rung is the dimmest tone in the ramp that clears it (5.49:1 / 4.62:1), and
+   using the token rather than a fourth hand-picked grey keeps the field in step
+   with the rest of the paper ramp. */
 html[data-light] ::placeholder {
-  color: #86816f;
+  color: var(--text-muted);
 }
 
 /* White hairlines and dividers are invisible on paper; restate them in ink at

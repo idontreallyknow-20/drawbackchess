@@ -25,6 +25,36 @@ import { Button } from "@/components/ui/Button";
 import { useBoardKeys, useFlipBoard, type PlyNav } from "@/lib/boardKeymap";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 
+/**
+ * The flip button on its own, WITHOUT the keymap.
+ *
+ * The match layouts are two disjoint subtrees — a side rail that is
+ * `display:none` on a phone and a stack that is `display:none` above it — and
+ * both are mounted at once, so a phone had the key binding and no button.
+ * Rendering a second <BoardTools/> would have fixed the button and broken the
+ * key: `useBoardKeys` would be bound twice and `f` would toggle the setting
+ * twice, back to where it started. So the keys stay in exactly one place
+ * (BoardTools, in the rail) and the button is a component either layout can
+ * mount as many times as its layout needs.
+ */
+export function FlipBoardButton({ className = "" }: { className?: string }) {
+  const { flipped, toggleFlip } = useFlipBoard();
+  return (
+    <Button
+      tone="default"
+      size="sm"
+      iconOnly
+      aria-label="Flip board"
+      aria-pressed={flipped}
+      title="Flip board (f)"
+      onClick={toggleFlip}
+      className={className}
+    >
+      <FlipVertical2 size={15} aria-hidden />
+    </Button>
+  );
+}
+
 export function BoardTools({
   onPlyNav,
   className = "",
@@ -35,22 +65,11 @@ export function BoardTools({
   className?: string;
 }) {
   const [helpOpen, setHelpOpen] = useState(false);
-  const { flipped, toggleFlip } = useFlipBoard();
   useBoardKeys({ onHelp: () => setHelpOpen((open) => !open), onPlyNav });
 
   return (
     <div className={"flex items-center gap-1 " + className}>
-      <Button
-        tone="default"
-        size="sm"
-        iconOnly
-        aria-label="Flip board"
-        aria-pressed={flipped}
-        title="Flip board (f)"
-        onClick={toggleFlip}
-      >
-        <FlipVertical2 size={15} aria-hidden />
-      </Button>
+      <FlipBoardButton />
       <Button
         tone="default"
         size="sm"

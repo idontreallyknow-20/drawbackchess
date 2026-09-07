@@ -64,7 +64,11 @@ export function PlayerLink({
     <Link
       href={`/u/${encodeURIComponent(label)}`}
       onClick={stop}
-      className={`inline-flex min-w-0 items-center gap-1.5 hover:underline ${className ?? ""}`}
+      // 66.1x18 wherever it appears, which is every player name on the site
+      // that is not inside running prose: tournament standings, club member
+      // lists, the profile rail. The negative margin gives the pixels back so
+      // a dense list keeps its rhythm, and both relax on a fine pointer.
+      className={`-my-3 inline-flex min-h-[44px] min-w-0 items-center gap-1.5 hover:underline [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0 ${className ?? ""}`}
     >
       {content}
     </Link>

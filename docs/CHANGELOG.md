@@ -1539,3 +1539,121 @@ memory from 1.1 GB to 12.9 GB in three seconds, before anything else was
 touched. Check `ps -eo rss,args --sort=-rss | head` before blaming the workers.
 When memory does get tight, `pkill` and `pkill -9` themselves fail or return
 144, and `pgrep -f pat | xargs -r kill -9` works where `pkill -f pat` does not.
+
+### Contrast, and the variants that were never re-tinted for paper
+
+`--bg-zebra` in dark had drifted to 19% lightness, ABOVE the 18% raised rung,
+so a tinted table row was lighter than a modal. That was the single largest
+contrast failure on the site: `parchment-400` measured **4.44:1** on it across
+269 rendered elements (codex rows, lobby chips, every glossary disclosure). Now
+16%, measuring 4.96.
+
+The worse class of bug was in the light theme. The five
+`html[data-light] .text-parchment-*` rules match only the BARE class, and
+Tailwind compiles `hover:text-parchment-100` and `text-parchment-400/60` to
+their own class names, so **none of the 78 hover call sites or the three alpha
+modifiers was ever re-tinted for paper.** They kept the dark ramp on white.
+Driven with a real mouse over real elements, the header "Sign in" link measured
+**1.03:1 on hover** in light, and a `/tv` icon button 1.71:1. Both are now over
+13:1. The new rules were read out of the compiled bundle rather than guessed at,
+so they cover every spelling Tailwind actually emits.
+
+Also: `html[data-light] ::placeholder` outranks all 13
+`placeholder:text-parchment-*` utilities, so it alone decides placeholder colour
+on paper, and it was hard-coded to a colour measuring 3.14:1. And light `--brag`
+was a 48%-lightness brass used as text, at 2.93:1 on both page and panel.
+
+Sitewide AA failures, same probe over 22 routes: **dark 390 to 130**. Light went
+238 to 210, and the small delta is honest rather than flattering: all 34 brag
+dates went, and the seven apparent new failures are one pre-existing element
+appearing on more routes because the second session was signed out. No element
+class regressed in either theme. The surface ladder is still strictly ordered
+(dark page 0.0075 < panel 0.0178 < zebra 0.0225 < raised 0.0286 < hover 0.0413).
+
+C31 closed as a clean negative with evidence: `--bg-hover` has **zero permanent
+consumers**. All eight uses sit behind a `hover:` variant, `--surface-hover`
+(the token 20 call sites actually spell) resolves to `--bg-raised` instead, and
+the real-pointer table shows every one of them lifting its text on hover rather
+than leaving muted text resting there. The documented 3.94:1 is never a resting
+state.
+
+### The button rule that was replacing heights, not raising floors
+
+The `@media (max-width: 640px)` button min-height flagged during the round is
+now a pointer query, plus an unconditional 36px for the other half of the same
+defect: section 7 asks for 36px on a mouse and those sites measured **29.5px at
+every fine-pointer width**, which the width query had only ever hidden below
+640.
+
+Two things the measurement caught that would otherwise have shipped:
+
+- A plain `.btn-ghost { min-height: 44px }` has the same specificity as
+  Tailwind's `.min-h-[52px]` and comes later in the bundle, so it does not raise
+  a floor, it **replaces a height**. The home and lobby primary CTAs went 52px
+  to 45px. The old width query had been doing exactly that to phones all along.
+- A blanket `:not([class*="min-h-"])` then dropped the home page's two "Play"
+  chips from 44px to 36px on touch, because they pin themselves to
+  `min-h-[36px]`. The exclusion now names only the sizes that already clear the
+  floor.
+
+Matrix over 7 routes x 4 widths x 2 pointer contexts: coarse at 768/1024/1440
+goes from a 29.5px minimum with 11 controls under 44 to **44px and zero**, fine
+goes from 29.5 to 36 with zero under 36. 80 buttons grew and 17 "shrank", every
+one of the 17 confined to fine@360, which is a mouse in a 360px window and
+exactly the case the width query was wrongly treating as a phone. Zero
+horizontal overflow in any of the eight contexts, before or after.
+
+### What was deliberately left, with numbers
+
+The largest remaining contrast block is the tier chips: dark tier-8 at
+**3.26:1** across 32 elements on `/codex`, light tier-9 at **1.42:1** across 18,
+and the `/achievements` rarity chips in light at 1.58 to 3.01. All are 12px, so
+4.5:1 applies. The fix is either a per-theme tier palette or a change to the
+`.tier-bg-*` fill alphas, and both are design-system decisions the doc pins
+("Card tiers everywhere, no exceptions"). Getting one wrong is visible on every
+card in the game, so it wants an owner rather than a unilateral edit.
+
+The 12px absolute floor moved 54 source sites to 34, and the RENDERED count did
+not move at all: 24 per theme before and after. All 24 are the same six
+`ModShell.tsx` rail labels at 11px repeated across four `/mod` routes, and every
+site fixed sits on a state the crawler cannot reach (the error boundary, page
+bodies behind auth, in-game card overlays, and one component with no importer).
+It cannot move until `ModShell.tsx` does.
+
+### The sweep, re-run against a coarse pointer
+
+A full 47-route sweep at six widths and three themes, with the touch-target
+pass rebuilt, and `e2e/sweep-baseline.json` regenerated on it. **26
+touch-target findings across the whole site**, down from a baseline that
+encoded hundreds of fine-pointer measurements. Zero `h1`, overflow, focus,
+contrast-token and system-state findings in the entire run.
+
+Chasing the last of them turned up four more detector gaps and four more
+half-fixes, all the same shape as the rest of the round:
+
+- `RailResizeHandle` measured 3.5px wide while its own comment said it had "an
+  oversized invisible hit area". It does: `<span class="absolute inset-y-0
+  -left-1.5 -right-1.5">`, a CHILD rather than a pseudo-element. The detector
+  now unions in absolutely-positioned children of the control itself, which is
+  the more common spelling of the same pattern. It also exempts
+  `role="separator"`: a drag gutter is not a tap target, and a 44px one would
+  be a 44px stripe of dead space between two panels.
+- The move strip's SAN buttons were 33.9 x **44**: height fixed, width never
+  looked at, on the control you scrub a game with on a phone.
+- `PlayerLink` was 66.1 x 18 everywhere it appears, which is every player name
+  on the site outside running prose.
+- The `/tv` channel switcher (30px), the `/analysis` FEN field (30.5px), the
+  `/achievements` signed-out call to action (41.3 x 19.5), and a FOURTH copy of
+  the 16px range shape, this one the in-game effects slider, where a mis-drag
+  costs a turn.
+
+`/settings`' filter now goes through the shared `SearchInput` rather than being
+a sixth hand-rolled search box. Its 44px floor was already right; four of the
+others were not, and one of each is the point of the primitive. It gains a
+clear button it did not have (verified 44 x 44 at 360 with the filter and the
+empty state both working).
+
+28 findings remain, on three routes, and they are named in the backlog.
+`/tutorial/first-game` is flaky by nature: its findings differ run to run
+because the game state differs, so it needs a seeded position before its count
+means anything.

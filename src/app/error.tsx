@@ -9,7 +9,9 @@ export default function Error({ reset }: { error: Error & { digest?: string }; r
   return (
     <main className="min-h-screen flex items-center justify-center px-6">
       <div className="plate w-full max-w-sm p-6 text-center">
-        <div className="text-[11px] text-parchment-400">Well, that broke</div>
+        {/* 12px is the design system's absolute floor for a label; 11px was
+            under it. Nothing else about the line changes. */}
+        <div className="text-[12px] text-parchment-400">Well, that broke</div>
         <h1 className="font-display text-2xl text-parchment mt-1">Something went wrong</h1>
         <p className="mt-2 text-sm text-parchment-300">
           The page hit an unexpected error. Your game state is saved locally.

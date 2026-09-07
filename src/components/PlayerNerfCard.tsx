@@ -138,7 +138,9 @@ export function PlayerNerfCard({
                 href={`/u/${encodeURIComponent(name)}`}
                 target="_blank"
                 rel="noopener"
-                className="hover:text-gold-leaf hover:underline transition-colors"
+                // 84.9x19: the link out to the opponent's profile, and the only way
+                // to reach it from a game.
+                className="-my-3 inline-flex min-h-[44px] items-center hover:text-gold-leaf hover:underline transition-colors [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
               >
                 {name}
               </a>

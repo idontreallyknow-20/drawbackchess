@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { GlossaryText } from "@/components/GlossaryText";
 import { InfoPageLayout, InfoSection } from "@/components/InfoPageLayout";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import type { Buff } from "@/engine/buff";
 import type { Nerf } from "@/engine/nerf";
 import { ALL_BUFFS } from "@/engine/buffs/library";
@@ -65,29 +66,18 @@ const SECTION_TAB: Record<string, string> = {
 function CardBreadcrumb({ section, name }: { section: string; name: string }) {
   const tab = SECTION_TAB[section] ?? "buffs";
   const familyHref = tab === "buffs" ? "/codex" : `/codex?tab=${tab}`;
-  const sep = (
-    <span aria-hidden className="text-parchment-500">
-      /
-    </span>
-  );
+  // The trail's markup, separators and hit areas live in one place now
+  // (components/ui/Breadcrumbs). This was the only visible breadcrumb on the
+  // site and its links measured 19.5px tall against the 44px floor.
   return (
-    <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-[13px]">
-      <Link href="/" className="text-parchment-400 transition-colors hover:text-parchment-100">
-        Home
-      </Link>
-      {sep}
-      <Link href="/codex" className="text-parchment-400 transition-colors hover:text-parchment-100">
-        Codex
-      </Link>
-      {sep}
-      <Link href={familyHref} className="text-parchment-400 transition-colors hover:text-parchment-100">
-        {section}
-      </Link>
-      {sep}
-      <span aria-current="page" className="text-parchment-200">
-        {name}
-      </span>
-    </nav>
+    <Breadcrumbs
+      items={[
+        { label: "Home", href: "/" },
+        { label: "Codex", href: "/codex" },
+        { label: section, href: familyHref },
+        { label: name },
+      ]}
+    />
   );
 }
 
@@ -295,7 +285,12 @@ function RelatedGrid({ title, cards }: { title: string; cards: RelatedCard[] }) 
           <Link
             key={c.id}
             href={c.path}
-            className="flex items-center justify-between gap-3 rounded-none border border-[color:var(--edge)] px-3 py-2 transition hover:border-[color:var(--edge-strong)] hover:bg-[color:var(--bg-raised)]"
+            // The related-card rows measured 40.4px tall, four short of the
+            // floor, and there are twelve of them on every card page. A
+            // min-height rather than more padding, and no `sm:` step-down: a
+            // tablet is a coarse pointer, and the desktop row is only 3.6px
+            // tighter anyway, so it keeps the 44px on a mouse too.
+            className="flex min-h-[44px] items-center justify-between gap-3 rounded-none border border-[color:var(--edge)] px-3 py-2 transition hover:border-[color:var(--edge-strong)] hover:bg-[color:var(--bg-raised)]"
           >
             <span className="font-display text-parchment-100">{c.name}</span>
             {/* 12px tier chip carrying the tier's own color (tier-bg + tier),

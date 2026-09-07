@@ -102,7 +102,10 @@ export function MoveStrip({
                 className={
                   // Fill the strip so the ply itself is the target, not a
                   // 36px band inside a 44px row.
-                  "min-h-[44px] px-1.5 tabular-nums transition-colors " +
+                  // 33.9x44: height fixed, width never was. A three-character SAN
+                  // move inside px-1.5 is a 34px target however tall it is, and
+                  // this strip is how you scrub a game on a phone.
+                  "min-h-[44px] min-w-[44px] justify-center px-1.5 tabular-nums transition-colors [@media(pointer:fine)]:min-w-0 " +
                   (selected
                     ? "bg-[color:var(--accent)] text-[color:var(--text-on-accent)]"
                     : "text-parchment-100 active:bg-white/[0.06] disabled:opacity-40")

@@ -28,6 +28,7 @@ import {
   when,
   whenShort,
 } from "./ui";
+import { SearchInput } from "@/components/ui/SearchInput";
 
 type UserFilter = "all" | "members" | "guests";
 type Sanction = "warn" | "mute" | "ban";
@@ -130,14 +131,16 @@ export function PlayersSection({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <input
+        <SearchInput
+          variant="plate"
+          className="w-full sm:max-w-sm"
           value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
+          onChange={(next) => {
+            setQuery(next);
             setSelected(null);
           }}
+          label="Search players"
           placeholder="Search players…"
-          className="plate w-full bg-transparent px-4 py-2.5 text-sm outline-none focus:border-[color:var(--edge-strong)] sm:max-w-sm sm:py-2"
         />
         <div className="flex items-center gap-2">
           <FilterChip active={filter === "all"} onClick={() => setFilter("all")}>

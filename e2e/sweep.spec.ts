@@ -547,6 +547,11 @@ async function probe(page: Page, interactiveSelector: string): Promise<DomReport
       // buttons, so it caught all 64. Same design, two very different numbers,
       // for a reason that has nothing to do with either board's hit areas.
       if (el.closest('[role="grid"]')) return;
+      // A drag gutter is not a tap target. `role="separator"` with a pointer
+      // handler is a resize affordance for a mouse (the rail handle is
+      // `touch-none` and `lg:block`, i.e. it does not exist on a phone), and a
+      // 44px gutter would be a 44px stripe of dead space between two panels.
+      if (el.getAttribute("role") === "separator") return;
       const box = el.getBoundingClientRect();
       // A control can carry its hit area on an absolutely-positioned pseudo
       // element that reaches outside its own box, which is the standard way to
@@ -563,6 +568,23 @@ async function probe(page: Page, interactiveSelector: string): Promise<DomReport
         const own = getComputedStyle(el);
         if (own.position === "static") return box;
         let { top, left, right, bottom } = box;
+        // An absolutely-positioned CHILD that reaches outside the box does the
+        // same job and is the more common spelling of it: `RailResizeHandle`
+        // is a 3.5px div containing `<span class="absolute inset-y-0 -left-1.5
+        // -right-1.5">`, whose whole purpose is to be the hit area. A child's
+        // events bubble to this element, so its box is part of this target.
+        // Only children of the control itself, never an ancestor's overlay.
+        for (const kid of Array.from(el.children)) {
+          const ks = getComputedStyle(kid);
+          if (ks.position !== "absolute" || ks.pointerEvents === "none") continue;
+          if (ks.display === "none" || ks.visibility === "hidden") continue;
+          const kr = kid.getBoundingClientRect();
+          if (!kr.width || !kr.height) continue;
+          top = Math.min(top, kr.top);
+          left = Math.min(left, kr.left);
+          right = Math.max(right, kr.right);
+          bottom = Math.max(bottom, kr.bottom);
+        }
         for (const pseudo of ["::before", "::after"]) {
           const ps = getComputedStyle(el, pseudo);
           if (!ps || ps.content === "none" || ps.position !== "absolute") continue;

@@ -38,6 +38,7 @@ import {
   type Library,
 } from "./codexData";
 import { Button } from "@/components/ui/Button";
+import { SearchInput } from "@/components/ui/SearchInput";
 
 // How many rows to add each time the reader approaches the end of the list.
 // The list defaults to this many so the DOM near page load stays small (well
@@ -342,7 +343,11 @@ export function CodexBrowser() {
                   role="tab"
                   aria-selected={selected}
                   onClick={() => switchTab(t)}
-                  className={`relative px-3 py-2 font-display text-[14px] transition ${
+                  // Same 44px floor and same `(pointer: fine)` step-down as
+                  // every other navigation chip: px-3 py-2 left these tabs 35px
+                  // tall. min-h, not more padding, so the underline indicator
+                  // stays pinned to the row's bottom edge.
+                  className={`relative inline-flex min-h-[44px] items-center px-3 py-2 font-display text-[14px] transition [@media(pointer:fine)]:min-h-0 ${
                     selected ? "text-parchment-50" : "text-parchment-300 hover:text-parchment-100"
                   }`}
                 >
@@ -355,28 +360,13 @@ export function CodexBrowser() {
             })}
           </div>
 
-          <label className="relative mt-3 block">
-            <span className="sr-only">{`Search ${nounPlural}`}</span>
-            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-parchment-400" />
-            <input
-              value={filters.search}
-              onChange={(e) => patch({ search: e.target.value })}
-              placeholder={`Search ${nounPlural} by name or effect`}
-              className="w-full rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-base)] py-2.5 pl-9 pr-9 text-[14px] font-body text-parchment placeholder:text-parchment-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]"
-            />
-            {filters.search && (
-              <button
-                type="button"
-                onClick={() => patch({ search: "" })}
-                aria-label="Clear search"
-                className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-none text-parchment-400 hover:text-parchment-100"
-              >
-                <span aria-hidden className="text-[16px]">
-                  &times;
-                </span>
-              </button>
-            )}
-          </label>
+          <SearchInput
+            className="mt-3"
+            value={filters.search}
+            onChange={(next) => patch({ search: next })}
+            label={`Search ${nounPlural}`}
+            placeholder={`Search ${nounPlural} by name or effect`}
+          />
 
           {/* Desktop: inline filter chip row, with the match count beside it
               only while a filter or search is narrowing the list. Mobile: one
@@ -403,7 +393,9 @@ export function CodexBrowser() {
             <button
               type="button"
               onClick={() => setSheetOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-none border border-[color:var(--edge)] px-3 py-1.5 text-[13px] text-parchment-200 hover:bg-[color:var(--bg-raised)] sm:hidden"
+              // The phone-only filter trigger: it was 32px tall, and it is the
+              // only way to reach the filters at this width.
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-none border border-[color:var(--edge)] px-3 py-1.5 text-[13px] text-parchment-200 hover:bg-[color:var(--bg-raised)] sm:hidden"
             >
               <SlidersHorizontal size={14} aria-hidden />
               Filters
@@ -552,22 +544,3 @@ function SkeletonRows() {
   );
 }
 
-function SearchIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-      className={className}
-    >
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}

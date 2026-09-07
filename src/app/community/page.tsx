@@ -563,7 +563,12 @@ function RailCard({
         {action && (
           <Link
             href={action.href}
-            className="inline-flex items-center gap-0.5 text-[13px] text-parchment-400 transition-colors hover:text-gold-leaf"
+            // The section "more" link. Same shape the home page and HeroTv
+            // already carry: a 44px hit area on a finger, given back to the
+            // layout with -my-2 so the header row keeps its height, and stepped
+            // down behind `(pointer: fine)` — never `sm:`, since a 1024px
+            // tablet is a coarse pointer. It measured 19.5px tall before.
+            className="-my-2 inline-flex min-h-[44px] items-center gap-0.5 text-[13px] text-parchment-400 transition-colors hover:text-gold-leaf [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
           >
             {action.label}
             <ChevronRight size={12} aria-hidden />

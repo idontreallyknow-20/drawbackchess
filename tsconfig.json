@@ -23,16 +23,32 @@
   // page/layout/handler's exported shape. That check is worth keeping.
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
   // `.next/dev/types` is the SAME thing regenerated continuously by `next dev`,
-  // and it is excluded here for the same reason Next excludes it from its own
-  // build type check (see next/dist/lib/typescript/type-paths.js and
-  // runTypeCheck.js): a plain `tsc --noEmit` otherwise compiles whatever the
-  // dev server happens to have half-written, and reports syntax errors in
-  // generated files that have nothing to do with this codebase. Excluding the
-  // directory does not fight Next: it only ever adds to `include`, and only
-  // seeds `exclude` when the key is missing. Nothing is lost in dev either: the
-  // generated next-env.d.ts imports .next/dev/types/routes.d.ts directly, so the
-  // route helper types still reach the program. What drops out is the rest of
-  // the directory, above all the per-route validator.ts, which is rewritten on
-  // every compile and points at route modules that a stale .next no longer has.
+  // and it is excluded here for exactly the reason Next gives for filtering it
+  // out of its own build type check. Next's words, in
+  // next/dist/lib/typescript/runTypeCheck.js:
+  //
+  //   tsconfig includes both .next/types and .next/dev/types to avoid config
+  //   churn between dev/build modes. During build, we filter out
+  //   .next/dev/types files to prevent stale dev types from causing errors
+  //   when routes have been deleted since the last dev session.
+  //
+  // `next build` therefore never compiles that directory (getDevTypesPath in
+  // type-paths.js returns it, and runTypeCheck drops every fileName under it),
+  // while a plain `tsc --noEmit` had no such filter and compiled whatever the
+  // dev server happened to have half-written. This exclude gives `npm run
+  // typecheck` the same file list the build already uses, so the two agree.
+  // It does not fight Next either: writeConfigurationDefaults only ever ADDS
+  // to `include`, and only seeds `exclude` when the key is missing.
+  //
+  // Nothing is lost. `.next/types` stays in `include` and is the copy that
+  // matters: `next build` writes it fresh and then checks it, and it carries
+  // both the typed-route helpers (PageProps, LayoutProps, RouteContext,
+  // ParamMap) and the per-route validator that checks every
+  // page/layout/handler's exported shape. The generated next-env.d.ts imports
+  // ./.next/types/routes.d.ts and ./.next/types/root-params.d.ts by path, from
+  // that same non-excluded directory, so the route helper types reach the
+  // program in dev as well. What drops out is only the dev server's duplicate,
+  // above all its validator.ts, which is rewritten on every compile and points
+  // at route modules a stale .next no longer has.
   "exclude": ["node_modules", ".next/dev/types"]
 }

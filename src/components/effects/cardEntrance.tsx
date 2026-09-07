@@ -1175,7 +1175,7 @@ export function CardEntrance({
           itself is the graphic, with a light sweep and a drawn-in rule. */}
       <span className="absolute inset-x-0 top-[68%] flex flex-col items-center px-[6%] text-center">
         <span
-          className="ce-title-tag smallcaps text-[9.5px] tracking-[0.22em] text-parchment-300"
+          className="ce-title-tag smallcaps text-[12px] tracking-[0.22em] text-parchment-300"
           style={{ animationDelay: "300ms", textShadow: "0 1px 6px rgba(0,0,0,0.95)" }}
         >
           {isOpener ? (mine ? "Opening pick" : "Opponent opens with") : mine ? "New card" : "Opponent gains"}

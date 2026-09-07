@@ -44,11 +44,12 @@ import {
   TABLET_STACK_FAB,
   TABLET_STACK_HIDE,
   TABLET_STACK_SCROLL,
+  TABLET_STACK_SHOW,
   TABLET_STACK_UNCLIP,
 } from "@/components/matchLayout";
 import { bottomChromePadClass } from "@/components/mobileChrome";
 import { MobileMatchStack } from "@/components/MobileMatchStack";
-import { BoardTools } from "@/components/board/BoardTools";
+import { BoardTools, FlipBoardButton } from "@/components/board/BoardTools";
 import { FxToggleButton } from "@/components/FxToggleButton";
 import { MoveList } from "@/components/MoveList";
 import { NerfCard } from "@/components/NerfCard";
@@ -3297,6 +3298,14 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
                     compact
                   />
                 )}
+                {/* Flip, on the surface that cannot press `f`. Exactly
+                    complementary to the side rail below (`hidden sm:grid` plus
+                    TABLET_STACK_HIDE), which carries the same button and the
+                    keymap: wherever the rail stands down, this stands up, so
+                    the control is never absent and never doubled. */}
+                <FlipBoardButton
+                  className={"zen-hide shrink-0 sm:hidden " + TABLET_STACK_SHOW}
+                />
               </div>
               <MobileMatchStack
                 actions={historyActions}

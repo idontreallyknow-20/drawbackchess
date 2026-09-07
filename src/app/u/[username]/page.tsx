@@ -1426,7 +1426,9 @@ function AchievementsStrip({ username }: { username: string }) {
         aria-expanded={expanded}
         aria-controls="achievements-fold"
         onClick={() => setExpanded((v) => !v)}
-        className="flex min-h-[40px] w-full flex-wrap items-center justify-between gap-3 py-1 text-left"
+        // 40px, four short. Full-width, so only the height was ever in
+        // question.
+        className="flex min-h-[44px] w-full flex-wrap items-center justify-between gap-3 py-1 text-left [@media(pointer:fine)]:min-h-[40px]"
       >
         <span className="flex items-center gap-2 font-display text-parchment-100">
           <ChevronRight

@@ -508,7 +508,10 @@ function TvView() {
                   href={channel.href}
                   aria-current={channel.active ? "page" : undefined}
                   className={
-                    "flex-1 rounded-none px-3 py-1.5 text-center font-display text-[13px] font-semibold transition-colors " +
+                    // 30px tall at every width: py-1.5 is 0.375rem, and at a 14px root that is
+                    // 5.25px a side. These are the channel switcher, the main control
+                    // on the page.
+                    "flex min-h-[44px] flex-1 items-center justify-center rounded-none px-3 py-1.5 text-center font-display text-[13px] font-semibold transition-colors [@media(pointer:fine)]:min-h-0 " +
                     (channel.active
                       ? "bg-[rgb(var(--accent-rgb)/0.16)] text-gold-leaf"
                       : "text-parchment-400 hover:bg-[color:var(--bg-raised)] hover:text-parchment-100")

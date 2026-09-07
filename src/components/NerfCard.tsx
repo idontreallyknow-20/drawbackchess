@@ -130,7 +130,7 @@ export function NerfCard({ nerf, revealed = true, compact = false, dense = false
       )}
       {/* How to live with the handicap. Advice, never a rule. */}
       {!compact && nerf.tip && (
-        <p className="mt-2 text-[10.5px] leading-snug text-parchment-400">
+        <p className="mt-2 text-[12px] leading-snug text-parchment-400">
           <span className="text-parchment-300">Tip</span>{" "}
           <GlossaryText text={nerf.tip} />
         </p>

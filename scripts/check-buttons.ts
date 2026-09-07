@@ -131,7 +131,14 @@ const BASELINE: string[] = [
   "src/components/QueueButton.tsx",
   "src/components/RatingChart.tsx",
   "src/components/SettingsBootstrap.tsx",
-  "src/components/SettingsPanel.tsx",
+  // The settings split (SettingsPanel.tsx -> components/settings/rows.tsx)
+  // carried the panel's bespoke affordances with it: the theme/piece picker
+  // cards, the picker disclosure row and the background upload label. A move,
+  // not new debt, and the same shape as the dock split below — the old
+  // SettingsPanel.tsx entry retired, this one took its place, and the net
+  // count did not change. They are shared with the new /settings route now, so
+  // converting them pays off on two surfaces instead of one.
+  "src/components/settings/rows.tsx",
   "src/components/SiteHeader.tsx",
   "src/components/SpectatorPill.tsx",
   "src/components/codex/CardDetail.tsx",
