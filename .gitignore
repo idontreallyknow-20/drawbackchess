@@ -46,5 +46,3 @@ AGENTS.md
 # finished one. The merged result is committed on completion.
 docs/card-winrate.shard*.json
 
-# Agent scratch: probe scripts and screenshots from a verification run.
-.eval-verify/

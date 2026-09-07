@@ -16,6 +16,7 @@ import { Board } from "@/components/Board";
 import { SiteHeader } from "@/components/SiteHeader";
 import { EVAL_LADDER_ANALYSIS, EvalBar, evalLabel, useBoardEval } from "@/components/EvalBar";
 import {
+  CLASS_GLYPH,
   CLASS_LABEL,
   CLASS_TONE,
   MoveMark,
@@ -336,7 +337,7 @@ function AnalysisInner() {
                     </span>
                   )}
                 </p>
-                <p className="mt-1 text-[12px] leading-snug text-parchment-500">
+                <p className="mt-1 text-[13px] leading-snug text-parchment-500">
                   Plain chess. No nerfs, buffs or pocket drops here, so the number means what it
                   says. It will not, on a board that has rules on it.
                 </p>
@@ -523,8 +524,9 @@ function MoveReviewPanel({
                       {moveNums[r.index]}
                       {moves[r.index].color === "w" ? "." : "..."} {sans[r.index]}
                     </span>
-                    <span className={CLASS_TONE[r.cls]}>{CLASS_LABEL[r.cls]}</span>
-                    <span className="ml-auto shrink-0 font-mono text-[12px] text-parchment-500">
+                    <span className={"font-mono " + CLASS_TONE[r.cls]}>{CLASS_GLYPH[r.cls]}</span>
+                    <span className="text-parchment-200">{CLASS_LABEL[r.cls]}</span>
+                    <span className="ml-auto shrink-0 font-mono text-parchment-500">
                       -{r.lossPct.toFixed(0)}%
                     </span>
                   </button>
@@ -532,7 +534,7 @@ function MoveReviewPanel({
               ))}
             </ul>
           )}
-          <p className="mt-3 text-[12px] leading-snug text-parchment-500">
+          <p className="mt-3 text-[13px] leading-snug text-parchment-500">
             Graded from the same plain-chess search as the bar, at depth 2 with capture sequences
             resolved. That finds hung pieces, losing trades and a takeable king; it does not judge
             quiet positional moves, so &ldquo;best&rdquo; here means the move that wins the tactics,
@@ -561,7 +563,10 @@ function TallyRow({
 }) {
   return (
     <>
-      <dt className={"text-[13px] " + CLASS_TONE[kind]}>{CLASS_LABEL[kind]}</dt>
+      <dt className="text-[13px] text-parchment-200">
+        <span className={"mr-1.5 font-mono " + CLASS_TONE[kind]} aria-hidden>{CLASS_GLYPH[kind]}</span>
+        {CLASS_LABEL[kind]}
+      </dt>
       <dd className="font-mono text-parchment-100">{white}</dd>
       <dd className="font-mono text-parchment-100">{black}</dd>
     </>

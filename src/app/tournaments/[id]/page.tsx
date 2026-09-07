@@ -5,7 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Crown, Flame, LogIn, LogOut, Swords, Timer, Trophy, Users } from "lucide-react";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { PlayerLink } from "@/components/PlayerLink";
 import { SiteHeader } from "@/components/SiteHeader";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { AccountUser, fetchMe } from "@/lib/authClient";
 import { saveOnlineSeat } from "@/lib/multiplayer";
 import type {
@@ -172,11 +174,13 @@ export default function TournamentDetailPage() {
             {/* Header */}
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="flex items-center gap-2 text-[12px] text-parchment-400">
-                  <Trophy size={13} className="text-gold-leaf" />
-                  <Link href="/tournaments" className="hover:text-gold-leaf">
-                    Tournaments
-                  </Link>
+                {/* One crumb, but through the shared trail rather than a
+                    fourth hand-rolled one: the link measured 75.1x18 on a
+                    coarse pointer and Breadcrumbs already owns the 44px hit
+                    area (and steps it back down only behind pointer:fine). */}
+                <div className="flex items-center gap-2 text-parchment-400">
+                  <Trophy size={13} className="shrink-0 text-gold-leaf" aria-hidden />
+                  <Breadcrumbs items={[{ label: "Tournaments", href: "/tournaments" }]} />
                 </div>
                 <h1 className="mt-1 break-words page-title">{t.name}</h1>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -317,13 +321,19 @@ export default function TournamentDetailPage() {
                                 <td className="px-3 py-2 text-right font-mono text-xs text-parchment-500">{i + 1}</td>
                                 <td className="px-2 py-2">
                                   <div className="flex items-center gap-2.5">
-                                    <PlayerAvatar name={s.username} avatar={s.avatar} size={26} />
-                                    <Link
-                                      href={`/u/${encodeURIComponent(s.username)}`}
-                                      className="min-w-0 truncate text-parchment-100 hover:text-gold-leaf"
-                                    >
-                                      {s.username}
-                                    </Link>
+                                    {/* Through PlayerLink, not a hand-spelled
+                                        anchor: this one measured 66.1x18 on a
+                                        coarse pointer precisely because it did
+                                        not go through the shared component, so
+                                        the fix that landed there never reached
+                                        it. The avatar moves inside the link,
+                                        which makes it part of the target. */}
+                                    <PlayerLink
+                                      name={s.username}
+                                      avatar={s.avatar}
+                                      avatarSize={26}
+                                      className="min-w-0 text-parchment-100 hover:text-gold-leaf"
+                                    />
                                     {s.flair && <span aria-hidden>{s.flair}</span>}
                                     {isCreator && <Crown size={12} className="shrink-0 text-gold-leaf" aria-label="Host" />}
                                     {s.streak >= 3 && <Flame size={12} className="shrink-0 text-oxblood-glow" aria-label="On a streak" />}
@@ -374,12 +384,13 @@ export default function TournamentDetailPage() {
 
                 <div className="plate px-5 py-4">
                   <div className="text-[12px] text-parchment-400">Host</div>
-                  <Link
-                    href={`/u/${encodeURIComponent(t.creator_name)}`}
-                    className="mt-1.5 flex items-center gap-1.5 text-sm text-parchment-100 hover:text-gold-leaf"
-                  >
-                    <Crown size={13} className="text-gold-leaf" /> {t.creator_name}
-                  </Link>
+                  <div className="mt-1.5 flex items-center gap-1.5 text-sm text-parchment-100">
+                    <Crown size={13} className="shrink-0 text-gold-leaf" aria-hidden />
+                    <PlayerLink
+                      name={t.creator_name}
+                      className="min-w-0 hover:text-gold-leaf"
+                    />
+                  </div>
                   <div className="mt-2 flex items-center gap-1.5 text-[12px] text-parchment-500">
                     <CalendarDays size={12} /> Created {new Date(t.created_at).toLocaleDateString()}
                   </div>
@@ -448,12 +459,10 @@ function Podium({ podium }: { podium: StandingRow[] }) {
                 {rank + 1}
               </span>
               <PlayerAvatar name={s.username} avatar={s.avatar} size={size} />
-              <Link
-                href={`/u/${encodeURIComponent(s.username)}`}
-                className="max-w-[6rem] truncate text-sm text-parchment-100 hover:text-gold-leaf"
-              >
-                {s.username}
-              </Link>
+              <PlayerLink
+                name={s.username}
+                className="max-w-[6rem] text-sm text-parchment-100 hover:text-gold-leaf"
+              />
               <span className="font-mono text-xs text-parchment-400">{s.score} pts</span>
             </div>
           );

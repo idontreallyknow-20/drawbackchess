@@ -332,7 +332,7 @@ export function EvalBar({
       data-eval-depth={result ? result.depth : undefined}
       data-eval-mode={exact ? "exact" : "estimate"}
       className={
-        "relative w-6 shrink-0 overflow-hidden border border-[color:var(--edge)] " + className
+        "relative w-6 shrink-0 overflow-hidden border border-[color:var(--edge-strong)] " + className
       }
       style={{ background: TRACK }}
     >
@@ -396,7 +396,7 @@ export function EvalStrip({
         role="img"
         aria-label={evalSpeech(result, rules)}
         title={evalSpeech(result, rules)}
-        className="relative h-2.5 w-full overflow-hidden border border-[color:var(--edge)]"
+        className="relative h-2.5 w-full overflow-hidden border border-[color:var(--edge-strong)]"
         style={{ background: TRACK }}
       >
         <div
@@ -419,9 +419,9 @@ export function EvalStrip({
         )}
       </p>
       {scope ? (
-        <p className="mt-1 text-[12px] leading-snug text-parchment-400">{scope}</p>
+        <p className="mt-1 text-[13px] leading-snug text-parchment-400">{scope}</p>
       ) : (
-        <p className="mt-1 text-[12px] leading-snug text-parchment-500">
+        <p className="mt-1 text-[13px] leading-snug text-parchment-500">
           No rules in play, so the engine is scoring the same game you are looking at.
         </p>
       )}

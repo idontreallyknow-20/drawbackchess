@@ -92,12 +92,17 @@ export const CLASS_GLYPH: Record<MoveClass, string> = {
   unclear: "",
 };
 
+// Accent tones for the annotation GLYPHS only. The words beside them stay in
+// ordinary text colour, because these accents are chosen for recognition rather
+// than for contrast and three of them (the brass especially) do not clear the
+// small-text ratio on the light theme's white panels. A "??" in red next to a
+// readable "Blunder" says the same thing and stays legible in both themes.
 export const CLASS_TONE: Record<MoveClass, string> = {
-  blunder: "text-oxblood-glow",
-  mistake: "text-coral-glow",
-  inaccuracy: "text-sun-glow",
+  blunder: "text-oxblood",
+  mistake: "text-coral",
+  inaccuracy: "text-brag",
   good: "text-parchment-400",
-  best: "text-verdigris-glow",
+  best: "text-verdigris",
   unclear: "text-parchment-500",
 };
 
@@ -312,7 +317,9 @@ export function MoveMark({ cls }: { cls: MoveClass | undefined }) {
   if (!cls || !CLASS_GLYPH[cls]) return null;
   return (
     <span
-      className={"ml-0.5 font-mono text-[12px] " + CLASS_TONE[cls]}
+      // Inherits the move list's own size on purpose: a mark set one step
+      // larger than the SAN it annotates reads as a separate word.
+      className={"ml-0.5 font-mono " + CLASS_TONE[cls]}
       title={CLASS_LABEL[cls]}
       aria-label={CLASS_LABEL[cls]}
     >

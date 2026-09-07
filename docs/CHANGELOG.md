@@ -1921,3 +1921,101 @@ everything inside a `.cpl-stage`, so any caption centred with
 `translateX(-50%)` **was not centred at all** in the reduced-motion still frame
 (the ROOK stamp sat 41px off the right edge of a 44.8px crop). Those captions
 now centre with width plus a negative margin, which survives it.
+
+### The eval bar, and the precision it does not have
+
+`analyzeBoard` takes a bare `BoardState`. It knows nothing about nerfs, buffs,
+pocket drops, or the fact that this game ends when a king is captured rather
+than by checkmate, so its number is the evaluation of a **different game** than
+the one on screen. The bar ships in two modes, chosen by whether any rule is
+live:
+
+- **No rules in play** -- the position genuinely is plain chess, so it shows the
+  signed number (`+1.2`), a smooth fill, the best move and the depth.
+- **Any rule in play** -- it quantises to **seven fixed bands** and the readout
+  is a **word, not a number** ("White is a little better"), prefixed `~`, with a
+  caption naming the specific blind spots: *"Plain-chess estimate. The engine
+  cannot see White's rule 'Rising Water' and Black's rule 'Pacifist', so read it
+  as a band, not a number."*
+
+The dishonesty in `+2.3` beside a nerfed queen is not the sign, it is the
+**precision**. A number to a fifth of a pawn claims the position was resolved; a
+word cannot be over-read that way, and a bar that snaps between seven positions
+instead of sliding is a visual promise that nothing finer is being claimed. The
+bar is deliberately NOT hidden under rules: material and king safety survive
+them, and a coarse true statement beats nothing. What a player must never get is
+a precise false one.
+
+Three things fell out of taking that seriously. `evalLabel` no longer returns
+`#` for a decisive score, because there is no checkmate here: it returns
+`+K`/`-K` and the band reads "White takes the king". Unrevealed nerfs are still
+named ("the handicaps both players are under, still unrevealed"), because going
+quiet before the reveal would make the bar most confident exactly where it knows
+least. And a rung that times out before completing depth 1 returns `scoreCp: 0`
+and the first generated move, which would paint a confident "Level" over an
+unsearched position, so it is dropped and the ladder climbs instead.
+
+`OnlineMatch`'s strip is gated on `game.result`. A live engine readout beside
+your own board in a rated game is engine assistance whatever it is labelled, and
+Lichess disables computer analysis during play for the same reason.
+
+### Every search budget is worth up to twice what its caller asked for
+
+The load-bearing measurement behind the frame work, and it reaches past the eval
+bar. `negamax` aborts at `budget * 2` and the deepening loop only checks the
+clock AFTER a whole depth completes, so `analyzeBoard(board, 300)` on
+`/analysis` was a **601ms** main-thread block after every move, not 300ms.
+
+That is not only an analysis problem. `aiBudgetMs` exists so the bot "can never
+think its whole bank away in fast time controls", and clamps to
+`min(base, remainingClock / 10)`. If the real spend is up to 2x, that guarantee
+is 2x looser than it reads. Filed as A16.
+
+| `/analysis`, 12-move line | long tasks | longest | total blocking | frames >100ms | depth |
+|---|---|---|---|---|---|
+| engine off (page baseline) | 16 | 76ms | 186ms | 0 | -- |
+| before | 28 | **601ms** | **6278ms** | 12 | 6 |
+| after (idle ladder) | 32 | **111ms** | **817ms** | 8 | 5 |
+
+Longest block 5.4x better, total blocking 7.7x better, one ply of depth given
+up. Each rung is one `requestIdleCallback`, cancelled on a position change,
+suspended when the tab is hidden, with the engine `import()`ed lazily so a route
+that never shows the bar never parses it. All of it is a main-thread mitigation
+of something a worker would remove outright (A18).
+
+### Move classification was noise first, and the fix is the finding
+
+The first cut graded whatever depth each position happened to reach and called
+**six** moves of a quiet London System blunders. An **odd**-depth search hands
+the side to move the last word, so comparing a depth-3 reading against a
+depth-4 one swings the white-relative score by tens of win-percent for nothing
+that happened on the board. `classifyLoss` now requires the **same, even** depth
+at both ends of a move or it grades nothing.
+
+Depth is fixed at 2 with quiescence rather than 4, and that is measured: over 40
+real middlegame positions a budget large enough to actually reach depth 4 runs
+200 to 600ms each, while depth 2 completes on every one in 6ms typical and 40ms
+worst, tracking the depth-4 reading within about 90cp. The panel says what that
+buys and what it does not, so `best` means "the move that wins the tactics"
+rather than "no better move exists".
+
+Against known blunders: Scholar's trap `3...Nf6??` found (-50% win chance), a
+hung queen `6...Qd6??` found (-30%) with its punishment graded best, and **zero
+false positives** across two quiet 8- and 20-move Italian lines. A 20-move
+review costs 1122ms wall with zero long tasks.
+
+### C43 closed
+
+`/tournaments/[id]` **12 touch-target findings to 0**, `/clubs/[slug]` **8 to
+0**. The player names there were flagged precisely because they spelled
+`a.hover:text-gold-leaf` themselves, so round 7's `PlayerLink` fix never reached
+them; they go through `PlayerLink` now, and the avatar moves inside the link to
+become part of the target. The breadcrumb goes through `ui/Breadcrumbs` rather
+than becoming a fourth hand-rolled trail, which also lifted it from 12px to the
+13px interactive floor.
+
+**Not verified, and not claimed:** `OnlineMatch`'s strip has never been rendered
+in a browser. Durable Objects do not run under `next dev`, so a live match
+cannot be reached at all, and the strip is gated behind `game.result` on top of
+that. It typechecks and lints. The same component is verified on the other three
+surfaces at five widths in both themes.
