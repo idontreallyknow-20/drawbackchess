@@ -134,7 +134,7 @@ export function PassiveChip() {
   return (
     <span
       title="Passive: always in effect"
-      className="shrink-0 rounded-[1px] border border-gold/40 bg-gold/10 px-1 py-px text-[11px] font-semibold text-gold-leaf/90"
+      className="shrink-0 rounded-[1px] border border-gold/40 bg-gold/10 px-1 py-px text-[12px] font-semibold text-gold-leaf"
     >
       Passive
     </span>
@@ -152,9 +152,9 @@ export function StatusChip({ status }: { status: string }) {
       title={pliesTitle(status) ?? status}
       // Shrinkable (not shrink-0): a long status must squeeze itself, never
       // the card name sitting in the same row.
-      className="inline-flex min-w-0 max-w-[8rem] shrink items-center gap-1 rounded-[1px] border border-gold/40 bg-gold/10 px-1 py-px text-[11px] font-semibold text-gold-leaf/90"
+      className="inline-flex min-w-0 max-w-[8rem] shrink items-center gap-1 rounded-[1px] border border-gold/40 bg-gold/10 px-1 py-px text-[12px] font-semibold text-gold-leaf"
     >
-      {m && <Clock aria-hidden size={9} strokeWidth={2.4} className="shrink-0" />}
+      {m && <Clock aria-hidden size={11} strokeWidth={2.4} className="shrink-0" />}
       <span className="min-w-0 truncate">{text}</span>
     </span>
   );

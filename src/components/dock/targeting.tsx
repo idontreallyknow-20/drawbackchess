@@ -192,7 +192,7 @@ export function TargetingBanner({
         {finishable && onFinish && (
           <button
             onClick={onFinish}
-            className="shrink-0 touch-manipulation inline-flex items-center justify-center min-h-[44px] sm:min-h-0 rounded-[1px] border border-mode-buff/60 bg-mode-buff/20 px-3 py-1 font-display text-[14px] sm:text-[13px] font-bold tracking-wide text-mode-buffGlow transition hover:bg-mode-buff/30"
+            className="shrink-0 touch-manipulation inline-flex items-center justify-center min-h-[44px] [@media(pointer:fine)]:min-h-0 rounded-[1px] border border-mode-buff/60 bg-mode-buff/20 px-3 py-1 font-display text-[14px] sm:text-[13px] font-bold tracking-wide text-mode-buffGlow transition hover:bg-mode-buff/30"
             title="Fire now with the targets picked so far (the rest are forfeited)"
           >
             Done
@@ -200,9 +200,9 @@ export function TargetingBanner({
         )}
         <button
           onClick={onCancel}
-          className="shrink-0 touch-manipulation inline-flex items-center justify-center min-h-[44px] sm:min-h-0 rounded-[1px] border border-coral/40 bg-coral/10 px-3 py-1 font-display text-[14px] sm:text-[13px] font-semibold tracking-wide text-coral-glow transition hover:bg-coral/20"
+          className="shrink-0 touch-manipulation inline-flex items-center justify-center min-h-[44px] [@media(pointer:fine)]:min-h-0 rounded-[1px] border border-coral/40 bg-coral/10 px-3 py-1 font-display text-[14px] sm:text-[13px] font-semibold tracking-wide text-coral-glow transition hover:bg-coral/20"
         >
-          Cancel <span className="text-coral-glow/60">Esc</span>
+          Cancel <span className="text-coral-glow">Esc</span>
         </button>
       </div>
       {/* Invalid-tap hint: one line naming what IS targetable, flashed after
@@ -238,15 +238,25 @@ export function EnemyBuffModal({
 }) {
   const { target } = targeting;
   // Hooks must run before any early return.
-  useModalChrome(true, onCancel);
+  const { attachDialog } = useModalChrome(true, onCancel);
   if (target.kind !== "enemy-buff") return null;
   const inst = game.buffs?.players[myColor].buffs[targeting.buffIndex];
   const buffName = (inst && BUFF_BY_ID[inst.id]?.name) ?? "Buff";
   return (
     // Scroll-locked while the target picker is up (see useModalChrome); it has
-    // no backdrop dismissal of its own, so only the lock and Escape apply.
+    // no backdrop dismissal of its own, so the lock, Escape and the focus trap
+    // apply. The trap matters more here than on most overlays: every option is
+    // a button, and without it Tab walks straight past Cancel into the board
+    // behind, which is covered and not meant to be reachable while a pick is
+    // pending.
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/80 px-4 py-6">
-      <div className="plate w-full max-w-md p-5 max-h-[90dvh] overflow-y-auto">
+      <div
+        ref={attachDialog}
+        role="dialog"
+        aria-modal="true"
+        aria-label={target.label}
+        className="plate w-full max-w-md p-5 max-h-[90dvh] overflow-y-auto"
+      >
         <div className="text-[12px] text-parchment-400">{buffName}</div>
         <div className="font-display text-lg text-parchment mt-0.5">{target.label}</div>
 
@@ -256,22 +266,35 @@ export function EnemyBuffModal({
           <div className="mt-3 space-y-2">
             {target.options.map((opt) => {
               const def = BUFF_BY_ID[opt.name];
-              return (
+              // A known card carries its OWN stretched pick target (BuffCard's
+              // .card-pick-target). It used to be wrapped in this list's
+              // button instead, which put the rule text's glossary chips --
+              // span[role=button], whose click handler stops propagation so
+              // reading a word never presses the surface under it -- inside a
+              // button. Measured: a click on a glossary term in an option card
+              // reached nothing, so the target pick was simply swallowed and
+              // the modal sat there. A masked option has no card and no rule
+              // text, so it keeps its plain button.
+              return def ? (
+                <BuffCard
+                  key={opt.index}
+                  buff={def}
+                  tier={opt.tier as 1}
+                  compact
+                  onClick={() => onPick({ buffIndex: opt.index })}
+                />
+              ) : (
                 <button
                   key={opt.index}
                   onClick={() => onPick({ buffIndex: opt.index })}
                   className="block w-full text-left"
                 >
-                  {def ? (
-                    <BuffCard buff={def} tier={opt.tier as 1} compact />
-                  ) : (
-                    <span className="flex items-center justify-between border border-[color:var(--edge)] bg-white/[0.03] px-3 py-2 text-sm text-parchment">
-                      Hidden buff
-                      <span className="font-display text-xs text-parchment-400">
-                        Tier {TIER_ROMAN[opt.tier as Tier]}
-                      </span>
+                  <span className="flex items-center justify-between border border-[color:var(--edge)] bg-white/[0.03] px-3 py-2 text-sm text-parchment">
+                    Hidden buff
+                    <span className="font-display text-xs text-parchment-400">
+                      Tier {TIER_ROMAN[opt.tier as Tier]}
                     </span>
-                  )}
+                  </span>
                 </button>
               );
             })}

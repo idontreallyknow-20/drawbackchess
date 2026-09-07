@@ -6,9 +6,10 @@ import { AccountUser, fetchMe } from "@/lib/authClient";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { ChevronRight, Plus, Search, Users, X } from "lucide-react";
+import { ChevronRight, Plus, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/Button";
+import { SearchInput } from "@/components/ui/SearchInput";
 
 interface Club {
   id: string;
@@ -198,25 +199,13 @@ export default function ClubsPage() {
         <div className="mt-6 min-w-0 space-y-4">
           {/* Search: filters the whole directory in place, like lichess's
               team search box at the top of the teams list. */}
-          <div className="plate flex items-center gap-2.5 px-4 py-2.5">
-            <Search size={16} className="shrink-0 text-parchment-400" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search clubs by name, owner, or description"
-              aria-label="Search clubs"
-              className="w-full bg-transparent text-[13px] text-parchment placeholder:text-parchment-500 focus:outline-none"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                className="shrink-0 text-[12px] font-medium text-parchment-400 hover:text-parchment-100"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+          <SearchInput
+            variant="plate"
+            value={query}
+            onChange={setQuery}
+            label="Search clubs"
+            placeholder="Search clubs by name, owner, or description"
+          />
 
           {/* Your clubs: the memberships this account already holds, lifted
               to the top the way lichess surfaces "Your teams". */}
@@ -241,7 +230,7 @@ export default function ClubsPage() {
               <ul className="divide-y divide-[color:var(--edge)]" aria-hidden>
                 {Array.from({ length: 4 }).map((_, i) => (
                   <li key={i} className="flex items-center gap-4 px-5 py-4">
-                    <div className="h-11 w-11 shrink-0 bg-[color:var(--bg-raised)] animate-pulse" />
+                    <div className="h-[44px] w-[44px] shrink-0 bg-[color:var(--bg-raised)] animate-pulse" />
                     <div className="min-w-0 flex-1">
                       <div className="h-3.5 w-40 bg-white/[0.07] animate-pulse" />
                       <div className="mt-2 h-3 w-56 max-w-full bg-[color:var(--bg-raised)] animate-pulse" />
@@ -320,7 +309,7 @@ function ClubRow({ club }: { club: Club }) {
           ) : (
             <p className="mt-0.5 truncate text-[13px] italic text-parchment-500">No description.</p>
           )}
-          <div className="mt-0.5 text-[12px] font-medium text-parchment-400">owner {club.owner_name}</div>
+          <div className="mt-0.5 text-[13px] font-medium text-parchment-400">owner {club.owner_name}</div>
         </div>
         <span className="flex shrink-0 items-center gap-1.5 font-mono text-[12px] text-parchment-400 tabular-nums">
           <Users size={13} />

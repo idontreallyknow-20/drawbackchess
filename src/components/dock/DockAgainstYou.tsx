@@ -68,7 +68,7 @@ function AgainstChip({ row }: { row: AgainstRow }) {
             </span>
             <span
               title={pliesTitle(row.left)}
-              className="shrink-0 text-[11px] font-semibold text-parchment-300"
+              className="shrink-0 text-[12px] font-semibold text-parchment-300"
             >
               {row.left}
             </span>
@@ -80,7 +80,7 @@ function AgainstChip({ row }: { row: AgainstRow }) {
               words, for anyone meeting a walnut or a leash for the first
               time. Face-up curses carry their own card text instead. */}
           {glossary && glossary.def !== row.detail && (
-            <span className="mt-1 block border-t border-[color:var(--edge)] pt-1 text-[11px] italic leading-snug text-parchment-400">
+            <span className="mt-1 block border-t border-[color:var(--edge)] pt-1 text-[12px] italic leading-snug text-parchment-400">
               {glossary.def}
             </span>
           )}

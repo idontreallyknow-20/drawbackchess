@@ -224,7 +224,7 @@ export function QueueButton({
           {/* Elapsed time so the queue never reads as a dead "Connecting…":
               the counter ticking is proof the search is live. */}
           <div
-            className="mt-2.5 flex items-center gap-2 text-[11px] text-parchment-400"
+            className="mt-2.5 flex items-center gap-2 text-[12px] text-parchment-400"
             aria-live="polite"
           >
             <span>Searching</span>
@@ -284,7 +284,7 @@ export function QueueButton({
                   >
                     <Icon size={14} style={{ color: category.accent }} aria-hidden />
                     <span className="font-mono text-sm tabular-nums">{option.label}</span>
-                    <span className="text-[11px] uppercase tracking-[0.08em] text-parchment-400">{category.label}</span>
+                    <span className="text-[12px] uppercase tracking-[0.08em] text-parchment-400">{category.label}</span>
                   </button>
                 );
               })}
@@ -401,7 +401,7 @@ function ModeCard({
           {mode === "nerf" ? "Nerf" : "Buff"}
         </div>
         {mode === "buff" && (
-          <span className="border border-gold/40 bg-gold/10 px-1.5 py-0.5 text-[8px] text-gold-leaf">
+          <span className="border border-gold/40 bg-gold/10 px-1.5 py-0.5 text-[12px] text-gold-leaf">
             Recommended
           </span>
         )}
@@ -412,7 +412,7 @@ function ModeCard({
           : "Start with normal chess. Draft powers for your own army."}
       </p>
       <div className="mt-2 flex items-center gap-2">
-        <span className="text-[9px] text-parchment-400">
+        <span className="text-[12px] text-parchment-400">
           Your {mode === "nerf" ? "Nerf" : "Buff"} rating
         </span>
         <span className={"font-mono text-base tabular-nums " + identity.title}>

@@ -1068,6 +1068,214 @@ function heldBuffs(game: NerfGame, color: Color): { inst: BuffInstance; def: Buf
     .filter((x): x is { inst: BuffInstance; def: Buff } => !!x.def);
 }
 
+// --- Buff-aware search support (backlog A13) --------------------------------
+//
+// `negamax` searches bare BoardStates, and only `legalMoves` runs
+// `def.augmentMoves`, so before this every move-granting buff existed at the
+// root and nowhere below it: the bot played a move that only its card made
+// legal, then evaluated every follow-up as if it did not hold the card.
+// `buildSearchBuffs` + `applySearchAugments` give the search the same augment
+// hooks per node, under three constraints that made the change risky enough to
+// be filed on its own.
+//
+// 1. NOTHING LIVE IS REACHABLE. The audit behind this (scripts/audit-augment-
+//    purity.ts) found ten generators that write `inst.state` from inside
+//    `augmentMoves` — the "use it or lose it" bookkeeping shared by the nine
+//    lossy openers and Dryad Grove sets `armed` / `offered` whenever the move
+//    is on offer. Called per node that would arm a real card off a hypothetical
+//    position and burn its charge in the real game. Rather than allowlisting
+//    the pure ones (283 hooks, 71 of which never fire in any probe position, so
+//    an allowlist would be guessing), the search runs against a private view:
+//    cloned instances, a cloned BuffMatchState, cloned captured pools and
+//    cloned player slots. Every mutator on the api therefore writes into
+//    throwaway objects. An impure generator can mis-score a search; it cannot
+//    reach the game.
+//
+//    The same audit found ZERO `api.rng` draws in the entire library, and
+//    `fxRng` is stateless anyway (seeded per call from the synced board, not a
+//    persistent stream — see its comment), so calling these hooks per node
+//    cannot advance anything a replica would have to agree about. The desync
+//    hazard recorded against this task does not exist.
+//
+// 2. NO PER-NODE API REBUILD. `makeBuffApi` is ~20 closures; building one per
+//    node is far too slow for a hot path. Instead exactly two apis are built
+//    per search (one per side) over mutable view games, and the only per-node
+//    work is retargeting `.board` at the node's board. That is a shared
+//    object, but every generator runs synchronously inside
+//    `applySearchAugments` immediately after the retarget and nothing in the
+//    library retains the api, so there is no live range for it to go stale in;
+//    and because the view is entirely clones, a stale read could only mis-score.
+//
+// 3. EXPIRY IS MODELLED. `timedAugment(n)` lasts the owner's next n moves, so
+//    applying it at every ply would over-value a three-turn card at depth 12 —
+//    trading one bias for another. The side to move at ply p has played
+//    exactly `p >> 1` of its own moves to get there, so the per-ply table below
+//    holds instances whose counters are already decremented by that much, and
+//    a card drops out of the table at the ply it expires. Charge-limited
+//    augments (`augment` / `lossyAugment`, 133 of the 283) are spent by PLAYING
+//    the granted move rather than by time passing, so they carry a bit in a
+//    spent mask that negamax threads down each line: once a line plays the
+//    granted move, deeper plies in that line stop being offered it.
+
+/** One held move-granting buff, prepared for a specific search ply. */
+export interface SearchAugment {
+  def: Buff;
+  /** Private clone of the live instance, timed counter already aged to the ply. */
+  inst: BuffInstance;
+  /** Bit in the spent mask for charge-limited augments, or -1 for timed ones. */
+  chargeBit: number;
+}
+
+/** Everything the search needs to reproduce `legalMoves`'s augment step at an
+ *  interior node, precomputed once per search. */
+export interface SearchBuffs {
+  /** byPly[p] = augments available to the side to move at ply p. */
+  byPly: SearchAugment[][];
+  /** api[p & 1] — the BuffApi of the side to move at ply p (parity 0 = root). */
+  api: [BuffApi, BuffApi];
+  /** The mutable private view games behind those apis. */
+  view: [NerfGame, NerfGame];
+  /** bitOf[p & 1] maps a granted move's `via` id to its spent-mask bit. */
+  bitOf: [Map<string, number>, Map<string, number>];
+}
+
+/** Spent-mask bits available per side. Sides hold single-digit numbers of
+ *  move-granting cards in practice; a card past the cap is simply left out of
+ *  the search (falling back to the old root-only behaviour for that card)
+ *  rather than being given an untracked, permanently unspent charge. */
+const MAX_AUGMENT_SLOTS = 16;
+
+function cloneForSearch(game: NerfGame, bs: BuffMatchState): NerfGame {
+  const clonePlayer = (c: Color) => {
+    const ps = bs.players[c];
+    return {
+      ...ps,
+      buffs: ps.buffs.map((b) => ({ ...b, state: { ...b.state } })),
+      flags: { ...ps.flags },
+      revived: { ...ps.revived },
+      inventory: ps.inventory ? { ...ps.inventory } : undefined,
+    };
+  };
+  const searchBs: BuffMatchState = {
+    ...bs,
+    effects: bs.effects.map((e) => ({ ...e })),
+    extraMoves: { ...bs.extraMoves },
+    skips: { ...bs.skips },
+    players: { w: clonePlayer("w"), b: clonePlayer("b") },
+  };
+  return {
+    ...game,
+    buffs: searchBs,
+    white: { ...game.white },
+    black: { ...game.black },
+    captured: { w: { ...game.captured.w }, b: { ...game.captured.b } },
+    fx: undefined,
+  };
+}
+
+/**
+ * Prepare the held move-granting buffs of both sides for a search rooted at
+ * `game`, covering plies 0..maxPly. Returns null when there is nothing to do
+ * (no draft game, a Chess Diff sub-game, or neither side holds a card with an
+ * `augmentMoves` hook), which is the overwhelmingly common case and costs the
+ * search nothing.
+ */
+export function buildSearchBuffs(game: NerfGame, maxPly: number): SearchBuffs | null {
+  const bs = game.buffs;
+  // A Chess Diff is plain chess: legalMoves runs no augments there either.
+  if (!bs || bs.diff) return null;
+
+  const me = game.board.turn;
+  const opp: Color = me === "w" ? "b" : "w";
+  const sides: [Color, Color] = [me, opp];
+
+  const live = sides.map((c) => heldBuffs(game, c).filter((h) => !!h.def.augmentMoves));
+  if (!live[0].length && !live[1].length) return null;
+
+  // Two private views, one per side, so a generator that reaches for a mutator
+  // writes into a clone instead of the live game.
+  const view: [NerfGame, NerfGame] = [cloneForSearch(game, bs), cloneForSearch(game, bs)];
+  const api: [BuffApi, BuffApi] = [makeBuffApi(view[0], me), makeBuffApi(view[1], opp)];
+  const bitOf: [Map<string, number>, Map<string, number>] = [new Map(), new Map()];
+
+  const byPly: SearchAugment[][] = [];
+  for (let ply = 0; ply <= maxPly; ply++) byPly.push([]);
+
+  for (let parity = 0; parity < 2; parity++) {
+    let nextBit = 0;
+    for (const { inst, def } of live[parity]) {
+      const charges = inst.state.charges;
+      let chargeBit = -1;
+      if (typeof charges === "number") {
+        // A charge already exhausted in the real game grants nothing at all.
+        if (charges <= 0) continue;
+        if (nextBit >= MAX_AUGMENT_SLOTS) continue;
+        chargeBit = parity * MAX_AUGMENT_SLOTS + nextBit++;
+        bitOf[parity].set(def.id, chargeBit);
+      }
+      const turns = inst.state.turns;
+      // The side to move at ply p has played p >> 1 of its own moves getting
+      // there, which is exactly what tickTurns would have decremented.
+      for (let ply = parity; ply <= maxPly; ply += 2) {
+        const state = { ...inst.state };
+        if (typeof turns === "number") {
+          const aged = turns - (ply >> 1);
+          if (aged <= 0) break; // expired here, and at every deeper ply
+          state.turns = aged;
+        }
+        byPly[ply].push({ def, inst: { ...inst, state }, chargeBit });
+      }
+    }
+  }
+
+  if (byPly.every((l) => !l.length)) return null;
+  return { byPly, api, view, bitOf };
+}
+
+/**
+ * Append the buff-granted moves available to the side to move at `ply` on
+ * `board`, exactly as `legalMoves` would at the root. `spentMask` carries the
+ * charge-limited augments already used further up this line.
+ *
+ * Nerf filters, shields, walls and zone effects are NOT reapplied here: the
+ * search has always generated interior moves with bare `generateMoves`, so
+ * those were already invisible below the root and this change neither adds to
+ * nor removes from that gap. It closes only the augment half.
+ */
+export function applySearchAugments(
+  sb: SearchBuffs,
+  board: BoardState,
+  ply: number,
+  spentMask: number,
+  moves: Move[],
+): void {
+  const list = sb.byPly[ply];
+  if (!list || !list.length) return;
+  const parity = ply & 1;
+  // Retarget the private view at this node's board. Generators run
+  // synchronously below and none of them retains the api, so the shared object
+  // is never read outside this call.
+  sb.view[parity].board = board;
+  sb.api[parity].board = board;
+  for (const a of list) {
+    if (a.chargeBit >= 0 && (spentMask & (1 << a.chargeBit)) !== 0) continue;
+    try {
+      a.def.augmentMoves!(moves, a.inst, sb.api[parity]);
+    } catch {
+      // A generator that throws on some hypothetical position must not take
+      // the whole search down with it; it just contributes nothing here.
+    }
+  }
+}
+
+/** Fold a played move into the spent mask: a charge-limited augment used in
+ *  this line is not offered again deeper in it. */
+export function markAugmentSpent(sb: SearchBuffs, ply: number, move: Move, spentMask: number): number {
+  if (!move.via) return spentMask;
+  const bit = sb.bitOf[ply & 1].get(move.via);
+  return bit === undefined ? spentMask : spentMask | (1 << bit);
+}
+
 /** A barred effect whose squares form exactly one complete file or rank is a
  * board-splitting WALL, not just a no-landing zone (Fault Line, Great Wall,
  * Great Divide, Sundering, and the whole-file / whole-rank hexes all build one
@@ -2097,6 +2305,136 @@ function aiSquareScore(game: NerfGame, me: Color, sq: Square): number {
   return p.color === me ? 100 + base + centrality : 1000 + base + centrality;
 }
 
+/**
+ * Material on the board from `me`'s side, minus what `me` is about to lose.
+ *
+ * The second half is the part that matters. A card that MOVES one of your
+ * pieces (a line sweep relocates the sweeper, a teleport lands it somewhere
+ * new) can win material on the way and still be a blunder, because the piece
+ * ends the turn standing where the opponent can take it. Counting only the
+ * pieces on the board cannot see that, so a hanging piece is charged here at
+ * its full value, less whatever it is standing on if a recapture is available.
+ */
+function aiPositionScore(game: NerfGame, me: Color): number {
+  const opp: Color = me === "w" ? "b" : "w";
+  let mine = 0;
+  let theirs = 0;
+  for (let sq = 0; sq < 64; sq++) {
+    const p = game.board.pieces[sq];
+    if (!p || p.type === "k") continue;
+    if (p.color === me) mine += AI_PIECE_VALUE[p.type];
+    else theirs += AI_PIECE_VALUE[p.type];
+  }
+  const theirAttacks = attackedBy(game.board, opp);
+  const myAttacks = attackedBy(game.board, me);
+  let hanging = 0;
+  for (let sq = 0; sq < 64; sq++) {
+    const p = game.board.pieces[sq];
+    if (!p || p.color !== me || p.type === "k") continue;
+    if (!theirAttacks.has(sq)) continue;
+    // Defended pieces are not free, so only the excess is at risk. This is a
+    // deliberately crude static exchange: it does not resolve a full capture
+    // sequence, only "can they take it and do we get something back".
+    hanging += myAttacks.has(sq) ? Math.max(0, AI_PIECE_VALUE[p.type] - 3) : AI_PIECE_VALUE[p.type];
+  }
+  return mine - theirs - hanging;
+}
+
+/**
+ * Rank a fully-formed pick sequence by what the board actually looks like
+ * afterwards, by applying it to a detached copy of the game.
+ *
+ * WHY THIS EXISTS
+ *
+ * `aiSquareScore` ranks a square by the single piece standing on it
+ * (`1000 + value * 20` for an enemy). That is a reasonable first guess and it
+ * is wrong in two ways that a sweep exposes at once. It cannot see what a card
+ * catches along the way, so a line that eats three pawns scores below one that
+ * ends on a knight; and it cannot see where the card leaves the piece it
+ * moved, so the bot walks its queen onto a defended square to reach the
+ * biggest target and hands over nine points for three.
+ *
+ * `queens_rampage` measured -13.6 win-rate points for its holder because of
+ * this, at tier 7. The card is fine. The policy that fires it was not, and a
+ * policy that plays a card badly does not just lose that game: it corrupts
+ * every measurement the balance harness takes of every activated card.
+ *
+ * Simulation rather than more heuristics, because the geometry lives inside
+ * each card's own mechanic and the picker cannot see it. The copy goes through
+ * serialize/deserialize, so it shares no structure with the live game and, in
+ * particular, carries its own RNG state: a card that rolls dice during this
+ * trial does not advance the real stream and replays stay deterministic.
+ */
+function aiScoreSequence(game: NerfGame, color: Color, buffIndex: number, picks: BuffPick[]): number | null {
+  const snap = serializeGame(game);
+  const trial = deserializeGame(snap);
+  if (!trial) return null;
+  if (!activateBuff(trial, color, buffIndex, picks)) return null;
+  return aiPositionScore(trial, color);
+}
+
+/**
+ * How many alternatives the refinement pass will simulate. Each costs one
+ * serialize/deserialize round trip plus one `activateBuff`, and an activation
+ * happens at most once per turn, so this is cheap in a real game. It is
+ * bounded anyway because the win-rate harness plays tens of thousands of them.
+ */
+const AI_REFINE_CANDIDATES = 10;
+
+/**
+ * Re-pick the last square by what the board looks like afterwards, not by what
+ * is standing on the square now.
+ *
+ * The greedy sequence is kept as the incumbent and only replaced when a
+ * simulated alternative is strictly better, so this can correct a blunder but
+ * never invents a worse one. If the simulation cannot run at all (a card the
+ * trial refuses to activate) the greedy answer stands unchanged.
+ */
+function refineLastSquarePick(
+  game: NerfGame,
+  color: Color,
+  buffIndex: number,
+  picks: BuffPick[],
+  value: number,
+  lastSquareStep: number,
+  options: Square[],
+): { picks: BuffPick[]; value: number } {
+  if (lastSquareStep < 0 || options.length < 2) return { picks, value };
+  const incumbent = aiScoreSequence(game, color, buffIndex, picks);
+  if (incumbent == null) return { picks, value };
+
+  const chosen = picks[lastSquareStep]?.square;
+  let bestPicks = picks;
+  let bestScore = incumbent;
+  let tried = 0;
+  for (const sq of options) {
+    if (sq === chosen) continue;
+    if (++tried > AI_REFINE_CANDIDATES) break;
+    const alt = picks.map((p, i) => (i === lastSquareStep ? { ...p, square: sq } : p));
+    const score = aiScoreSequence(game, color, buffIndex, alt);
+    if (score != null && score > bestScore) {
+      bestScore = score;
+      bestPicks = alt;
+    }
+  }
+  if (bestPicks === picks) return { picks, value };
+
+  // The worth-firing gate downstream reads `value`, so it has to describe the
+  // sequence actually being returned. Recomputed from the enemy material the
+  // new picks land on, the same way the greedy pass counts it.
+  const opp: Color = color === "w" ? "b" : "w";
+  let newValue = 0;
+  for (const p of bestPicks) {
+    const piece = p.square !== undefined ? game.board.pieces[p.square] : null;
+    if (piece && piece.color === opp) newValue = Math.max(newValue, AI_PIECE_VALUE[piece.type]);
+  }
+  // A sweep that catches three pawns on the way and ends on an empty square is
+  // worth firing, and the landing-square rule alone would score it zero. The
+  // simulated material gain is the honest floor for it.
+  const gained = bestScore - aiPositionScore(game, color);
+  return { picks: bestPicks, value: Math.max(newValue, gained) };
+}
+
 /** Collect a full pick sequence for an activated buff without a UI. Returns
  * null when the buff currently has no valid use, plus a rough value of the
  * best target so the caller can decide whether firing now is worth it. */
@@ -2111,11 +2449,21 @@ function aiCollectPicks(
   const inst0 = game.buffs?.players[color].buffs[buffIndex];
   const def0 = inst0 && BUFF_BY_ID[inst0.id];
   const sacrifice = !!def0 && pickIsSacrifice(def0);
+  // The candidates offered at the LAST square step, kept so the refinement
+  // pass below can try the alternatives the greedy scorer passed over. Only
+  // the last step is revisited: it is where a card's geometry resolves (a
+  // sweep's endpoint, a teleport's destination), and re-searching every step
+  // would multiply out for no benefit on the one and two pick cards that make
+  // up nearly the whole library.
+  let lastSquareStep = -1;
+  let lastSquareOptions: Square[] = [];
   for (let step = 0; step < 16; step++) {
     const target = buffNextTarget(game, color, buffIndex, picks);
-    if (!target) return { picks, value };
+    if (!target) return refineLastSquarePick(game, color, buffIndex, picks, value, lastSquareStep, lastSquareOptions);
     if (target.kind === "square") {
       if (!target.squares.length) return null;
+      lastSquareStep = picks.length;
+      lastSquareOptions = target.squares;
       let best = target.squares[0];
       let bestScore = -Infinity;
       for (const sq of target.squares) {
@@ -2146,7 +2494,9 @@ function aiCollectPicks(
       picks.push({ buffIndex: best.index });
     }
   }
-  return { picks, value };
+  // The 16-step guard tripped, so the card never finished asking. Refine
+  // anyway rather than returning a different shape from the normal path.
+  return refineLastSquarePick(game, color, buffIndex, picks, value, lastSquareStep, lastSquareOptions);
 }
 
 /** Fire at most one of the bot's activated buffs, auto-picking targets.

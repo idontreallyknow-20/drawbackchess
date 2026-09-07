@@ -35,7 +35,11 @@ export function FxToggleButton({ className = "" }: { className?: string }) {
         onChange={(e) => setFxLevel(Number(e.target.value) as FxLevel)}
         aria-label="Effects intensity"
         aria-valuetext={info.label}
-        className="fx-slider w-20"
+        // 70x14. The fourth copy of this shape after /play, /friend and the
+        // settings panel: a native range paints a track box barely taller than
+        // the track, and this one is in the in-game HUD where a mis-drag costs
+        // a turn. The track paints centred in whatever height the element has.
+        className="fx-slider w-20 min-h-[44px] [@media(pointer:fine)]:min-h-0"
         list="fx-slider-ticks"
       />
       <datalist id="fx-slider-ticks">

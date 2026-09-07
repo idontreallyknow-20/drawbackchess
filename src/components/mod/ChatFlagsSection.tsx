@@ -79,7 +79,7 @@ export function ChatFlagsSection({
                   {whenShort(f.created_at)}
                 </span>
                 {f.reviewed ? (
-                  <span className="ml-auto text-[11px] text-parchment-400">reviewed</span>
+                  <span className="ml-auto text-[12px] text-parchment-400">reviewed</span>
                 ) : null}
               </div>
               <p className="mt-2 break-words text-sm text-parchment-100">{f.text}</p>

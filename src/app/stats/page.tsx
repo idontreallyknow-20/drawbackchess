@@ -27,7 +27,14 @@ export default function StatsRedirect() {
 
   return (
     <main className="min-h-screen grid place-items-center">
-      <p className="text-parchment-300/60">Redirecting…</p>
+      {/* A redirect shim still renders for a beat, and often longer than a
+          beat on a slow connection while fetchMe resolves. Without a heading
+          the route cannot be identified by anyone arriving with a screen
+          reader, and the sweep counts it as a route with no h1, which it is. */}
+      <h1 className="sr-only">Your statistics</h1>
+      <p className="text-parchment-400" role="status">
+        Redirecting…
+      </p>
     </main>
   );
 }

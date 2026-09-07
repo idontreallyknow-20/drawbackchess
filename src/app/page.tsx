@@ -121,8 +121,15 @@ function LiveNowStrip() {
   if (!lobby) return null;
   const online = lobby.players.length + lobby.anonymous;
   const games = lobby.games.length;
+  // 42px tall, two short of the minimum, purely from line-height: it is a
+  // full-width block so only the height was ever in question. `flex-col`
+  // rather than a bare `flex`, because the two spans are a stacked two-line
+  // strip and a row would have put them side by side.
   return (
-    <Link href="/lobby" className="mt-5 block text-[13px] leading-6 text-parchment-300 no-underline">
+    <Link
+      href="/lobby"
+      className="mt-5 flex min-h-[44px] flex-col justify-center text-[13px] leading-6 text-parchment-300 no-underline [@media(pointer:fine)]:min-h-0"
+    >
       <span className="block">
         <span className="font-semibold tabular-nums text-parchment-50">{online.toLocaleString()}</span>{" "}
         {online === 1 ? "player" : "players"}
@@ -273,7 +280,7 @@ function HomeFeed() {
     <div>
       <div className="flex items-baseline justify-between">
         <h2 className="text-[13px] uppercase tracking-[0.05em] text-parchment-400">Latest games</h2>
-        <Link href="/community" className="text-[12px] text-parchment-400 no-underline hover:text-parchment-100">
+        <Link href="/community" className="-my-1 inline-flex min-h-[44px] items-center text-[13px] text-parchment-400 no-underline hover:text-parchment-100 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:my-0">
           Community »
         </Link>
       </div>
@@ -302,7 +309,7 @@ function HomeFeed() {
                 <span className="text-parchment-50">{g.blackName}</span>
                 <span className="ml-1.5 font-mono tabular-nums text-parchment-300">{resultLabel(g.winner)}</span>
               </Link>
-              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-parchment-400">
+              <div className="mt-0.5 flex items-center gap-2 text-[12px] text-parchment-400">
                 <ModeBadge mode={modeOf(g.category)} compact />
                 <span>{g.rated ? "Rated" : "Casual"}</span>
                 <span>{timeAgo(g.completedAt)}</span>
@@ -321,7 +328,7 @@ function UpdatesTimeline() {
     <div className="plate p-4 sm:p-5">
       <div className="flex items-baseline justify-between">
         <h2 className="text-[13px] uppercase tracking-[0.05em] text-parchment-400">Latest updates</h2>
-        <Link href="/updates" className="text-[12px] text-parchment-400 no-underline hover:text-parchment-100">
+        <Link href="/updates" className="-my-1 inline-flex min-h-[44px] items-center text-[13px] text-parchment-400 no-underline hover:text-parchment-100 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:my-0">
           All updates »
         </Link>
       </div>
@@ -399,7 +406,7 @@ function CardOfTheDay() {
     <div className="plate p-4 sm:p-5">
       <div className="flex items-baseline justify-between">
         <h2 className="text-[13px] uppercase tracking-[0.05em] text-parchment-400">Card of the day</h2>
-        <Link href="/codex" className="text-[12px] text-parchment-400 no-underline hover:text-parchment-100">
+        <Link href="/codex" className="-my-1 inline-flex min-h-[44px] items-center text-[13px] text-parchment-400 no-underline hover:text-parchment-100 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:my-0">
           Codex »
         </Link>
       </div>
@@ -412,12 +419,12 @@ function CardOfTheDay() {
       ) : (
         <Link href={card.href} className="mt-3 block no-underline">
           <div className="flex items-center gap-3">
-            <span className={`grid h-11 w-11 shrink-0 place-items-center border tier-bg-${card.tier} tier-${card.tier}`}>
+            <span className={`grid h-[44px] w-[44px] shrink-0 place-items-center border tier-bg-${card.tier} tier-${card.tier}`}>
               <card.Icon size={22} strokeWidth={1.6} aria-hidden />
             </span>
             <span className="min-w-0">
               <span className="block truncate text-[15px] text-parchment-50">{card.name}</span>
-              <span className="block text-[12px] text-parchment-400">
+              <span className="block text-[13px] text-parchment-400">
                 {card.kind === "nerf" ? "Nerf" : "Buff"} · Tier {TIER_ROMAN[card.tier]}
               </span>
             </span>
@@ -458,17 +465,39 @@ function SiteFooter() {
 
   return (
     <footer className="mx-auto mt-12 w-full max-w-[1300px] px-3 pb-8 sm:px-5">
-      <div className="flex flex-col gap-3 border-t border-[color:var(--edge)] pt-4 text-[12px] text-parchment-400 sm:flex-row sm:items-center sm:justify-between">
-        <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-4 gap-y-1">
+      {/* This is a local copy of the site footer, and it had drifted below the
+          shared one in components/SiteFooter.tsx: 12px links with no tap
+          target, where the shared footer is 13px with 44px targets. Footer
+          links are nav links, not captions, so they take the same treatment
+          here. Height comes from a min-height that relaxes behind
+          (pointer: fine), so the desktop row keeps its density. */}
+      <div className="flex flex-col gap-3 border-t border-[color:var(--edge)] pt-4 text-[13px] text-parchment-400 sm:flex-row sm:items-center sm:justify-between">
+        {/* Height was fixed here already; WIDTH was not, so "FAQ" was a
+            24.7px-wide target that happened to be 44px tall. The shared footer
+            solved this with px-3 and this copy never picked it up.
+            The padding cannot come out of the existing 16px gap without the
+            neighbouring hit areas overlapping (12px each side into a 16px gap),
+            and no padding that fits inside that gap gets a 24.7px word to 44.
+            So on a coarse pointer the links get their padding and the gap
+            shrinks to compensate, and on a fine pointer both revert exactly to
+            what this footer looked like before. */}
+        <nav
+          aria-label="Footer"
+          className="flex flex-wrap items-center gap-x-1 gap-y-1 [@media(pointer:fine)]:gap-x-4"
+        >
           {footerLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="no-underline transition-colors hover:text-parchment-100">
+            <Link
+              key={link.href}
+              href={link.href}
+              className="-my-1 inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-3 no-underline transition-colors hover:text-parchment-100 [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:min-w-0 [@media(pointer:fine)]:px-0"
+            >
               {link.label}
             </Link>
           ))}
         </nav>
         <SocialsRow label="" className="" variant="quiet" />
       </div>
-      <div className="mt-2 flex items-center justify-between text-[11px] text-parchment-500">
+      <div className="mt-2 flex items-center justify-between text-[12px] text-parchment-500">
         <span>Nerf Chess</span>
         <BuildVersionLabel />
       </div>
@@ -492,7 +521,7 @@ function BuildVersionLabel() {
   const version = process.env.NEXT_PUBLIC_BUILD_VERSION ?? "";
   if (!isModerator || !version) return null;
   return (
-    <span className="font-mono text-[11px] opacity-70" title="Deployed version">
+    <span className="font-mono text-[12px] opacity-70" title="Deployed version">
       {version}
     </span>
   );

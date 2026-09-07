@@ -41,7 +41,7 @@ function HumanStats() {
       </div>
     );
   }
-  if (!stats) return <div className="mt-8 text-parchment-300/60">Loading…</div>;
+  if (!stats) return <div className="mt-8 text-parchment-400">Loading…</div>;
 
   const h = stats.humans;
 

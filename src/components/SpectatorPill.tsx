@@ -51,7 +51,7 @@ export function SpectatorPill({ n, names }: { n: number; names: string[] }) {
         aria-expanded={open}
         aria-label={`${n} watching`}
         title={`${n} watching`}
-        className="inline-flex items-center gap-1.5 border border-coral/40 bg-coral/10 px-2 py-1 text-[10px] text-coral-glow transition-colors hover:bg-coral/15"
+        className="inline-flex items-center gap-1.5 border border-coral/40 bg-coral/10 px-2 py-1 text-[13px] text-coral-glow transition-colors hover:bg-coral/15"
       >
         <Eye size={13} aria-hidden />
         <span className="tabular-nums">{n}</span>

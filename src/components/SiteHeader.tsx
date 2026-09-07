@@ -48,6 +48,9 @@ const PLAY_MENU_LINKS: NavMenuItem[] = [
   { href: "/lobby", label: "Lobby" },
   { href: "/lobby?tab=friends", label: "Challenge a friend" },
   { href: "/play", label: "Practice vs computer" },
+  // The one surface that works with nobody else online, so it belongs beside
+  // the ways of finding an opponent rather than buried under Community.
+  { href: "/puzzles", label: "Daily puzzle" },
   { href: "/tournaments", label: "Tournaments" },
 ];
 
@@ -99,7 +102,9 @@ function sectionForPath(pathname: string | null): string | null {
     pathname === "/play" ||
     pathname.startsWith("/play/") ||
     pathname === "/friend" ||
-    pathname.startsWith("/friend/")
+    pathname.startsWith("/friend/") ||
+    pathname === "/puzzles" ||
+    pathname.startsWith("/puzzles/")
   )
     return "/lobby";
   if (pathname === "/leaderboard" || pathname.startsWith("/leaderboard/")) return "/leaderboard";
@@ -125,7 +130,7 @@ function timeAgo(at: number): string {
 function Badge({ n }: { n: number }) {
   if (n <= 0) return null;
   return (
-    <span className="absolute -right-1 -top-1 grid min-w-[17px] place-items-center bg-oxblood-glow px-1 font-mono text-[11px] leading-[17px] text-white tabular-nums">
+    <span className="absolute -right-1 -top-1 grid min-w-[18px] place-items-center bg-oxblood-glow px-1 font-mono text-[12px] leading-[18px] text-white tabular-nums">
       {n > 9 ? "9+" : n}
     </span>
   );
@@ -278,8 +283,15 @@ export function SiteHeader({ active }: { active?: string }) {
     window.location.assign("/");
   };
 
+  // shrink-0 is load-bearing, not decoration. `w-[44px]` is a flex BASIS, and
+  // these sit in a flex row, so they were shrinkable: with a long generated
+  // guest username ("GuestSomethingSomething") the right cluster ran out of
+  // room at 1024 and every icon button was squeezed to 43.2px. That is an
+  // intermittent 44px violation that only reproduces on some names, which is
+  // the worst kind to leave in. The row now gives way at the account name
+  // (min-w-0 + truncate below) instead of at the targets.
   const iconButton =
-    "nav-icon-btn relative grid h-11 w-11 place-items-center text-parchment-400 hover:bg-[color:var(--bg-hover)] hover:text-parchment-50";
+    "nav-icon-btn relative grid h-[44px] w-[44px] shrink-0 place-items-center text-parchment-400 hover:bg-[color:var(--bg-hover)] hover:text-parchment-50";
 
   // Lichess's tall header: 60px, the wordmark and nav left, the icon cluster
   // right, one hairline underneath.
@@ -289,7 +301,14 @@ export function SiteHeader({ active }: { active?: string }) {
         {/* Mobile hamburger, left of the wordmark: opens every destination on
             phones and tablets, where the inline nav below is hidden. */}
         <MobileNavMenu align="left" hideAt="md" />
-        <Logo />
+        {/* The wordmark is a link, and it is the ONE control that appears on
+            every route, so its hit area is the single most repeated target on
+            the site. The mark itself is 34px tall, which left the link 34px on
+            a finger. A min-height (not padding) lifts it to the 44px floor
+            without moving the mark or changing the 48/60px bar height, and it
+            steps back down once there is a real pointer. `(pointer: fine)`,
+            never `sm:`: a 1024px tablet is a touch device. */}
+        <Logo className="min-h-[44px] [@media(pointer:fine)]:min-h-0" />
         <div className="ml-2 hidden items-center font-body md:flex">
           {NAV_LINKS.map((link) =>
             link.menu ? (
@@ -311,8 +330,16 @@ export function SiteHeader({ active }: { active?: string }) {
                       <Link
                         key={item.href}
                         href={item.href}
+                        // These rows measured 35px tall. The route sweep never
+                        // sees them (they only exist while the parent is
+                        // hovered or focused), and they are hidden below `md`,
+                        // which is exactly what made them easy to miss: the
+                        // band where they ARE the navigation, 768 to 1024, is
+                        // tablet, and a tablet is a COARSE pointer. So the
+                        // floor applies here and the step-down is
+                        // `(pointer: fine)`, not another width query.
                         className={
-                          "block px-4 py-2 text-[14px] transition-colors hover:bg-[color:var(--bg-hover)] " +
+                          "flex min-h-[44px] items-center px-4 py-2 text-[14px] transition-colors hover:bg-[color:var(--bg-hover)] [@media(pointer:fine)]:min-h-0 " +
                           (item.className ?? "text-parchment-200 hover:text-parchment-50")
                         }
                       >
@@ -377,7 +404,7 @@ export function SiteHeader({ active }: { active?: string }) {
             </button>
             {menu === "challenges" && (
               <div className="absolute right-0 top-full z-40 mt-2 w-80 max-w-[calc(100vw-1.5rem)] site-nav-pop shadow-xl">
-                <div className="border-b border-[color:var(--edge)] px-4 py-2.5 text-[11px] text-parchment-400">
+                <div className="border-b border-[color:var(--edge)] px-4 py-2.5 text-[12px] text-parchment-400">
                   Challenges
                 </div>
                 {challenges.length === 0 ? (
@@ -391,7 +418,7 @@ export function SiteHeader({ active }: { active?: string }) {
                             name={challenge.from}
                             className="text-sm text-parchment-100 hover:text-gold-leaf"
                           />
-                          <div className="text-[11px] text-parchment-400">
+                          <div className="text-[12px] text-parchment-400">
                             {challenge.rated ? "Rated" : "Casual"} · {clockLabel(challenge.timeSec, challenge.incrementSec)} · {timeAgo(challenge.at)}
                           </div>
                         </div>
@@ -433,9 +460,12 @@ export function SiteHeader({ active }: { active?: string }) {
             {menu === "bell" && (
               <div className="absolute right-0 top-full z-40 mt-2 w-80 max-w-[calc(100vw-1.5rem)] site-nav-pop shadow-xl">
                 <div className="flex items-center justify-between border-b border-[color:var(--edge)] px-4 py-2.5">
-                  <span className="text-[11px] text-parchment-400">Notifications</span>
+                  <span className="text-[12px] text-parchment-400">Notifications</span>
                   {unread > 0 && (
-                    <button onClick={markAllRead} className="text-xs text-parchment-400 hover:text-parchment-100">
+                    <button
+                      onClick={markAllRead}
+                      className="-my-2 inline-flex min-h-[44px] items-center text-[13px] text-parchment-400 hover:text-parchment-100 [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
+                    >
                       Mark all read
                     </button>
                   )}
@@ -469,7 +499,7 @@ export function SiteHeader({ active }: { active?: string }) {
                           <div className="text-sm leading-snug text-parchment-100">
                             <NotificationText text={n.text} actorName={n.actorName} />
                           </div>
-                          <div className="mt-0.5 text-[11px] text-parchment-400">{timeAgo(n.at)}</div>
+                          <div className="mt-0.5 text-[12px] text-parchment-400">{timeAgo(n.at)}</div>
                         </div>
                       </li>
                     ))}
@@ -492,7 +522,7 @@ export function SiteHeader({ active }: { active?: string }) {
         ) : !user ? (
           <Link
             href="/login"
-            className="ml-1 px-3 py-2 text-[13px] uppercase tracking-[0.05em] text-parchment-300 no-underline transition-colors hover:text-parchment-50"
+            className="ml-1 inline-flex min-h-[44px] items-center px-3 text-[13px] font-semibold text-parchment-300 no-underline transition-colors hover:text-parchment-50 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:py-2"
           >
             Sign in
           </Link>
@@ -504,6 +534,10 @@ export function SiteHeader({ active }: { active?: string }) {
                 onClick={() => toggle("profile")}
                 aria-label={user.isGuest ? "Guest account menu" : "Account menu"}
                 title={user.isGuest ? "Guest account menu" : "Account menu"}
+                // min-w-[44px] stays: on a phone the name is hidden and the
+                // avatar alone is 38px wide, so the floor has to come from
+                // here. The button may shrink TO 44 but never past it, and the
+                // name inside truncates to let it.
                 className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 px-2 py-1.5 text-[14px] text-parchment-200 transition-colors hover:bg-[color:var(--bg-hover)] hover:text-parchment-50"
                 aria-haspopup="menu"
                 aria-expanded={menu === "profile"}
@@ -512,11 +546,13 @@ export function SiteHeader({ active }: { active?: string }) {
                     the wordmark; the avatar alone opens the menu there. Guests
                     show a plain "Sign in" affordance beside the name so the
                     header reads as signed-out, never as a registered account. */}
-                <span className="hidden items-center gap-1.5 sm:inline-flex">
+                <span className="hidden min-w-0 items-center gap-1.5 sm:inline-flex">
                   {user.isGuest && (
-                    <span className="text-[11px] text-parchment-400">Guest</span>
+                    <span className="shrink-0 text-[13px] text-parchment-400">Guest</span>
                   )}
-                  <span className={user.isGuest ? "text-parchment-200" : undefined}>{user.username}</span>
+                  <span className={"truncate " + (user.isGuest ? "text-parchment-200" : "")}>
+                    {user.username}
+                  </span>
                 </span>
                 <PlayerAvatar name={user.username} avatar={user.avatar} size={24} />
               </button>
@@ -529,7 +565,7 @@ export function SiteHeader({ active }: { active?: string }) {
                   <span aria-hidden className="hidden text-parchment-500 sm:inline">·</span>
                   <Link
                     href="/login"
-                    className="hidden px-2 py-1.5 text-[13px] uppercase tracking-[0.05em] text-gold-leaf no-underline transition-colors hover:text-parchment-50 sm:inline-flex"
+                    className="hidden min-h-[44px] items-center px-2 text-[13px] font-semibold text-gold-leaf no-underline transition-colors hover:text-parchment-50 sm:inline-flex [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:py-1.5"
                   >
                     Sign in
                   </Link>
@@ -537,10 +573,14 @@ export function SiteHeader({ active }: { active?: string }) {
               )}
             </div>
             {menu === "profile" && (
-              <div className="absolute right-0 top-full z-40 mt-2 w-56 site-nav-pop py-1 shadow-xl">
+              // max-w alongside the fixed width for the same reason the two
+              // w-80 dropdowns above carry one: html,body{overflow-x:clip}
+              // means an over-wide popover is silently clipped, not scrollable,
+              // so at 320px the right-anchored menu would lose its left edge.
+              <div className="absolute right-0 top-full z-40 mt-2 w-56 max-w-[calc(100vw-1.5rem)] site-nav-pop py-1 shadow-xl">
                 {user.isGuest && (
                   <>
-                    <div className="px-4 pb-1 pt-2 text-[11px] leading-snug text-parchment-400">
+                    <div className="px-4 pb-1 pt-2 text-[12px] leading-snug text-parchment-400">
                       You are playing as a guest. Register to keep this name and rating on any
                       device.
                     </div>
@@ -650,7 +690,7 @@ export function CompactSiteHeader({ status }: { status?: React.ReactNode }) {
   return (
     <nav className="site-nav relative z-[60] flex min-h-[44px] items-center gap-2 px-2 sm:min-h-[60px] sm:gap-3 sm:px-5">
       <MobileNavMenu align="left" hideAt="none" />
-      <Logo />
+      <Logo className="min-h-[44px] [@media(pointer:fine)]:min-h-0" />
       {status && (
         <div className="ml-auto flex min-w-0 items-center gap-x-3 text-[12px] text-parchment-400">
           {status}
@@ -750,7 +790,9 @@ function MenuItem({ icon, label, onClick }: { icon: React.ReactNode; label: stri
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-[40px] w-full items-center gap-2.5 px-4 py-2 text-left text-[14px] text-parchment-200 transition-colors hover:bg-[color:var(--bg-hover)] hover:text-parchment-50"
+      // 44px on a finger, the dense 40px row once there is a pointer. Width is
+      // not a pointer: `sm:` here would hand a tablet the 40px row.
+      className="flex min-h-[44px] w-full items-center gap-2.5 px-4 py-2 text-left text-[14px] text-parchment-200 transition-colors hover:bg-[color:var(--bg-hover)] hover:text-parchment-50 [@media(pointer:fine)]:min-h-[40px]"
     >
       <span className="text-parchment-400">{icon}</span>
       {label}

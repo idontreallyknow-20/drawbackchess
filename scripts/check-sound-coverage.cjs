@@ -71,6 +71,59 @@ if (unhandled.length) {
   );
 }
 
+// Every exported cue must be gated. A sound that plays through the master
+// switch (or through mute, or at full level while the volume slider sits at
+// 10%) is the single easiest bug to introduce here: you add a voice, you test
+// it, it works, and nobody notices it ignores Settings until a player in a
+// quiet room gets a check alarm at full blast. knock(), tone() and
+// playSample() all apply isMuted() and getVolume() themselves, so the check is
+// that the function body reaches one of the pref gates before making a sound:
+// `soundPrefs.enabled` (game voices), `fx()` (card/effect voices, which folds
+// in the effects pref and mute), or a bare `isMuted()` for the handful that
+// build their own audio graph.
+const GATE = /soundPrefs\.enabled|\bfx\(\)|isMuted\(\)/;
+// Not cues: helpers and configuration that happen to be exported.
+const NOT_A_CUE = new Set(["playSample", "playPassiveCue"]);
+const ungated = [];
+let cueCount = 0;
+const fnRe = /export function (play\w+)\s*\(/g;
+let m;
+while ((m = fnRe.exec(soundsSrc))) {
+  const name = m[1];
+  if (NOT_A_CUE.has(name)) continue;
+  cueCount++;
+  // Body = from the opening brace to the next top-level "\n}" line.
+  const from = soundsSrc.indexOf("{", m.index + m[0].length);
+  const end = soundsSrc.indexOf("\n}", from);
+  const body = soundsSrc.slice(from, end < 0 ? soundsSrc.length : end);
+  // A cue that only delegates to other exported cues inherits their gates.
+  const delegatesOnly = !/\b(knock|tone)\(/.test(body) && /\bplay[A-Z]\w*\(/.test(body);
+  if (!GATE.test(body) && !delegatesOnly) ungated.push(name);
+}
+if (ungated.length) {
+  fail(
+    `these exported sounds never check the sound prefs and would play with sound off: ` +
+      `${ungated.join(", ")}. Start the body with a soundPrefs.enabled / fx() guard.`,
+  );
+}
+
+// playPassiveCue is the one dispatcher, and it must still gate before playing.
+if (!/function playPassiveCue[\s\S]{0,200}?fx\(\)/.test(soundsSrc)) {
+  fail("playPassiveCue no longer gates on fx(); passive cues would ignore the sound settings");
+}
+
+// The volume setting is applied in exactly three places (knock, tone,
+// playSample). A cue that multiplies by getVolume() itself squares the slider,
+// which is how the tonal half of the set used to drift out of balance with the
+// percussive half.
+const doubledVolume = soundsSrc.match(/master:[^,}]*getVolume\(\)/g) || [];
+if (doubledVolume.length) {
+  fail(
+    `${doubledVolume.length} cue(s) scale a master gain by getVolume() by hand; ` +
+      `knock()/tone() already do it, so this squares the volume setting.`,
+  );
+}
+
 // Confirm the spawn actually calls the dispatcher (the wiring, not just the map).
 if (!/playPassiveCue\(/.test(fs.readFileSync(path.join(ROOT, "src/components/effects/passive/PassiveSpawn.tsx"), "utf8"))) {
   fail("PassiveSpawn.tsx does not call playPassiveCue; passive cues would never fire");
@@ -85,3 +138,7 @@ console.log(
     `${handled.size} families, all wired to a dispatcher voice.`,
 );
 console.log("  coverage by family: " + summary);
+console.log(
+  `  gate audit: ${cueCount} exported cues, all behind the sound prefs; ` +
+    `no cue double-applies the volume setting.`,
+);

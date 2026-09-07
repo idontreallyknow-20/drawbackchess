@@ -45,7 +45,7 @@ function SeatBadge({ kind }: { kind: SeatKind }) {
   if (kind === "member") return null;
   if (kind === "house")
     return (
-      <span className="shrink-0 rounded-none border border-bruise-glow/40 px-1.5 py-px text-[11px] text-bruise-glow">
+      <span className="shrink-0 rounded-none border border-bruise-glow/40 px-1.5 py-px text-[12px] text-bruise-glow">
         house bot
       </span>
     );
@@ -183,7 +183,7 @@ export function GamesSection() {
           <div className="space-y-2">
             {games.map((g, i) => (
               <div key={g.id} className={`plate p-4 ${i === 0 ? "border border-[color:var(--edge-strong)]" : ""}`}>
-                {i === 0 && <div className="text-[11px] text-parchment-50">Last human game</div>}
+                {i === 0 && <div className="text-[12px] text-parchment-50">Last human game</div>}
                 <div className={`flex flex-wrap items-center gap-2 text-sm ${i === 0 ? "mt-1" : ""}`}>
                   <Seat seat={g.white} />
                   <span className="font-mono tabular-nums text-parchment-200">
@@ -222,7 +222,7 @@ export function GamesSection() {
                     </ModLinkButton>
                   ) : (
                     <span
-                      className="ml-auto text-parchment-400/60"
+                      className="ml-auto text-parchment-500"
                       title="This game was archived without its move list."
                     >
                       no moves stored

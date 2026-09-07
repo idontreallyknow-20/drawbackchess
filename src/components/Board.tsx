@@ -6,6 +6,7 @@ import React, {
   type CSSProperties,
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -49,7 +50,6 @@ import {
   type SigAnchor,
   type SigOrdering,
   type SignatureConfig,
-  SignatureOverlay,
   RootClaws,
   SnowflakeGlyph,
   StunSwirl,
@@ -60,7 +60,6 @@ import { PLUGIN_ID_SET, PLUGIN_SIGNATURES } from "./effects/sigPlugins";
 import { BRAINROT_MASCOT_IDS, SidelineMascot } from "./effects/SidelineMascot";
 import { ExpansionZone } from "./effects/ExpansionZone";
 import {
-  GenBurst,
   genSignatureConfig,
   runGenSelfCheck,
   type GenConfig,
@@ -126,7 +125,11 @@ import { EdgeAura, EmpowerShine, NerfAura, tierRgb } from "./effects/EmpowerAura
 import type { MotifMark } from "./effects/fxZones";
 import { EffectPopover, type EffectPopoverContent } from "./EffectPopover";
 import { StatusChip, StatusFrame } from "./board/StatusGlyph";
-import { statusHeadline, type BoardStatus } from "@/lib/boardStatus";
+// The signature-VFX "which cut" prop is called `role` in the effects library,
+// which collides with the ARIA attribute of the same name; these two thin
+// wrappers rename it to `cut` at Board's boundary (see SignatureCut.tsx).
+import { GenBurstCut, SignatureCut } from "./board/SignatureCut";
+import { BOARD_STATUS, statusHeadline, type BoardStatus } from "@/lib/boardStatus";
 import { FX_LEVELS, useFxHidden, useFxLevel } from "@/lib/fxToggle";
 import { fxDurationScale, motionOff } from "@/lib/settings";
 import { VfxLayer } from "./effects/vfx/VfxLayer";
@@ -193,11 +196,13 @@ import {
   playExplosion,
   playExtinction,
   playFreeze,
+  playIllegal,
   playLightning,
   playMassFreeze,
   playNova,
   playPetrifiedForest,
   playPetrify,
+  playPremoveSet,
   playRampage,
   playSelect,
   playShades,
@@ -375,7 +380,10 @@ function PlayAnnouncement({ name, tier, outcome }: { name: string; tier: number;
             {name}
           </span>
           <span
-            className={`shrink-0 rounded-[1px] border px-1.5 py-px font-display font-bold tier-bg-${tier} tier-${tier} ${big ? "text-[11px]" : "text-[9px]"}`}
+            // 12px is the caption floor in docs/design-system.md §3; this chip
+            // sat at 9px (and 11px on the big cut), which is unreadable at
+            // arm's length and below the contract.
+            className={`shrink-0 rounded-[1px] border px-1.5 py-px font-display font-bold tier-bg-${tier} tier-${tier} ${big ? "text-[13px]" : "text-[12px]"}`}
           >
             {TIER_ROMAN[tier]}
           </span>
@@ -813,7 +821,23 @@ interface DragState {
   // before the first move/rAF repositions it.
   startX: number;
   startY: number;
+  /** How far the pointer must travel before this counts as a DRAG rather than
+   *  a press. Until then no ghost is mounted and the origin square does not
+   *  fade, so a click that wobbles two pixels still reads as a click. */
+  threshold: number;
+  /** True once that distance has been covered. */
+  live: boolean;
 }
+
+/** Chessground's `draggable.distance`. Three pixels is enough to tell a click
+ *  from a drag on a mouse and small enough that a real drag feels immediate. */
+const DRAG_DISTANCE_PX = 3;
+/** Touch gets a much larger one, which is how "tap-tap" becomes the default
+ *  gesture on a phone: a finger never lands still, and a tap that moves four
+ *  pixels must not lift the piece. A deliberate finger drag still clears it.
+ *  (Lichess reaches the same place via `stats.dragged` defaulting false on
+ *  touch, so the distance is never auto-zeroed there.) */
+const DRAG_DISTANCE_TOUCH_PX = 10;
 
 type RightClickMark = 1 | 2 | 3 | 4;
 
@@ -1434,6 +1458,41 @@ for (let r = 7; r >= 0; r--) {
 }
 const ORDERED_SQUARES_BLACK = [...ORDERED_SQUARES_WHITE].reverse();
 
+// --- Words, for the keyboard layer and the live region ----------------------
+// Everything a screen reader hears about the board is spelled here, so the
+// square labels, the per-cell descriptions and the announcements can never
+// drift apart.
+
+/** Algebraic name of every square, precomputed. */
+const SQUARE_NAME: string[] = [];
+for (let sq = 0; sq < 64; sq++) SQUARE_NAME.push("abcdefgh"[FILE(sq)] + (RANK(sq) + 1));
+
+const PIECE_WORD: Record<PieceType, string> = {
+  p: "pawn",
+  n: "knight",
+  b: "bishop",
+  r: "rook",
+  q: "queen",
+  k: "king",
+};
+
+const COLOR_WORD: Record<Color, string> = { w: "white", b: "black" };
+
+/** "white knight" / "empty". */
+function pieceWords(piece: { type: PieceType; color: Color } | null | undefined): string {
+  return piece ? `${COLOR_WORD[piece.color]} ${PIECE_WORD[piece.type]}` : "empty";
+}
+
+/** The eight visual ranks, top of the screen first: the rows of the ARIA grid.
+ *  Same source of truth as the flat render order, sliced. */
+function rankRowsOf(ordered: Square[]): Square[][] {
+  const rows: Square[][] = [];
+  for (let i = 0; i < 64; i += 8) rows.push(ordered.slice(i, i + 8));
+  return rows;
+}
+const RANK_ROWS_WHITE = rankRowsOf(ORDERED_SQUARES_WHITE);
+const RANK_ROWS_BLACK = rankRowsOf(ORDERED_SQUARES_BLACK);
+
 /** Wall-clock fallback for input timing when an event carries no timeStamp. */
 function nowMs(): number {
   return Date.now();
@@ -1492,11 +1551,19 @@ interface SquareEnv {
   onClosePopover: (sq: Square) => void;
   onPickSquare: ((sq: Square) => void) | undefined;
   setEffectPopoverSq: React.Dispatch<React.SetStateAction<Square | null>>;
+  /** A square that takes DOM focus becomes the keyboard cursor, so clicking a
+   *  square and then using the arrows continues from where the eye already is. */
+  onSquareFocus: (sq: Square) => void;
+  /** Per-board id prefix for each cell's aria-describedby target. Boards can
+   *  share a page (TV, the profile preview), so the ids cannot be global. */
+  descPrefix: string;
 }
 
 interface BoardSquareProps {
   sq: Square;
   isSelected: boolean;
+  /** The one square in the tab order (roving tabindex, see the grid below). */
+  isCursor: boolean;
   isHover: boolean;
   isDragging: boolean;
   isInspect: boolean;
@@ -1520,6 +1587,7 @@ interface BoardSquareProps {
 const BoardSquare = React.memo(function BoardSquare({
   sq,
   isSelected,
+  isCursor,
   isHover,
   isDragging,
   isInspect,
@@ -1583,6 +1651,8 @@ const BoardSquare = React.memo(function BoardSquare({
     onClosePopover,
     onPickSquare,
     setEffectPopoverSq,
+    onSquareFocus,
+    descPrefix,
   } = env;
             const f = FILE(sq), r = RANK(sq);
             const isLight = (f + r) % 2 === 1;
@@ -1673,7 +1743,68 @@ const BoardSquare = React.memo(function BoardSquare({
               highlightLastMove && (lastFrom || lastTo) ? "sq-last" : "",
               checkSquares?.includes(sq) ? "sq-check" : "",
               isHover && (isTarget || isCastleHint) ? "sq-hover" : "",
+              // The keyboard cursor's focus ring. Inset rather than offset:
+              // an outward ring on a gridcell would sit on top of its
+              // neighbours. Accent, 2px, per docs/design-system.md section 10.
+              "outline-none focus-visible:outline focus-visible:outline-2",
+              "focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--accent)]",
             ].join(" ");
+
+            // What a screen reader is told about this square beyond its name.
+            //
+            // A square in this game can be frozen, warded, barred, doomed with
+            // a turn count, chained, mined or holding a walnut, and a player
+            // who cannot hear that cannot play: naming only the piece would be
+            // an accessible board that is still unplayable. So every status
+            // the square already paints is spelled out here, in the same
+            // vocabulary the visual key uses (BOARD_STATUS labels), which is
+            // what keeps the spoken board and the drawn board saying the same
+            // thing.
+            //
+            // The NAME itself (aria-label) is deliberately left as "square e4":
+            // it is the handle the e2e suite and the drag-hover lookup address
+            // squares by. This description is what carries the state, and a
+            // screen reader reads it straight after the name.
+            const doomTurns = doomMarks.get(sq);
+            const effectLeft = effectTurns[sq];
+            const trapMark = trapMarks.get(sq);
+            const descText = [
+              pieceWords(piece),
+              // Piece state.
+              frozenSquares.has(sq) ? BOARD_STATUS.frozen.label : "",
+              stunBySquare.has(sq) ? "stunned" : "",
+              jailed ? "chained" : "",
+              lockedSquares.has(sq) ? BOARD_STATUS.restricted.label : "",
+              pawnClampSquares.has(sq) ? "held back" : "",
+              !!piece && (shieldedSquares.has(sq) || kingSafeSquares.has(sq))
+                ? BOARD_STATUS.shielded.label
+                : "",
+              amazonSquares.has(sq) || moveAsSquares.has(sq) ? BOARD_STATUS.empowered.label : "",
+              doomTurns != null
+                ? `${BOARD_STATUS.doomed.label}, ${doomTurns} ${doomTurns === 1 ? "turn" : "turns"}`
+                : "",
+              boundMark ? `carries ${boundMark.name}` : "",
+              // Square state.
+              wardSquares.has(sq) ? BOARD_STATUS.warded.label : "",
+              banned || barredSquares.has(sq) ? BOARD_STATUS.barred.label : "",
+              underwater ? "flooded" : "",
+              trapMark ? `${BOARD_STATUS.trap.label}, ${trapMark.name}` : "",
+              walnutSquares.has(sq) ? "walnut" : "",
+              bananaSquares.has(sq) ? "banana peel" : "",
+              strikeSquares.has(sq) ? "just struck" : "",
+              effectLeft != null ? `${effectLeft} ${effectLeft === 1 ? "turn" : "turns"} left` : "",
+              // What you can do with it.
+              isSelected ? "selected" : "",
+              isTarget ? (isCapture ? "capture" : "move available") : "",
+              isCastleHint ? "castling rook" : "",
+              isPickTarget ? "card target" : "",
+              isPremoveSquare ? "premove" : "",
+              checkSquares?.includes(sq) ? "in check" : "",
+              highlightLastMove && (lastFrom || lastTo) ? "last move" : "",
+            ]
+              .filter(Boolean)
+              .join(", ");
+            const descId = `${descPrefix}${sq}`;
 
             return (
               <div
@@ -1712,12 +1843,27 @@ const BoardSquare = React.memo(function BoardSquare({
                     ? isPickTarget
                       ? "pointer"
                       : "default"
+                    : // The square the piece was lifted from shows the closed
+                      // hand for as long as the drag lasts. `.dragging` carries
+                      // the same cursor, but it sits on a pointer-events-none
+                      // piece where a cursor rule can never apply.
+                    isDragging
+                    ? "grabbing"
                     : piece && piece.color === myColor && !disabled
                     ? "grab"
                     : "default",
                 }}
                 role="gridcell"
                 aria-label={`square ${"abcdefgh"[f]}${r + 1}`}
+                aria-describedby={descId}
+                aria-selected={isSelected || undefined}
+                // Roving tabindex: exactly one square is a tab stop, and the
+                // arrow keys move both the cursor and the focus between them
+                // (see handleGridKeyDown). 64 tab stops would be the other,
+                // wrong, way to make a grid reachable.
+                tabIndex={isCursor ? 0 : -1}
+                data-sq={sq}
+                onFocus={() => onSquareFocus(sq)}
                 // Desktop hover raises the styled effect popover in place of the
                 // old browser title (only when the square explains something and
                 // no drag is in flight). Pointer-leave dismisses it; pointerdown
@@ -1736,6 +1882,12 @@ const BoardSquare = React.memo(function BoardSquare({
                     : undefined
                 }
               >
+                {/* The square's description, read after its name. sr-only is
+                    absolutely positioned and 1px, so it costs the layout
+                    nothing. */}
+                <span id={descId} className="sr-only">
+                  {descText}
+                </span>
                 {underwater && (
                   <div className="absolute inset-0 bg-cyan-500/25 mix-blend-screen pointer-events-none" />
                 )}
@@ -2023,9 +2175,9 @@ const BoardSquare = React.memo(function BoardSquare({
                       >
                         <span className="absolute inset-0 z-30 block" style={leadShift}>
                           {isGenConfig(sigCfg) ? (
-                            <GenBurst config={sigCfg} role={sigRole} delayMs={delay} />
+                            <GenBurstCut config={sigCfg} cut={sigRole} delayMs={delay} />
                           ) : (
-                            <SignatureOverlay visual={sigCfg.visual} role={sigRole} delayMs={delay} />
+                            <SignatureCut visual={sigCfg.visual} cut={sigRole} delayMs={delay} />
                           )}
                         </span>
                       </span>
@@ -2065,9 +2217,9 @@ const BoardSquare = React.memo(function BoardSquare({
                           } as CSSProperties
                         }
                       >
-                        <SignatureOverlay
+                        <SignatureCut
                           visual={sigOf(zoneSig.sig)!.visual}
-                          role={zRole}
+                          cut={zRole}
                           delayMs={zoneSig.order * sigOf(zoneSig.sig)!.staggerMs}
                         />
                       </span>
@@ -2115,7 +2267,12 @@ const BoardSquare = React.memo(function BoardSquare({
                     }
                     className={
                       "pointer-events-none " +
-                      (isDragging ? "opacity-30 " : "") +
+                      // The origin square's piece fades while its copy rides
+                      // the cursor. This used to be a local `opacity-30`,
+                      // which left the shared `.dragging` rule in globals.css
+                      // defined and applied nowhere; both said the same thing,
+                      // so the class wins and the value lives in one place.
+                      (isDragging ? "dragging " : "") +
                       // The piece itself wears its live effect (owner: "a mark
                       // should actually change the piece"): frostbitten when
                       // frozen, gilded when shielded, deathly when doomed —
@@ -2291,6 +2448,28 @@ export function Board({
   const [promotionMove, setPromotionMove] = useState<Move[] | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [hoverSq, setHoverSq] = useState<Square | null>(null);
+  // --- Keyboard play -------------------------------------------------------
+  // The square the keyboard cursor sits on, and the one square in the tab
+  // order (see the roving tabindex on the grid). Seeded once, lazily, at the
+  // viewer's own king so the first Tab onto the board lands somewhere
+  // meaningful rather than in a corner; after that it only moves where the
+  // player puts it.
+  const [cursor, setCursor] = useState<Square>(
+    () => findKing(board, myColor) ?? (myColor === "w" ? SQ(4, 0) : SQ(4, 7)),
+  );
+  // The live region under the board. `n` alternates a trailing space onto the
+  // rendered text so that repeating the SAME message (two refused targets in a
+  // row) is still a content change and still gets announced.
+  const [announcement, setAnnouncement] = useState<{ text: string; n: number }>({
+    text: "",
+    n: 0,
+  });
+  const announce = useCallback((text: string) => {
+    setAnnouncement((prev) => ({ text, n: prev.n + 1 }));
+  }, []);
+  // Per-board id prefix for the cells' aria-describedby targets: two boards can
+  // share a page (TV, the profile game preview), so these cannot be global.
+  const descPrefix = `${useId()}sq`;
   // Advertise an in-flight piece drag to interested overlays (the draft panel
   // defers its forced reopen until the drag lands) without threading a prop
   // through every host: a body dataset flag, cleared on unmount for safety.
@@ -3135,6 +3314,10 @@ export function Board({
   }, [selected, movesFrom]);
 
   const orderedSquares = orientation === "w" ? ORDERED_SQUARES_WHITE : ORDERED_SQUARES_BLACK;
+  // The same order, sliced into the eight visual ranks the ARIA grid's rows
+  // need. Precomputed per orientation at module scope: this is on the render
+  // path of a 64-cell board.
+  const rankRows = orientation === "w" ? RANK_ROWS_WHITE : RANK_ROWS_BLACK;
   const bannedSquares = useMemo(() => new Set(visual?.bannedSquares ?? []), [visual?.bannedSquares]);
   const waterSquares = useMemo(() => new Set(visual?.waterSquares ?? []), [visual?.waterSquares]);
   const frozenSquares = useMemo(() => new Set(visual?.frozenSquares ?? []), [visual?.frozenSquares]);
@@ -3768,6 +3951,7 @@ export function Board({
         );
         if (premoveMode || autoQueen || capturesKing) {
           const q = candidates.find((c) => c.promotion === "q") ?? candidates[0];
+          if (premoveMode) playPremoveSet();
           onMove(q);
           setSelected(null);
           return true;
@@ -3775,6 +3959,7 @@ export function Board({
         setPromotionMove(candidates);
         return true;
       }
+      if (premoveMode) playPremoveSet();
       onMove(candidates[0]);
       setSelected(null);
       return true;
@@ -3805,6 +3990,7 @@ export function Board({
   // (Settings anim-off / reduced motion) drops the shake while the ring stays
   // as a brief static indicator (reduced motion never means zero feedback).
   const flagInvalid = (ringSq: Square, shakeSq?: Square | null) => {
+    playIllegal();
     invalidKeyRef.current += 1;
     setInvalidFx({ sq: ringSq, key: invalidKeyRef.current });
     if (motionOff()) return;
@@ -3812,8 +3998,11 @@ export function Board({
     if (!grid) return;
     const shakeTargets = shakeSq != null && shakeSq !== ringSq ? [ringSq, shakeSq] : [ringSq];
     for (const s of shakeTargets) {
-      const idx = orderedSquares.indexOf(s);
-      const el = grid.children[idx] as HTMLElement | undefined;
+      // Addressed by data-sq, not by child index: the cells are no longer the
+      // grid's direct children (each rank is wrapped in a display:contents
+      // role="row", see the grid below) and an index lookup would now land on
+      // a whole rank.
+      const el = grid.querySelector(`[data-sq="${s}"]`) as HTMLElement | null;
       if (!el) continue;
       el.classList.remove("sq-invalid-shake");
       void el.offsetWidth;
@@ -3834,6 +4023,11 @@ export function Board({
       return;
     }
     if (e.button !== undefined && e.button !== 0) return;
+    // Keep the keyboard cursor under the hand: a piece pickup calls
+    // preventDefault (so the square never takes DOM focus and its onFocus
+    // never fires), and without this a player who clicks a piece and then
+    // reaches for the arrow keys would resume from wherever they last were.
+    setCursor(sq);
     // Drawn arrows and marks are cleared the moment a move interaction begins
     // (see onPointerDownPiece / tryPlay) and also by a plain left-click that
     // plays no move and grabs no piece (handled at the end of this function):
@@ -3959,6 +4153,21 @@ export function Board({
     return () => window.removeEventListener("keydown", onKey);
   }, [promotionMove]);
 
+  // Move focus into the picker when it opens, and back onto the board when it
+  // closes. Without the first half a keyboard player who reached a promotion
+  // square has a dialog open and no way into it; without the second they are
+  // dropped on <body> and have to tab in from the top of the page again.
+  const promotionFirstRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (!promotionMove) return;
+    const opener = document.activeElement as HTMLElement | null;
+    promotionFirstRef.current?.focus();
+    return () => {
+      const now = document.activeElement;
+      if (!now || now === document.body) opener?.focus();
+    };
+  }, [promotionMove]);
+
   // --- Drag & drop via pointer events ---
   const onPointerDownPiece = (e: React.PointerEvent, sq: Square) => {
     clearAnnotations();
@@ -3971,7 +4180,17 @@ export function Board({
     setSelected(sq);
     setInspectSq(null);
     if (selected !== sq) playSelect();
-    setDrag({ from: sq, pointerId: e.pointerId, cell, startX: e.clientX, startY: e.clientY });
+    setDrag({
+      from: sq,
+      pointerId: e.pointerId,
+      cell,
+      startX: e.clientX,
+      startY: e.clientY,
+      threshold: e.pointerType === "touch" ? DRAG_DISTANCE_TOUCH_PX : DRAG_DISTANCE_PX,
+      // Armed, not lifted. The ghost mounts and the origin fades only once the
+      // pointer has actually travelled (see onMove below).
+      live: false,
+    });
     setHoverSq(sq);
     lastHoverRef.current = sq;
     // The ghost is pre-positioned before its first paint by the layout effect
@@ -4019,6 +4238,21 @@ export function Board({
 
     const onMove = (e: PointerEvent) => {
       if (e.pointerId !== drag.pointerId) return;
+      // Below the threshold this is still a press, not a drag: no ghost, no
+      // faded origin, and the hover ring stays where it is. Crossing it once
+      // promotes the gesture (one setState per drag, which re-runs this effect
+      // with `live` true and changes nothing else).
+      if (!drag.live) {
+        const dx = e.clientX - drag.startX;
+        const dy = e.clientY - drag.startY;
+        if (dx * dx + dy * dy < drag.threshold * drag.threshold) return;
+        // startX/startY move to the crossing point so the layout effect that
+        // seeds the ghost's first paint puts it under the pointer, not back at
+        // the press.
+        setDrag((d) =>
+          d && !d.live ? { ...d, live: true, startX: e.clientX, startY: e.clientY } : d,
+        );
+      }
       pendingX = e.clientX;
       pendingY = e.clientY;
       // The ghost follows the pointer in the event itself, not a frame later:
@@ -4124,7 +4358,8 @@ export function Board({
     };
   }, []);
 
-  const draggedPiece = drag ? board.pieces[drag.from] : null;
+  // Only a drag that has cleared its distance threshold paints a ghost.
+  const draggedPiece = drag?.live ? board.pieces[drag.from] : null;
 
   // Seed the floating ghost's transform to the pickup point synchronously,
   // before the browser paints the frame that mounts it. Without this the ghost
@@ -4482,6 +4717,213 @@ export function Board({
   const sqClosePopover = useCallback((s: Square) => sqCbRef.current.closePopover(s), []);
   const sqPickSquare = useCallback((s: Square) => sqCbRef.current.pickSquare?.(s), []);
 
+  // --- Keyboard play ---------------------------------------------------------
+  //
+  // Before this the board was pointer-only: gridcell roles with no grid around
+  // them, no tab stop, no key handling. A player could not make a single move
+  // without a mouse or a finger.
+  //
+  // The shape is the ARIA grid pattern, which is also how Lichess does it.
+  // Focus enters the board ONCE (roving tabindex: exactly one square carries
+  // tabIndex 0), the arrows move that focus, and Enter or Space is the press.
+  // Everything a key does routes through the SAME functions the pointer uses
+  // (tryPlay, flagInvalid, setSelected), so premove mode, auto-queen, the
+  // promotion picker, targeting mode, the refused-input feedback and every
+  // Settings toggle behave identically whichever way the move was made.
+
+  const cursorSq: Square = cursor;
+
+  const handleSquareFocus = useCallback((sq: Square) => setCursor(sq), []);
+
+  /** Move DOM focus to a square. The cells are all rendered, so this never
+   *  waits for a re-render; the tabIndex catches up on the next one. */
+  const focusSquare = useCallback((sq: Square) => {
+    const grid = boardRef.current?.querySelector("[data-board-grid]") as HTMLElement | null;
+    (grid?.querySelector(`[data-sq="${sq}"]`) as HTMLElement | null)?.focus();
+  }, []);
+
+  /** Enter / Space on a square: the keyboard's press. Deliberately mirrors
+   *  handleSquarePointerDown branch for branch. */
+  const activateSquare = (sq: Square) => {
+    // Targeting mode swallows the press exactly as it swallows the pointer.
+    if (pickingSquares) {
+      if (pickSquareSet.has(sq)) {
+        if (legalMoves.some((m) => m.drop != null && m.to === sq)) playDrop();
+        onPickSquare?.(sq);
+      } else {
+        flagInvalid(sq);
+        onInvalidPick?.(sq);
+        announce(`${SQUARE_NAME[sq]} is not a valid target`);
+      }
+      return;
+    }
+    // Not playable (not your turn, history review, an open offer): the press
+    // still reads the square out, which is the keyboard counterpart of the
+    // desktop hover popover and the touch tap-to-inspect.
+    if (disabled) {
+      if (effectInfoFor(sq)) setEffectPopoverSq(sq);
+      announce(`${SQUARE_NAME[sq]}, ${pieceWords(board.pieces[sq])}`);
+      return;
+    }
+    // A legal destination of the current selection plays the move, or opens the
+    // promotion picker. The move itself is announced by the last-move watcher,
+    // which covers pointer play and the opponent's replies too.
+    if (selected != null && targets[sq] && tryPlay(sq)) {
+      setCursor(sq);
+      return;
+    }
+    const piece = board.pieces[sq];
+    if (piece && piece.color === myColor && movesFrom.has(sq)) {
+      clearAnnotations();
+      setInspectSq(null);
+      if (selected === sq) {
+        setSelected(null);
+        announce("Selection cleared");
+      } else {
+        setSelected(sq);
+        playSelect();
+        const n = movesFrom.get(sq)?.length ?? 0;
+        announce(
+          `${pieceWords(piece)} ${SQUARE_NAME[sq]} selected, ${n} ${n === 1 ? "move" : "moves"}`,
+        );
+      }
+      return;
+    }
+    // Your own piece with nothing to play: the same refused-pickup feedback the
+    // pointer gets, said out loud.
+    if (piece && piece.color === myColor) {
+      flagInvalid(sq);
+      announce(`${pieceWords(piece)} ${SQUARE_NAME[sq]} has no legal move`);
+      return;
+    }
+    // Inspect an enemy piece (slate preview dots), toggled by a second press.
+    if (piece && piece.color !== myColor && oppMovesFrom.has(sq)) {
+      clearAnnotations();
+      setSelected(null);
+      const next = inspectSq === sq ? null : sq;
+      setInspectSq(next);
+      playSelect();
+      announce(
+        next == null
+          ? "Preview cleared"
+          : `${pieceWords(piece)} ${SQUARE_NAME[sq]}, showing where it can move`,
+      );
+      return;
+    }
+    // A press that plays nothing and picks nothing up: clears the shapes, the
+    // selection and the premove queue, lichess-style, same as a dead tap.
+    const hadSelection = selected != null;
+    clearAnnotations();
+    if (hadSelection) setSelected(null);
+    setInspectSq(null);
+    if (premoveMode && premoves && premoves.length > 0 && onCancelPremove) {
+      onCancelPremove();
+      announce("Premove cancelled");
+    } else {
+      announce(`${SQUARE_NAME[sq]}, ${pieceWords(board.pieces[sq])}`);
+    }
+  };
+
+  const handleGridKeyDown = (e: React.KeyboardEvent) => {
+    if (e.altKey || e.metaKey) return;
+    // Visual, not absolute: from black's side "up" is a lower rank and "right"
+    // a lower file, the same resolution squareAtClient does for the pointer.
+    const dir = orientation === "w" ? 1 : -1;
+    const file = FILE(cursorSq);
+    const rank = RANK(cursorSq);
+    const clamp = (n: number) => Math.max(0, Math.min(7, n));
+    let next: Square | null = null;
+    switch (e.key) {
+      case "ArrowRight":
+        next = SQ(clamp(file + dir), rank);
+        break;
+      case "ArrowLeft":
+        next = SQ(clamp(file - dir), rank);
+        break;
+      case "ArrowUp":
+        next = SQ(file, clamp(rank + dir));
+        break;
+      case "ArrowDown":
+        next = SQ(file, clamp(rank - dir));
+        break;
+      // Home / End walk the rank, Ctrl+Home / Ctrl+End the whole board: the
+      // grid pattern's convention, and the reason Ctrl is allowed through here
+      // while every other Ctrl chord is left to the browser.
+      case "Home":
+        next = e.ctrlKey ? orderedSquares[0] : SQ(dir === 1 ? 0 : 7, rank);
+        break;
+      case "End":
+        next = e.ctrlKey ? orderedSquares[63] : SQ(dir === 1 ? 7 : 0, rank);
+        break;
+      case "PageUp":
+        next = SQ(file, dir === 1 ? 7 : 0);
+        break;
+      case "PageDown":
+        next = SQ(file, dir === 1 ? 0 : 7);
+        break;
+      default:
+        break;
+    }
+    if (next != null) {
+      e.preventDefault();
+      // MoveList binds the same arrow keys on `window` for history scrubbing.
+      // While the board holds focus the board owns them, so the event stops
+      // here; released, the move list gets them back.
+      e.stopPropagation();
+      if (next !== cursorSq) {
+        setCursor(next);
+        focusSquare(next);
+      }
+      return;
+    }
+    if (e.ctrlKey) return; // every other Ctrl chord belongs to the browser
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      // Space would otherwise scroll the page out from under the board.
+      e.preventDefault();
+      e.stopPropagation();
+      activateSquare(cursorSq);
+      return;
+    }
+    if (e.key === "Escape") {
+      // No preventDefault and no stopPropagation: Escape has other owners on
+      // this page (a half-drawn arrow, the promotion picker, history review),
+      // and swallowing it would break them. When there is nothing selected
+      // this branch simply does nothing and they get their turn.
+      if (selected == null && inspectSq == null) return;
+      clearAnnotations();
+      setSelected(null);
+      setInspectSq(null);
+      announce("Selection cleared");
+    }
+  };
+
+  // Every move that lands is announced once, whoever made it and however it was
+  // made. Derived during render rather than in an effect (the pattern the
+  // inspect-reset above uses) so the message is queued in the same commit the
+  // move renders in, never a frame late.
+  const lastMoveKey = lastMove
+    ? `${board.history.length}:${lastMove.from}:${lastMove.to}:${lastMove.promotion ?? ""}`
+    : `${board.history.length}:none`;
+  const [announcedMoveKey, setAnnouncedMoveKey] = useState(lastMoveKey);
+  if (announcedMoveKey !== lastMoveKey) {
+    setAnnouncedMoveKey(lastMoveKey);
+    if (lastMove) {
+      const who = COLOR_WORD[lastMove.color];
+      let words: string;
+      if (lastMove.castle) {
+        words = `${who} castles ${lastMove.castle === "k" ? "kingside" : "queenside"}`;
+      } else if (lastMove.drop) {
+        words = `${who} drops a ${PIECE_WORD[lastMove.drop]} on ${SQUARE_NAME[lastMove.to]}`;
+      } else {
+        words =
+          `${who} ${PIECE_WORD[lastMove.piece]} ${SQUARE_NAME[lastMove.from]} ` +
+          `${lastMove.captured ? "takes" : "to"} ${SQUARE_NAME[lastMove.to]}` +
+          (lastMove.promotion ? `, promotes to ${PIECE_WORD[lastMove.promotion]}` : "");
+      }
+      announce(words);
+    }
+  }
+
   // All the per-render-stable inputs BoardSquare needs, bundled into one object
   // memoized on exactly those inputs. During a pure interaction render (hover,
   // selection, popover, cast) none of these change, so `squareEnv` keeps its
@@ -4541,6 +4983,8 @@ export function Board({
       onClosePopover: sqClosePopover,
       onPickSquare: sqPickSquare,
       setEffectPopoverSq,
+      onSquareFocus: handleSquareFocus,
+      descPrefix,
     }),
     [
       board,
@@ -4594,12 +5038,23 @@ export function Board({
       sqClosePopover,
       sqPickSquare,
       setEffectPopoverSq,
+      handleSquareFocus,
+      descPrefix,
     ],
   );
 
 
   return (
     <div ref={boardRef} className="relative w-full max-w-full aspect-square mx-auto">
+      {/* What just happened, for a screen reader: the move that landed
+          (either side's), the piece you picked up, a refused target, a
+          cancelled premove. Same role="status" / aria-live="polite" pattern
+          ConnectionBanner uses, so nothing here can interrupt. The alternating
+          trailing space makes a REPEATED message a content change, which is
+          what a live region needs in order to say it twice. */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement.text ? announcement.text + (announcement.n % 2 ? "" : " ") : ""}
+      </div>
       <div ref={cropRef} className="absolute inset-0 sm:inset-3 overflow-hidden border border-black/40 sm:rounded-sm">
         {/* Canvas VFX layer: particles, projectiles, beams and cinematics for
             card plays, drawn over the squares but under floating UI. The
@@ -4610,6 +5065,15 @@ export function Board({
         <Board3DLayer />
         <div
           data-board-grid
+          // A real ARIA grid at last: the gridcell roles below have had no grid
+          // around them and no row wrappers, which made them invalid rather
+          // than merely unhelpful. See the keyboard-play block above for the
+          // roving tabindex and the key handling that the role promises.
+          role="grid"
+          aria-label={`Chess board, ${COLOR_WORD[orientation]} at the bottom`}
+          aria-rowcount={8}
+          aria-colcount={8}
+          onKeyDown={handleGridKeyDown}
           // touch-action must block the browser's own PAN gestures — without
           // that it claims the touch for scrolling and fires pointercancel
           // mid-drag — but `none` also killed pinch-zoom, and the board is
@@ -4622,42 +5086,48 @@ export function Board({
           onContextMenu={(e) => e.preventDefault()}
         >
           {/* Per-square render reads the staged animation refs (fx, zone
-              signature, piece anims) — the same deliberate imperative pipeline
-              documented above, so react-hooks/refs is suppressed here too. */}
-          {/* Per-square render reads the staged animation refs (fx, zone
               signature, piece anims) in the parent loop below — the same
               deliberate imperative pipeline documented above, so
               react-hooks/refs is suppressed for the ref reads. */}
           {/* eslint-disable react-hooks/refs */}
-          {orderedSquares.map((sq) => {
-            const isSelected = selected === sq;
-            const isHover = hoverSq === sq && drag != null;
-            const isDragging = drag?.from === sq;
-            const isInspect = inspectSq === sq;
-            const rightClickMark = rightClickMarks[sq];
-            const boardFx = fxRef.current.get(sq);
-            const zoneSig = zoneSigRef.current.get(sq);
-            const isAnimPiece = animsRef.current.has(sq);
-            const motifShown = motifShownFor(sq);
-            const hasEffectInfo = !!effectInfoFor(sq);
-            return (
-              <BoardSquare
-                key={sq}
-                sq={sq}
-                isSelected={isSelected}
-                isHover={isHover}
-                isDragging={isDragging}
-                isInspect={isInspect}
-                isAnimPiece={isAnimPiece}
-                motifShown={motifShown}
-                hasEffectInfo={hasEffectInfo}
-                rightClickMark={rightClickMark}
-                boardFx={boardFx}
-                zoneSig={zoneSig}
-                env={squareEnv}
-              />
-            );
-          })}
+          {rankRows.map((row, rowIndex) => (
+            // display:contents (Tailwind's `contents`), so the eight-column CSS
+            // grid still lays the 64 cells out itself and not one pixel of the
+            // board moves. The wrapper exists for the accessibility tree only,
+            // which is exactly what display:contents is for.
+            <div key={`rank-${rowIndex}`} role="row" aria-rowindex={rowIndex + 1} className="contents">
+              {row.map((sq) => {
+                const isSelected = selected === sq;
+                const isHover = hoverSq === sq && drag != null;
+                const isDragging = drag?.live === true && drag.from === sq;
+                const isInspect = inspectSq === sq;
+                const rightClickMark = rightClickMarks[sq];
+                const boardFx = fxRef.current.get(sq);
+                const zoneSig = zoneSigRef.current.get(sq);
+                const isAnimPiece = animsRef.current.has(sq);
+                const motifShown = motifShownFor(sq);
+                const hasEffectInfo = !!effectInfoFor(sq);
+                return (
+                  <BoardSquare
+                    key={sq}
+                    sq={sq}
+                    isSelected={isSelected}
+                    isCursor={cursorSq === sq}
+                    isHover={isHover}
+                    isDragging={isDragging}
+                    isInspect={isInspect}
+                    isAnimPiece={isAnimPiece}
+                    motifShown={motifShown}
+                    hasEffectInfo={hasEffectInfo}
+                    rightClickMark={rightClickMark}
+                    boardFx={boardFx}
+                    zoneSig={zoneSig}
+                    env={squareEnv}
+                  />
+                );
+              })}
+            </div>
+          ))}
           {/* eslint-enable react-hooks/refs */}
         </div>
 
@@ -4856,7 +5326,7 @@ export function Board({
             if (isGenConfig(cfg)) {
               return (
                 <div key={`genlead-${cast.key}`} aria-hidden className={cellStage} style={cellStyle}>
-                  <GenBurst config={cfg} role="lead" delayMs={0} />
+                  <GenBurstCut config={cfg} cut="lead" delayMs={0} />
                 </div>
               );
             }
@@ -4869,7 +5339,7 @@ export function Board({
             }
             return (
               <div key={`siglead-${cast.key}`} aria-hidden className={cellStage} style={cellStyle}>
-                <SignatureOverlay visual={cfg.visual} role="lead" delayMs={0} />
+                <SignatureCut visual={cfg.visual} cut="lead" delayMs={0} />
               </div>
             );
           })()}
@@ -5014,9 +5484,16 @@ export function Board({
               className="plate flex flex-col items-center gap-2 p-3 sm:p-4"
             >
               <div className="flex gap-2">
-                {promotionMove.map((m) => (
+                {promotionMove.map((m, i) => (
                   <button
                     key={m.promotion}
+                    type="button"
+                    // Enter on a promotion square opens this picker, so focus
+                    // has to land inside it or a keyboard player is stranded
+                    // with a move half-played. The first piece (queen) takes
+                    // it; the rest are one Tab away and Escape backs out.
+                    ref={i === 0 ? promotionFirstRef : undefined}
+                    aria-label={`Promote to ${PIECE_WORD[m.promotion!]}`}
                     onClick={() => {
                       onMove(m);
                       setPromotionMove(null);
@@ -5032,7 +5509,7 @@ export function Board({
               <button
                 type="button"
                 onClick={cancelPromotion}
-                className="rounded-[1px] border border-coral/40 bg-coral/10 px-3 py-1 font-display text-[11px] font-semibold tracking-wide text-coral-glow transition hover:bg-coral/20"
+                className="rounded-[1px] border border-coral/40 bg-coral/10 px-3 py-1 font-display text-[12px] font-semibold tracking-wide text-coral-glow transition hover:bg-coral/20"
               >
                 Cancel <span className="text-coral-glow/60">Esc</span>
               </button>

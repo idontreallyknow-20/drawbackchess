@@ -85,7 +85,7 @@ export function WaitingCornerNotice({
             Waiting for <span className="text-parchment-100">{oppName}</span>
             <span className="waiting-ellipsis" aria-hidden />
           </span>
-          <span className={"shrink-0 text-[11px] " + (onClock ? "text-oxblood-glow" : "text-parchment-400")}>
+          <span className={"shrink-0 text-[12px] " + (onClock ? "text-oxblood-glow" : "text-parchment-400")}>
             {clockLine}
           </span>
           {canViewTheirs && (
@@ -115,7 +115,7 @@ export function WaitingCornerNotice({
       >
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="text-[11px] uppercase tracking-wide text-parchment-400">
+            <div className="text-[12px] uppercase tracking-wide text-parchment-400">
               {skipped ? "Draft skipped" : `${noun[0].toUpperCase()}${noun.slice(1)} draft`}
             </div>
             <div className="mt-0.5 truncate font-display text-[15px] font-semibold text-parchment-100">
@@ -157,7 +157,7 @@ export function WaitingCornerNotice({
             {oppState}
             {!oppLockedIn && <span className="waiting-ellipsis" aria-hidden />}
           </span>
-          <span className={"shrink-0 text-[11px] " + (onClock ? "text-oxblood-glow" : "text-parchment-400")}>
+          <span className={"shrink-0 text-[12px] " + (onClock ? "text-oxblood-glow" : "text-parchment-400")}>
             {clockLine}
           </span>
         </div>

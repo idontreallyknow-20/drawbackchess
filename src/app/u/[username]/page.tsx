@@ -926,7 +926,7 @@ function OverflowMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`More actions for ${username}`}
-        className="grid h-11 w-11 place-items-center rounded-none border border-[color:var(--edge)] text-parchment-400 transition hover:border-[color:var(--edge-strong)] hover:text-parchment-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]"
+        className="grid h-[44px] w-[44px] place-items-center rounded-none border border-[color:var(--edge)] text-parchment-400 transition hover:border-[color:var(--edge-strong)] hover:text-parchment-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]"
       >
         <MoreHorizontal size={18} strokeWidth={2.2} aria-hidden />
       </button>
@@ -1271,7 +1271,7 @@ function ChipGroup({
             aria-pressed={on}
             onClick={() => onChange(o.value)}
             className={
-              "inline-flex h-[44px] items-center rounded-none border px-3 text-[14px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] sm:h-[36px] sm:text-[13px] " +
+              "inline-flex h-[44px] items-center rounded-none border px-3 text-[14px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] [@media(pointer:fine)]:h-[36px] sm:text-[13px] " +
               (on
                 ? "border-[color:var(--edge-strong)] bg-[color:var(--bg-raised)] text-gold-leaf"
                 : "border-[color:var(--edge)] text-parchment-400 hover:border-[color:var(--edge-strong)] hover:text-parchment-200")
@@ -1426,7 +1426,9 @@ function AchievementsStrip({ username }: { username: string }) {
         aria-expanded={expanded}
         aria-controls="achievements-fold"
         onClick={() => setExpanded((v) => !v)}
-        className="flex min-h-[40px] w-full flex-wrap items-center justify-between gap-3 py-1 text-left"
+        // 40px, four short. Full-width, so only the height was ever in
+        // question.
+        className="flex min-h-[44px] w-full flex-wrap items-center justify-between gap-3 py-1 text-left [@media(pointer:fine)]:min-h-[40px]"
       >
         <span className="flex items-center gap-2 font-display text-parchment-100">
           <ChevronRight
@@ -1465,7 +1467,9 @@ function AchievementsStrip({ username }: { username: string }) {
               </span>
             );
           })}
-          <span className="text-[12px] text-gold-leaf">
+          {/* The disclosure's action word: interactive text, so 13px. The
+              medallion count beside it stays a 12px caption. */}
+          <span className="text-[13px] text-gold-leaf">
             {expanded ? "Hide" : "See all"}
           </span>
         </span>
@@ -1520,7 +1524,7 @@ function AchievementsStrip({ username }: { username: string }) {
               <div className="mt-3">
                 <Link
                   href={`/achievements?u=${encodeURIComponent(username)}`}
-                  className="text-[12px] text-gold-leaf transition-colors hover:text-brag"
+                  className="-my-1 inline-flex min-h-[44px] items-center text-[13px] text-gold-leaf transition-colors hover:text-brag [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
                 >
                   Open the achievements wall
                 </Link>
@@ -1536,6 +1540,26 @@ function AchievementsStrip({ username }: { username: string }) {
 function ProfileSkeleton() {
   return (
     <section className="mx-auto max-w-6xl px-5 py-8 sm:px-6">
+      {/* The route has THREE loading states and this is the one that was
+          headingless: the client component's own, shown while it fetches, and
+          reached on any client-side navigation where `loading.tsx` never
+          renders at all. Without a heading here the page had none for the
+          whole fetch, which on a slow connection is most of the time anyone
+          spends on it.
+
+          The heading lives here rather than in `loading.tsx` because this
+          component covers every path, including the one that file misses.
+          `loading.tsx` deliberately has none, or the two would stack.
+
+          Known and accepted: this component is mounted TWICE for a frame or
+          two on arrival, once as the Suspense fallback in ProfilePage and once
+          as ProfileContent's own `!profile` return, so two identical sr-only
+          headings are briefly live. Removing one leaves a phase with none,
+          which is the worse failure: a duplicate heading for 100ms is not
+          something a reader will notice, and a missing one for the length of a
+          fetch is. Worth knowing if the route sweep's one-h1 assertion ever
+          flakes here; it should read settled state. */}
+      <h1 className="sr-only">Player profile</h1>
       <div className="flex items-center gap-4">
         <div className="skeleton h-[72px] w-[72px] shrink-0 rounded-full" style={{ borderRadius: "50%" }} />
         <div className="min-w-0">
@@ -2066,7 +2090,7 @@ function HouseBotEditor({
           className="px-3 text-gold-leaf">
           {saving ? "Saving..." : "Set rating"}
         </Button>
-        <span className="text-[11px] text-parchment-500">Both modes, engine-safe.</span>
+        <span className="text-[12px] text-parchment-500">Both modes, engine-safe.</span>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -2075,6 +2099,9 @@ function HouseBotEditor({
           type="button"
           onClick={() => setPicking((v) => !v)}
           title="Change picture"
+          // The only child is the avatar, and a preset avatar is aria-hidden,
+          // so without this the control announces as an unnamed button.
+          aria-label={`Change ${username}'s picture`}
           className="shrink-0"
         >
           <PlayerAvatar name={username} avatar={avatar} size={40} />
@@ -2133,7 +2160,7 @@ function HouseBotEditor({
                 className="px-3 text-gold-leaf">
                 {preparing ? "Preparing..." : "Upload image..."}
               </Button>
-              <span className="text-[11px] text-parchment-500">
+              <span className="text-[12px] text-parchment-500">
                 PNG, JPEG, WebP, or GIF. Cropped to a square; max 1 MB after compression.
               </span>
             </div>
@@ -2147,6 +2174,7 @@ function HouseBotEditor({
                   disabled={saving}
                   onClick={() => pickAvatar(id)}
                   title={id}
+                  aria-label={`Use avatar ${id}`}
                   className={
                     "rounded-none border p-0.5 transition " +
                     (id === avatar ? "border-[color:var(--edge-strong)]" : "border-transparent hover:border-[color:var(--edge-strong)]")

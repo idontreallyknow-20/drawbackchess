@@ -41,11 +41,17 @@ function FilterSelect({
 }) {
   return (
     <label className="flex min-w-0 flex-col gap-1">
-      <span className="text-[11px] text-parchment-400">{label}</span>
+      <span className="text-[12px] text-parchment-400">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="max-w-full rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-base)] px-3 py-1.5 text-[12px] font-body text-parchment focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]"
+        // 31.5px tall and 12px text. Both are floors, not preferences: §10 puts
+        // the hit area at 44px on a finger and §3 puts interactive text at
+        // 13px (the 12px allowance is captions and labels — the eyebrow above
+        // is one, the control is not). The step-down is `(pointer: fine)`
+        // rather than `sm:`, because this row is only rendered from `sm` up and
+        // "sm and up" includes every tablet, which is a coarse pointer.
+        className="min-h-[44px] max-w-full rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-base)] px-3 py-1.5 text-[13px] font-body text-parchment focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)] [@media(pointer:fine)]:min-h-0"
       >
         {children}
       </select>

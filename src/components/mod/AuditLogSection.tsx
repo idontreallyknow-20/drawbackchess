@@ -110,7 +110,7 @@ export function AuditLogSection() {
           ))}
         </div>
       )}
-      <p className="text-[11px] text-parchment-500">
+      <p className="text-[12px] text-parchment-500">
         Showing {rows.length} of {log.length} recorded actions.
       </p>
     </div>

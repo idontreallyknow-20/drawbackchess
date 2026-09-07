@@ -320,12 +320,16 @@ export const SECTIONS: SectionConfig[] = [
   {
     id: "appearance",
     title: "Appearance",
-    blurb: "Site theme, background, motion",
+    blurb: "Site theme, zen mode, background",
     icon: Palette,
     rows: [
       {
         id: "siteTheme",
-        label: "Theme",
+        // "Site theme", not "Theme": the group eyebrow above it is already
+        // called Theme, so the two stacked and the page read "Theme / Theme".
+        // Only the display label changes; the row id and the setting key are
+        // untouched, so nothing persisted under dc:settings-v1 moves.
+        label: "Site theme",
         group: "Theme",
         control: { kind: "siteTheme" },
       },
@@ -343,19 +347,6 @@ export const SECTIONS: SectionConfig[] = [
         group: "Background",
         control: { kind: "customBg" },
       },
-      {
-        id: "reducedMotion",
-        label: "Reduced motion",
-        group: "Motion",
-        control: { kind: "toggle", setting: "reducedMotion" },
-      },
-      {
-        id: "followSystemMotion",
-        label: "Follow system motion",
-        hint: "Follow your device's reduce-motion setting. Off by default so card plays stay visible; turning it on is not recommended.",
-        group: "Motion",
-        control: { kind: "toggle", setting: "followSystemMotion" },
-      },
     ],
   },
   {
@@ -372,20 +363,36 @@ export const SECTIONS: SectionConfig[] = [
     ],
   },
   {
+    // The one home for the motion switches. They used to sit here AND under
+    // Appearance, as two rows bound to the same two settings: flipping one
+    // silently moved the other, and the same pair had to be found twice to be
+    // trusted. Reduced motion is where a player expects to find it, next to the
+    // accessibility label, so Appearance keeps theme and background and this
+    // section keeps motion. Animation speed, piece glide and the effects
+    // toggles are feel, not access, and stay under Board & Pieces; the hint
+    // below points there rather than restating them as a third copy.
     id: "accessibility",
     title: "Accessibility",
-    blurb: "Motion",
+    // Every other blurb lists what is inside; this one used to be the word
+    // "Motion", then the label of its first row, which told a reader nothing
+    // they could not see. It now names both rows, and it has a second job as
+    // of the /settings route: it is this section's meta description and the
+    // intro line on /settings/accessibility.
+    blurb: "Reduced motion, and following your device",
     icon: Accessibility,
     rows: [
       {
-        id: "reducedMotionA11y",
+        id: "reducedMotion",
         label: "Reduced motion",
+        hint: "Stand animations down across the site. Animation speed, piece glide and board effects have their own controls under Board & Pieces.",
+        group: "Motion",
         control: { kind: "toggle", setting: "reducedMotion" },
       },
       {
-        id: "followSystemMotionA11y",
+        id: "followSystemMotion",
         label: "Follow system motion",
         hint: "Follow your device's reduce-motion setting. Off by default so card plays stay visible; turning it on is not recommended.",
+        group: "Motion",
         control: { kind: "toggle", setting: "followSystemMotion" },
       },
     ],

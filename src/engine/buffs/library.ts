@@ -883,7 +883,7 @@ const TIER1: Buff[] = [
     },
   ),
   def(
-    { id: "second_wind", name: "Second Wind", description: "One captured pawn returns to an empty square on your 2nd rank after your opponent's next move, once.", tier: 1, category: "pieces" },
+    { id: "second_wind", name: "Second Wind", description: "One captured pawn returns to an empty square on your 2nd rank after your opponent's next move, once.", tier: 2, category: "pieces" },
     // Preserve the revive payoff (a captured pawn back on the 2nd rank), but the
     // trigger is delayed: you pick the square now and the pawn appears only once
     // the opponent has replied. If that square is filled by then, the revive
@@ -1759,7 +1759,7 @@ const TIER2: Buff[] = [
     },
   ),
   def(
-    { id: "minor_recall", name: "Minor Recall", description: "Return a captured knight or bishop to your back rank, once.", tier: 3, category: "pieces" },
+    { id: "minor_recall", name: "Minor Recall", description: "Return a captured knight or bishop to your back rank, once.", tier: 4, category: "pieces" },
     reviveOne(["n", "b"], backRankZone),
   ),
   def(
@@ -1877,7 +1877,7 @@ const TIER3: Buff[] = [
     extraMovesNow(1),
   ),
   def(
-    { id: "promote_now", requires: ["p"], name: "Promote Now", description: "Choose one of your pawns on your 6th rank or beyond; it promotes to a queen after your opponent's next move, once.", tier: 3, category: "pieces" },
+    { id: "promote_now", requires: ["p"], name: "Promote Now", description: "Choose one of your pawns on your 6th rank or beyond; it promotes to a queen after your opponent's next move, once.", tier: 5, category: "pieces" },
     // Delayed: the pawn is chosen at activation and promotes only once the
     // opponent has replied. If it has been captured by then the promotion
     // fizzles and the charge is still spent.
@@ -2246,7 +2246,7 @@ const TIER3: Buff[] = [
     },
   ),
   def(
-    { id: "second_wind_major", name: "Second Wind Major", description: "Return a captured rook to any empty back-rank square, once. Using it spends your next unused reroll, if any.", tier: 3, category: "pieces" },
+    { id: "second_wind_major", name: "Second Wind Major", description: "Return a captured rook to any empty back-rank square, once. Using it spends your next unused reroll, if any.", tier: 5, category: "pieces" },
     consumeRerollOnUse(reviveOne(["r"], backRankZone)),
   ),
   def(
@@ -3142,7 +3142,7 @@ const TIER5: Buff[] = [
     // Tier 6 (owner call). Pools are built by the card's own `tier` field
     // (poolAtTier filters b.tier === t), so it drafts as a tier-6 card even
     // though it's declared in this file's TIER5 block.
-    { id: "resurrect_queen", name: "Resurrect Queen", description: "Bring your captured queen back to any empty square on the board, and she cannot be captured for your opponent's next turn.", tier: 6, category: "pieces" },
+    { id: "resurrect_queen", name: "Resurrect Queen", description: "Bring your captured queen back to any empty square on the board, and she cannot be captured for your opponent's next turn.", tier: 7, category: "pieces" },
     activated(
       (_inst, api, picks) => {
         if (picks.length > 0) return null;

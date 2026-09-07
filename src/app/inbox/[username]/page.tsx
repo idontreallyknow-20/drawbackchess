@@ -8,6 +8,7 @@ import { PlayerLink } from "@/components/PlayerLink";
 import { AccountUser, fetchMe } from "@/lib/authClient";
 import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/Button";
+import { PollConnectionBanner } from "@/components/ConnectionBanner";
 
 type ThreadMessage = { id: string; fromMe: boolean; text: string; at: number };
 type Thread = { peer: { username: string; avatar: string | null }; messages: ThreadMessage[] };
@@ -23,6 +24,14 @@ export default function ThreadPage() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Whether the last poll landed. This is the ONE async surface in the sweep
+  // with a repeating network dependency, so it is the one that can be
+  // "disconnected" as distinct from "errored": every other route in the batch
+  // fetches once, and a failed one-shot is the error state (§8.3) whose
+  // recovery is the reader pressing Retry. Failures here were silent by
+  // design after the first successful load (see the poll below), which is
+  // exactly the stale-live-state case the ConnectionBanner exists for.
+  const [pollHealthy, setPollHealthy] = useState(true);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const stickToBottom = useRef(true);
 
@@ -61,13 +70,18 @@ export default function ThreadPage() {
           return;
         }
         if (!res.ok) {
-          // Only surface an error before the first successful load; a failed
-          // poll on an open thread should stay quiet and retry on the next tick.
+          // Only surface the full error state before the first successful
+          // load; a failed poll on an open thread keeps the thread on screen
+          // (never unmount live state during a reconnect, §8.4) and retries on
+          // the next tick. It is no longer silent, though: the banner says the
+          // conversation has stopped updating and counts the seconds.
           if (!loaded) setLoadError(true);
+          else setPollHealthy(false);
           return;
         }
         loaded = true;
         setLoadError(false);
+        setPollHealthy(true);
         const data = (await res.json()) as Thread;
         setThread((prev) => {
           if (!prev) return data;
@@ -86,6 +100,7 @@ export default function ThreadPage() {
         });
       } catch {
         if (!loaded) setLoadError(true);
+        else setPollHealthy(false);
       }
     };
     load();
@@ -132,10 +147,27 @@ export default function ThreadPage() {
 
   return (
     <main className="min-h-screen">
+      {/* Only once a thread is on screen: before that there is no live state to
+          go stale, and the pre-load failure path is the error state below. */}
+      {thread && <PollConnectionBanner healthy={pollHealthy} />}
       <SiteHeader />
       <section className="max-w-2xl mx-auto px-5 sm:px-6 py-6">
+        {/* This route had no h1 at all. The visible header is a breadcrumb
+            (Inbox / name) rather than a heading, which reads correctly on
+            screen but leaves the page unidentifiable to a screen reader and
+            unnamed in a heading outline. Hidden rather than shown so the
+            breadcrumb stays the visual treatment, and it carries the
+            correspondent's name, which is the one thing that distinguishes
+            this page from every other thread. */}
+        <h1 className="sr-only">Conversation with {thread?.peer.username ?? username}</h1>
         <div className="mb-4 flex min-w-0 items-center gap-3">
-          <Link href="/inbox" className="text-sm text-parchment-400 hover:text-parchment-100">
+          {/* A breadcrumb crumb, 34.9x18 before this. The negative margin gives the
+              pixels back so the trail keeps its density, and both relax on a
+              pointer that can hit 18px. */}
+          <Link
+            href="/inbox"
+            className="-mx-2 -my-3 inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-2 text-sm text-parchment-400 hover:text-parchment-100 [@media(pointer:fine)]:mx-0 [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:min-w-0 [@media(pointer:fine)]:px-0"
+          >
             Inbox
           </Link>
           <span className="text-parchment-500">/</span>
@@ -209,7 +241,7 @@ export default function ThreadPage() {
                         }
                       >
                         <div className="whitespace-pre-wrap break-words">{m.text}</div>
-                        <div className="mt-1 text-right font-mono text-[11px] text-parchment-400">
+                        <div className="mt-1 text-right font-mono text-[12px] text-parchment-400">
                           {new Date(m.at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
                         </div>
                       </div>
@@ -233,7 +265,7 @@ export default function ThreadPage() {
                 placeholder={`Message ${thread?.peer.username ?? username}`}
                 maxLength={1000}
                 aria-label={`Message ${thread?.peer.username ?? username}`}
-                className="min-h-[44px] min-w-0 flex-1 rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-base)] px-4 py-3 text-[13px] text-parchment placeholder:text-parchment-400/50"
+                className="min-h-[44px] min-w-0 flex-1 rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-base)] px-4 py-3 text-[13px] text-parchment placeholder:text-parchment-500"
               />
               <Button tone="leaf"
                 onClick={send}

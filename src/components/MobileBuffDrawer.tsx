@@ -2,12 +2,18 @@
 
 import { ChevronDown, ChevronUp, Layers } from "lucide-react";
 import { type ReactNode, useState } from "react";
+import { TABLET_STACK_HIDE } from "./matchLayout";
 
 /**
  * Collapsible bottom drawer for the draft-mode buff dock on tablet widths
- * (sm to lg). Phones render the dock inline under the board
- * (MobileMatchStack) and desktop has the side rail. `usable` drives a badge
- * so a buff becoming activatable doesn't go unnoticed while closed.
+ * (sm to lg), which design-system.md section 9 keeps for that range. Phones
+ * render the dock inline under the board (MobileMatchStack) and desktop has
+ * the side rail. `usable` drives a badge so a buff becoming activatable
+ * doesn't go unnoticed while closed.
+ *
+ * Portrait tablets now render the same inline dock as a phone, so the drawer
+ * stands down there rather than showing the hand twice; landscape tablets in
+ * the sm..lg range keep it.
  */
 export function MobileBuffDrawer({
   held,
@@ -41,7 +47,7 @@ export function MobileBuffDrawer({
   }
 
   return (
-    <div className="hidden sm:block lg:hidden">
+    <div className={"hidden sm:block lg:hidden " + TABLET_STACK_HIDE}>
       {open && (
         <button
           type="button"
@@ -72,7 +78,9 @@ export function MobileBuffDrawer({
           type="button"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="flex h-11 w-full items-center justify-between px-4 transition-colors duration-150 hover:bg-white/[0.04] active:bg-white/[0.07]"
+          // 44px in pixels, not `h-11`: this interface roots at 14px, so
+          // 2.75rem is 38.5px and the bar was under the 44px hit floor.
+          className="flex h-[44px] w-full items-center justify-between px-4 transition-colors duration-150 hover:bg-white/[0.04] active:bg-white/[0.07]"
         >
           <span className="flex items-center gap-2 text-[12px] text-parchment-400">
             {/* Mint icon chip echoes the desktop dock's "your buffs" hero so the

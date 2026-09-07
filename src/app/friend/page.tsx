@@ -29,7 +29,10 @@ export default function FriendRedirect() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-6">
-      <div className="text-[11px] text-parchment-400">Opening the lobby…</div>
+      {/* A redirect shim is still a page while it is on screen, and this one
+          was on screen with no heading for 5 of 12 samples. */}
+      <h1 className="sr-only">Play a friend</h1>
+      <div className="text-[12px] text-parchment-400">Opening the lobby…</div>
     </main>
   );
 }

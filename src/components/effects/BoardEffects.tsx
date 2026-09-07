@@ -2909,7 +2909,7 @@ function CastBanner({
       />
       {description && (
         <span
-          className="ce-title-tag relative mt-0.5 block max-h-[2.6em] max-w-[86%] overflow-hidden text-[10.5px] leading-snug text-parchment-200"
+          className="ce-title-tag relative mt-0.5 block max-h-[2.6em] max-w-[86%] overflow-hidden text-[12px] leading-snug text-parchment-200"
           style={{ animationDelay: "240ms", textShadow: "0 1px 5px rgba(0,0,0,0.95)" }}
         >
           {description}
@@ -2949,7 +2949,7 @@ export function CastTextFallback({
     >
       <span className={`block font-display text-sm font-bold leading-tight tier-${tier}`}>{name}</span>
       {description && (
-        <span className="mt-0.5 block max-h-[2.8em] overflow-hidden text-[10.5px] leading-snug text-parchment-200">
+        <span className="mt-0.5 block max-h-[2.8em] overflow-hidden text-[12px] leading-snug text-parchment-200">
           {description}
         </span>
       )}

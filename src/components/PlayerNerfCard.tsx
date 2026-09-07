@@ -138,7 +138,9 @@ export function PlayerNerfCard({
                 href={`/u/${encodeURIComponent(name)}`}
                 target="_blank"
                 rel="noopener"
-                className="hover:text-gold-leaf hover:underline transition-colors"
+                // 84.9x19: the link out to the opponent's profile, and the only way
+                // to reach it from a game.
+                className="-my-3 inline-flex min-h-[44px] items-center hover:text-gold-leaf hover:underline transition-colors [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
               >
                 {name}
               </a>
@@ -196,7 +198,7 @@ export function PlayerNerfCard({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
                 {ownerLabel && (
-                  <span className="text-[10px] text-parchment-400">{ownerLabel}</span>
+                  <span className="text-[12px] text-parchment-400">{ownerLabel}</span>
                 )}
                 <TurnCostBadge cost={NERF_TURN_COST} />
               </div>
@@ -212,15 +214,15 @@ export function PlayerNerfCard({
             </span>
           </div>
           {!compact && (
-            <div className="rule-ornament my-3 text-[10px]">
+            <div className="rule-ornament my-3 text-[12px]">
               <span className="font-display">{TIER_LABEL[nerf.tier]}</span>
             </div>
           )}
           <p
             className={
               compact
-                ? "mt-2 text-[13px] leading-snug text-parchment/95"
-                : "text-[15px] leading-relaxed text-parchment/95"
+                ? "mt-2 text-[13px] leading-snug text-parchment"
+                : "text-[15px] leading-relaxed text-parchment"
             }
           >
             <GlossaryText text={nerf.description} />
@@ -228,8 +230,8 @@ export function PlayerNerfCard({
           {progress && progress.max > 0 && (
             <div className="mt-3">
               <div className="mb-1 flex items-center justify-between">
-                <span className="text-[10px] text-parchment-400">Progress</span>
-                <span className="font-mono text-[10px] text-parchment-300">{progress.label}</span>
+                <span className="text-[12px] text-parchment-400">Progress</span>
+                <span className="font-mono text-[12px] text-parchment-300">{progress.label}</span>
               </div>
               <div className="h-1.5 overflow-hidden bg-white/5">
                 <div
@@ -240,7 +242,7 @@ export function PlayerNerfCard({
             </div>
           )}
           {nerf.flavor && !compact && (
-            <p className="mt-3 border-l-2 border-white/15 pl-3 font-display text-[13px] text-parchment-300/85">
+            <p className="mt-3 border-l-2 border-white/15 pl-3 font-display text-[13px] text-parchment-300">
               &ldquo;{nerf.flavor}&rdquo;
             </p>
           )}
@@ -248,15 +250,15 @@ export function PlayerNerfCard({
       ) : (
         <>
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-gold/40 bg-gold/10 font-display text-2xl font-bold text-gold/80">
+            <div className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full border border-gold/40 bg-gold/10 font-display text-2xl font-bold text-gold">
               ?
             </div>
             <div className="min-w-0">
-              <div className="text-[10px] text-parchment-400">{ownerLabel}</div>
-              <div className="font-display text-xl text-parchment/85">Hidden rule</div>
+              <div className="text-[12px] text-parchment-400">{ownerLabel}</div>
+              <div className="font-display text-xl text-parchment">Hidden rule</div>
             </div>
           </div>
-          <p className="mt-3 text-sm leading-relaxed text-parchment-300/80">
+          <p className="mt-3 text-sm leading-relaxed text-parchment-300">
             You&apos;ll see their rule when the game ends.
           </p>
         </>
@@ -264,7 +266,7 @@ export function PlayerNerfCard({
 
       {boons && boons.length > 0 && (
         <div className={(compact ? "mt-2.5" : "mt-4") + " border-t border-white/10 pt-2"}>
-          <div className="text-[10px] text-parchment-400">Your cards</div>
+          <div className="text-[12px] text-parchment-400">Your cards</div>
           {/* Cap + scroll the held-cards list so a full late-game hand never grows
               this card tall enough to squeeze the interactive card dock (with its
               Use buttons) out of the rail. */}
@@ -272,18 +274,22 @@ export function PlayerNerfCard({
             {boons.map((b, i) => (
               <li key={`${b.name}-${i}`} className="flex items-baseline gap-1.5">
                 <span
-                  className={`min-w-0 truncate font-display text-[12px] font-semibold leading-tight tier-${b.tier}`}
+                  // The card name is what identifies the row, so it keeps a
+                  // floor: with three siblings now carrying 12px type instead
+                  // of 8-9px, a bare `min-w-0` would let the name shrink away
+                  // before the status text did.
+                  className={`min-w-[4.5rem] truncate font-display text-[12px] font-semibold leading-tight tier-${b.tier}`}
                 >
                   {b.name}
                 </span>
                 <TurnCostBadge cost={b.cost} short className="self-center" />
                 {b.status && (
-                  <span className="min-w-0 flex-1 truncate text-[8px] text-gold/80">
+                  <span className="min-w-0 flex-1 truncate text-[12px] text-gold" title={b.status}>
                     {b.status}
                   </span>
                 )}
                 <span
-                  className={`ml-auto shrink-0 rounded-[1px] border px-1.5 py-px font-display text-[9px] font-bold tier-bg-${b.tier} tier-${b.tier}`}
+                  className={`ml-auto shrink-0 rounded-[1px] border px-1.5 py-px font-display text-[12px] font-bold tier-bg-${b.tier} tier-${b.tier}`}
                 >
                   {TIER_ROMAN[b.tier]}
                 </span>

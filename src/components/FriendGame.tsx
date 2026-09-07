@@ -386,7 +386,7 @@ export function FriendGameProvider({ children }: { children: React.ReactNode }) 
       <main className="min-h-screen pb-16">
         <SiteHeader active="/lobby" />
         <section className="max-w-xl mx-auto px-6 py-12 text-center">
-          <div className="text-[11px] text-parchment-400">
+          <div className="text-[12px] text-parchment-400">
             {challenging ? `Challenge sent to ${challenging}` : "Share this code"}
           </div>
           <div className="mt-3 font-mono text-5xl tracking-[0.2em] text-gold-leaf">{code}</div>
@@ -395,7 +395,7 @@ export function FriendGameProvider({ children }: { children: React.ReactNode }) 
               ? `${challenging} has been notified.`
               : "Send this code to your friend."}
           </p>
-          <div className="mt-8 flex items-center justify-center gap-2 text-[11px] text-parchment-400">
+          <div className="mt-8 flex items-center justify-center gap-2 text-[12px] text-parchment-400">
             <span className="w-1.5 h-1.5 rounded-full bg-verdigris animate-flicker" />
             Waiting for opponent…
           </div>
@@ -419,7 +419,7 @@ export function FriendGameProvider({ children }: { children: React.ReactNode }) 
       <main className="min-h-screen pb-16">
         <SiteHeader active="/lobby" />
         <section className="max-w-xl mx-auto px-6 py-12 text-center">
-          <div className="text-[11px] text-parchment-400">Connecting…</div>
+          <div className="text-[12px] text-parchment-400">Connecting…</div>
           <div className="mt-3 font-mono text-4xl tracking-[0.2em] text-gold-leaf">{joinCode || code}</div>
           {error && (
             <div className="mt-6 plate p-3 px-4 border-oxblood-glow/60 bg-oxblood/15 text-parchment">
@@ -525,13 +525,14 @@ export function FriendGameSetup({ showFriends = true }: { showFriends?: boolean 
                 }
               >
                 <span className="font-mono text-base leading-none tabular-nums">{t.label}</span>
-                <span className={"text-[11px] " + (on ? "opacity-90" : "text-parchment-400")}>{t.speed}</span>
+                <span className={"text-[13px] " + (on ? "opacity-90" : "text-parchment-400")}>{t.speed}</span>
               </Button>
             );
           })}
         </div>
         <details className="mt-3" open={customOpen} onToggle={(e) => setCustomOpen(e.currentTarget.open)}>
-          <summary className="cursor-pointer select-none text-[12px] text-parchment-400 hover:text-parchment-200">
+          {/* A disclosure summary is a control: its text is interactive text. */}
+          <summary className="inline-flex min-h-[44px] cursor-pointer select-none items-center text-[13px] text-parchment-400 hover:text-parchment-200 [@media(pointer:fine)]:min-h-0">
             Custom time
           </summary>
           <div className="mt-3 space-y-4">
@@ -574,7 +575,7 @@ export function FriendGameSetup({ showFriends = true }: { showFriends?: boolean 
           </StakeButton>
         </div>
         {rated && (
-          <p className="mt-2 text-[11px] leading-snug text-parchment-400">
+          <p className="mt-2 text-[12px] leading-snug text-parchment-400">
             Rated when both players are signed in.
           </p>
         )}
@@ -607,7 +608,7 @@ export function FriendGameSetup({ showFriends = true }: { showFriends?: boolean 
                 placeholder="ABCDE"
                 maxLength={8}
                 aria-label="Friend game code"
-                className="min-w-0 flex-1 bg-ink-900/60 border border-white/15 rounded-sm px-4 py-3 text-lg font-mono tracking-widest uppercase focus:outline-none focus:border-gold/60 text-parchment placeholder:text-parchment-400/40"
+                className="min-w-0 flex-1 bg-ink-900/60 border border-white/15 rounded-sm px-4 py-3 text-lg font-mono tracking-widest uppercase focus:outline-none focus:border-gold/60 text-parchment placeholder:text-parchment-500"
               />
               <Button tone="ghost"
                 onClick={() => joinWithCode(joinCode)}
@@ -670,7 +671,9 @@ function ModeChoice({
       aria-label={mode === "nerf" ? "Nerf" : "Buff"}
       onClick={onClick}
       className={
-        "flex items-center justify-center gap-2 px-3 py-3 border transition font-display text-sm font-bold " +
+        // 148.5x41: py-3 is 0.75rem, and at a 14px root that is 10.5px a side, so
+        // the box lands three short of the minimum however wide it is.
+        "flex min-h-[44px] items-center justify-center gap-2 px-3 py-3 border transition font-display text-sm font-bold [@media(pointer:fine)]:min-h-0 " +
         identity
       }
     >
@@ -756,7 +759,7 @@ function TimeSlider({
   return (
     <div className={disabled ? "opacity-50" : ""}>
       <div className="flex items-center justify-between mb-2">
-        <div className="text-[11px] text-parchment-400">{label}</div>
+        <div className="text-[12px] text-parchment-400">{label}</div>
         <div className="font-mono text-sm text-gold-leaf tabular-nums">{display}</div>
       </div>
       <input
@@ -767,9 +770,14 @@ function TimeSlider({
         value={index}
         disabled={disabled}
         onChange={(e) => onChange(values[Number(e.target.value)])}
-        className="w-full accent-gold-leaf disabled:cursor-not-allowed"
+        // 16px tall, and the one control on this page that has to be dragged
+        // rather than tapped. The track paints centred in whatever height the
+        // element has, so min-height grows the hit area without moving the
+        // slider. Same shape and same fix as the picker on /play, which is a
+        // separate copy of this component.
+        className="min-h-[44px] w-full accent-gold-leaf disabled:cursor-not-allowed [@media(pointer:fine)]:min-h-0"
       />
-      <div className="mt-1 flex justify-between font-mono text-[10px] text-parchment-400">
+      <div className="mt-1 flex justify-between font-mono text-[12px] text-parchment-400">
         <span>{formatEdgeLabel(values[0])}</span>
         <span>{formatEdgeLabel(values[values.length - 1])}</span>
       </div>

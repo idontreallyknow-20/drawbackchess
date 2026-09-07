@@ -18,6 +18,7 @@ const ClipModal = dynamic(() => import("@/components/clip/ClipModal").then((m) =
   ssr: false,
 });
 import { MobileMatchStack } from "@/components/MobileMatchStack";
+import { BoardTools, FlipBoardButton } from "@/components/board/BoardTools";
 import { FxToggleButton } from "@/components/FxToggleButton";
 import { MoveList } from "@/components/MoveList";
 import { PlayerNerfCard } from "@/components/PlayerNerfCard";
@@ -54,6 +55,16 @@ import { computeFxVisual, fxVisualFields } from "@/components/effects/fxZones";
 import { useSignatureQueue } from "@/components/effects/useSignatureQueue";
 import { MobileBuffDrawer } from "@/components/MobileBuffDrawer";
 import { cardFaceIcon } from "@/lib/cardIcon";
+import {
+  TABLET_STACK_BOARD,
+  TABLET_STACK_CENTER,
+  TABLET_STACK_COL,
+  TABLET_STACK_FAB,
+  TABLET_STACK_HIDE,
+  TABLET_STACK_SCROLL,
+  TABLET_STACK_SHOW,
+  TABLET_STACK_UNCLIP,
+} from "@/components/matchLayout";
 import { bottomChromePadClass } from "@/components/mobileChrome";
 import { DraftNotice } from "@/components/DraftNotice";
 import {
@@ -76,7 +87,7 @@ import { useZenHotkey } from "@/lib/useZenMode";
 import { ensureAccount } from "@/lib/authClient";
 import type { QueuedPremove } from "@/components/Board";
 import { buildCustomNerf, CustomNerf } from "@/engine/nerfs/custom";
-import { playCapture, playCheck, playNerf, playMove as playMoveSfx } from "@/lib/sounds";
+import { playCheck, playMoveCue, playNerf } from "@/lib/sounds";
 import { nerfSummary, outcomeFor, recordCompletedGame } from "@/lib/gameHistory";
 import { applyResult, loadRatingFor, saveRatingFor } from "@/lib/rating";
 import { loadRatings } from "@/lib/ratings";
@@ -159,6 +170,26 @@ const BOT_ELO: Record<AILevel, number> = {
 const DRAFT_REVEAL_EASE_MS = 450;
 const DRAFT_REVEAL_HOLD_MS = 4000;
 
+// --- Opening-arc instrumentation (C49) -------------------------------------
+// Opt in with ?perf=1. Off, `perfMark` is a dead branch on a module constant
+// and costs one boolean test per call; on, it appends {n, t} to window.__gamePerf
+// so a harness can read the exact render/commit boundaries between hydration
+// and the draft overlay mounting. Deliberately not a `performance.mark` only:
+// the ORDER of render-vs-commit is what the measurement is about, and marks
+// with identical names collapse in the timeline.
+const PERF_MARKS =
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("perf") === "1";
+function perfMark(n: string) {
+  if (!PERF_MARKS) return;
+  try {
+    const w = window as unknown as { __gamePerf?: Array<{ n: string; t: number }> };
+    (w.__gamePerf ??= []).push({ n, t: performance.now() });
+  } catch {
+    // instrumentation must never break the game
+  }
+}
+
 export default function GamePageWrapper() {
   // Rematch remounts GamePage under a fresh key with the URL untouched, so
   // bootstrapGame re-runs against the SAME configuration (mode, strength,
@@ -191,6 +222,7 @@ function LoadingPanel() {
 }
 
 function GamePage({ onRematch }: { onRematch: () => void }) {
+  perfMark("render:start");
   // Zen mode: `z` hides everything but the board, clocks and move list.
   useZenHotkey();
   const router = useRouter();
@@ -417,6 +449,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
   }, []);
 
   function bootstrapGame() {
+    perfMark("bootstrap:start");
     try {
       const saved = loadSavedAiGame(querySignature);
       if (saved) {
@@ -453,6 +486,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
         enableDraftMode(g, makeSeed(), { mode: "buff" });
         setHistoryPly(null);
         setGame(g);
+        perfMark("bootstrap:end");
         return;
       }
       // Deal both players' nerf options; the game starts when the player
@@ -582,6 +616,12 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
     onPrepStart: () => setOfferDeadline(null),
   });
   const draftCovered = !!liveOffer && !liveOfferOnClock && draftSeq.overlayVisible;
+  perfMark(
+    `render:draft key=${liveOfferKey ?? "-"} phase=${draftSeq.phase} vis=${draftSeq.overlayVisible ? 1 : 0} busy=${sigBusy ? 1 : 0}`,
+  );
+  useEffect(() => {
+    perfMark("commit");
+  });
   useEffect(() => {
     draftCoveredRef.current = draftCovered;
   });
@@ -975,20 +1015,28 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
     if (hist.length === lastSeenMoveCount.current) return;
     const last = hist[hist.length - 1];
     if (last) {
-      if (last.captured) playCapture();
-      else playMoveSfx();
+      // One call, five possible voices: quiet click, capture, the castle
+      // double-knock, a pocket drop, plus the promotion flourish on top. The
+      // bot's moves land a semitone darker and a shade quieter than yours, so
+      // "the board changed and it was not me" is audible without looking.
+      playMoveCue(last, { opponent: last.color !== myColor });
       // gameInCheck also sees buff-granted movement, so a king attacked only
       // by an empowered "weird" piece (an amazon, a camel knight...) still
-      // rings the check bell.
+      // rings the check bell. Being checked keeps the full two-ring alarm;
+      // a check you just delivered gets the single opening toll.
       if (gameInCheck(game, game.board.turn)) {
-        setTimeout(playCheck, 80);
+        const onMe = game.board.turn === myColor;
+        setTimeout(() => playCheck({ onMe }), 80);
       }
     }
     // Plain ref bookkeeping; flagged only as collateral of the mutable-replica
     // bailout elsewhere in this component (isolated, this pattern is clean).
     // eslint-disable-next-line react-hooks/immutability
     lastSeenMoveCount.current = hist.length;
-  }, [game]);
+    // myColor only changes when a new game is set up, and the history-length
+    // guard above already swallows a re-run that plays no new move, so naming
+    // it here cannot double-sound anything.
+  }, [game, myColor]);
 
   // Board-mutating self-buffs (the bot's summon/transform/revive/removal that
   // reacts to a move) mutate the board with no draft frame to hang a play on.
@@ -1507,21 +1555,59 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
             )}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {nerfDraft.myOptions.map((n, i) => (
-                <button
+                // A plain frame, NOT a button: the card grows its own stretched
+                // pick target (see NerfCard). Wrapping the card in a button put
+                // the rule text's glossary chips -- span[role=button] -- inside
+                // a button, and their click handler stops propagation, so a
+                // click on a glossary word selected nothing at all here. This
+                // frame only carries the selection ring and the dimming, which
+                // is why it keeps the same box the button had.
+                <div
                   key={n.id}
-                  type="button"
-                  onClick={() => (nerfSelected === i ? startDraftGame(n) : setNerfSelected(i))}
                   className={
-                    "mx-auto block w-full max-w-md sm:max-w-none text-left transition-[box-shadow,opacity] duration-200 touch-manipulation" +
+                    // self-start: as a stretched grid item this frame used to
+                    // run the full height of the tallest card in the row, so
+                    // the selection ring was drawn around empty space below a
+                    // short card. That was invisible while the frame was also
+                    // the button; now that the target is the card face, a
+                    // stretched frame would leave a dead zone INSIDE the ring.
+                    // Hugging the card keeps ring and hit area the same box.
+                    "mx-auto block w-full max-w-md self-start text-left transition-[box-shadow,opacity] duration-200 sm:max-w-none" +
                     (nerfSelected === i
                       ? " ring-2 ring-gold"
                       : nerfSelected != null
                       ? " opacity-60"
                       : "")
                   }
+                  // The glossary dead zone, closed the same way the buff draft
+                  // closes it. A term in the rule text is its own control and
+                  // its click handler stops propagation on purpose (reading a
+                  // word must never activate the surface under it -- here that
+                  // would START THE GAME), so a click on one of the five or so
+                  // underlined words on a card reached nothing: no ring, no
+                  // Confirm. Taking the pick on the CAPTURE phase, before the
+                  // term swallows it, makes every word on the card select.
+                  // Select only, never confirm: the guard below means a term
+                  // click on the already-chosen card is still inert.
+                  onClickCapture={(e) => {
+                    if (nerfSelected === i) return;
+                    const t = e.target as HTMLElement | null;
+                    if (!t?.closest('[role="button"][aria-expanded]')) return;
+                    setNerfSelected(i);
+                  }}
                 >
-                  <NerfCard nerf={n} preview ownerLabel={nerfSelected === i ? "Selected" : "Pick this nerf"} />
-                </button>
+                  <NerfCard
+                    nerf={n}
+                    preview
+                    ownerLabel={nerfSelected === i ? "Selected" : "Pick this nerf"}
+                    // First click selects, a second click on the selected card
+                    // starts the game -- the behaviour the wrapper had.
+                    onClick={() => (nerfSelected === i ? startDraftGame(n) : setNerfSelected(i))}
+                    // The gold ring is the sighted signal; aria-pressed is the
+                    // same fact for everyone else.
+                    selected={nerfSelected === i}
+                  />
+                </div>
               ))}
             </div>
             {nerfSelected != null && (
@@ -1687,8 +1773,10 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
   // bottom clock get pushed off). Literal strings only, so Tailwind's JIT
   // emits them.
   const boardFitClass = hint
-    ? "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-11rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-11rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full"
-    : "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-8rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-8rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full";
+    ? "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-11rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-11rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full " +
+      TABLET_STACK_BOARD
+    : "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-8rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-8rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full " +
+      TABLET_STACK_BOARD;
 
   const handleMove = (m: Move) => {
     if (game.result || isReviewingHistory) return;
@@ -1784,7 +1872,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={confirmHeldMove}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Confirm
         </button>
@@ -1801,7 +1889,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onOfferDraw}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Offer draw
         </button>
@@ -1839,7 +1927,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
           disabled={drawOfferStatus !== "idle"}
           title="Offer a draw"
           aria-label="Offer a draw"
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {drawOfferStatus === "offering" ? "Offering..." : "Draw"}
         </button>
@@ -1847,7 +1935,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
           onClick={requestResign}
           title="Resign the game"
           aria-label="Resign the game"
-          className="min-w-0 px-3 py-2 text-xs font-semibold tracking-wide">
+          className="min-w-0 px-3 py-2 text-[13px] font-semibold tracking-wide">
           Resign
         </Button>
       </div>
@@ -1869,7 +1957,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
             ? "Clip unavailable: these moves can't be replayed (the board was rewritten by a card)"
             : "Save the last moves as a short video clip"
         }
-        className="min-w-0 w-full px-3 py-2 text-xs tracking-wide disabled:opacity-50">
+        className="min-w-0 w-full px-3 py-2 text-[13px] tracking-wide disabled:opacity-50">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <polygon points="23 7 16 12 23 17 23 7" />
           <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
@@ -1886,8 +1974,24 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
       </div>
     ) : null;
 
+  perfMark("render:body-done");
   return (
-    <main className="flex min-h-dvh flex-col sm:h-dvh sm:min-h-0 sm:overflow-hidden">
+    <main className={"flex min-h-dvh flex-col sm:h-dvh [@media(pointer:fine)]:min-h-0 sm:overflow-hidden " + TABLET_STACK_SCROLL}>
+      {/* The live game had NO h1 at all: the only one on this route sits in
+          the pre-game nerf-draft branch, so the moment a game started the
+          page lost its heading. A screen reader landing here was told nothing
+          about what the page is, and /tutorial/first-game inherited the same
+          gap because it renders this same wrapper.
+
+          Visually hidden rather than displayed, because the board IS the
+          content and a printed heading above it would be exactly the
+          brochure-style padding section 4 rules out on app surfaces. It names
+          the mode and the side, which is what a player arriving by keyboard
+          needs to know first. */}
+      <h1 className="sr-only">
+        {gameMode === "nerf" ? "Nerf mode" : gameMode === "buff" ? "Buff mode" : "Chess"} game
+        against the computer, playing {myColor === "w" ? "White" : "Black"}
+      </h1>
       <CompactSiteHeader
         status={
           <span className="zen-hide hidden sm:inline">
@@ -1909,6 +2013,8 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
       <div
         className={
           "mx-auto flex w-full max-w-[1360px] flex-1 min-h-0 flex-col gap-2 px-0 sm:overflow-hidden sm:px-6 xl:max-w-[1680px] " +
+          TABLET_STACK_UNCLIP +
+          " " +
           bottomChromePadClass(!!game.buffs)
         }
       >
@@ -2019,11 +2125,17 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
             }
           />
           <RailResizeHandle railWidth={railWidth} resizeRail={resizeRail} />
-          <div className="flex min-h-0 flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-start">
-            <div ref={boardShellRef} className="min-h-0 min-w-0 sm:flex-none">
+          <div className={"flex min-h-0 flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-start " + TABLET_STACK_COL}>
+            {/* In the band the whole column — player strips, board, stack —
+                shares the board's width and centres as one, so the strips line
+                up with the board's edges instead of spanning the viewport. */}
+            <div
+              ref={boardShellRef}
+              className={`min-h-0 min-w-0 sm:flex-none ${TABLET_STACK_BOARD} ${TABLET_STACK_CENTER}`}
+            >
               {/* Mobile-only player strips: the side rails (clocks, cards,
                   actions) are hidden below the sm breakpoint. */}
-              <div className="flex items-center justify-between gap-2 px-2 sm:hidden">
+              <div className={"flex items-center justify-between gap-2 px-2 sm:hidden " + TABLET_STACK_SHOW}>
                 <BoardPlayerRow
                   // Material counts read the COMMITTED position (a queued premove
                   // must never bump the capture tally early); history review
@@ -2046,7 +2158,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
                   />
                 )}
               </div>
-              <div data-board-measure className={`relative mx-auto sm:mx-0 ${boardFitClass}`}>
+              <div data-board-measure className={`relative mx-auto sm:mx-0 ${TABLET_STACK_CENTER} ${boardFitClass}`}>
                 <Board
                   board={boardForDisplay}
                   // Removal FX diff the committed position, never the premove /
@@ -2149,7 +2261,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
                 )}
                 {!isReviewingHistory && <BoardSplashHost rows={againstMe} />}
               </div>
-              <div className="flex items-center justify-between gap-2 px-2 sm:hidden">
+              <div className={"flex items-center justify-between gap-2 px-2 sm:hidden " + TABLET_STACK_SHOW}>
                 <BoardPlayerRow
                   // Material counts read the COMMITTED position (a queued premove
                   // must never bump the capture tally early); history review
@@ -2173,6 +2285,13 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
                     compact
                   />
                 )}
+                {/* Flip, on the surface that cannot press `f`. The rail below
+                    carries the same button plus the keymap, but the rail is
+                    display:none on a phone, so this was the one layout where
+                    the flip setting was still three levels into Settings —
+                    which is the whole complaint the rail button answered. The
+                    keys stay bound once, in the rail's BoardTools. */}
+                <FlipBoardButton className="zen-hide shrink-0" />
               </div>
               <MobileMatchStack
                 actions={historyActions}
@@ -2227,6 +2346,11 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
             <div
               className={
                 "hidden min-h-0 overflow-hidden gap-3 sm:grid sm:h-[var(--board-height)] sm:w-72 sm:shrink-0 " +
+                // The move rail is the thing that was squeezing the board on a
+                // portrait tablet; there its clocks ride the player strips and
+                // its move list is the horizontal strip in the stack.
+                TABLET_STACK_HIDE +
+                " " +
                 (clockEnabled ? "sm:grid-rows-[auto_minmax(0,1fr)_auto]" : "sm:grid-rows-[minmax(0,1fr)]")
               }
               style={railHeightStyle}
@@ -2259,7 +2383,24 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
                   draftRunning={myDraftCharging}
                 />
               )}
-              <div className="zen-hide flex justify-end pt-1">
+              <div className="zen-hide flex items-center justify-end gap-2 pt-1">
+                {/* Flip and the shortcut sheet, plus the keymap binding for
+                    this surface (f, ?, k/j, 0/$, Home/End, c). The ply jump
+                    reuses the same state the wheel-over-board scrub reads. */}
+                <BoardTools
+                  onPlyNav={(to) => {
+                    const st = wheelNavRef.current;
+                    if (st.blocked || st.max === 0) return;
+                    const cur = st.ply ?? st.max;
+                    const next =
+                      to === "first"
+                        ? st.min
+                        : to === "last"
+                        ? st.max
+                        : cur + (to === "prev" ? -1 : 1);
+                    st.nav(Math.max(st.min, Math.min(next, st.max)));
+                  }}
+                />
                 <FxToggleButton />
               </div>
             </div>
@@ -2342,8 +2483,16 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
 
       {/* Board spectacles still playing when the draft arrived: a small
           status chip says so while the overlay waits its turn. The machine
-          caps this hold, so a stuck animation can never block the draft. */}
-      {myOffer && !game.result && !draftSeq.overlayVisible && <DraftResolvingChip />}
+          caps this hold, so a stuck animation can never block the draft.
+          sigBusy is in the condition because the chip claims something
+          specific -- "Resolving effects" -- and it used to appear whenever the
+          overlay was merely not up yet. At game start nothing is resolving
+          (sigBusy is false from the first frame), yet the chip still flashed
+          in the same frame as the board and vanished as the dialog mounted,
+          every run: a status line that was never true. Now it appears only
+          while the signature queue actually is busy, which is the one case it
+          describes. */}
+      {myOffer && !game.result && !draftSeq.overlayVisible && sigBusy && <DraftResolvingChip />}
       {myOffer && !game.result && draftSeq.overlayVisible && (
         <DraftOverlay
           offer={myOffer}
@@ -2410,7 +2559,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
         <Button tone="leaf"
          
           onClick={() => setShowResult(true)}
-          className="fixed bottom-4 right-3 z-40 px-4 py-2 text-sm font-semibold shadow-xl sm:bottom-16 lg:bottom-4">
+          className={"fixed bottom-4 right-3 z-40 px-4 py-2 text-sm font-semibold shadow-xl sm:bottom-16 lg:bottom-4 " + TABLET_STACK_FAB}>
           Show result
         </Button>
       )}

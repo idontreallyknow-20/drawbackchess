@@ -304,7 +304,7 @@ function DraftCoachBanner() {
         role="status"
         className="plate max-w-md border border-gold/50 px-4 py-2.5 text-center shadow-xl"
       >
-        <div className="text-[10px] text-gold-leaf">your first draft</div>
+        <div className="text-[12px] text-gold-leaf">your first draft</div>
         <p className="mt-1 text-[13px] leading-snug text-parchment-200">
           <strong className="text-parchment">Pick</strong> a card to take it now, or{" "}
           <strong className="text-parchment">Bank</strong> to take nothing and make your next

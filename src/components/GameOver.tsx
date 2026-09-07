@@ -3,8 +3,17 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "@/lib/useReducedMotion";
+import { useMotionTempo, tempoScale } from "@/components/useMotionTempo";
 import { useModalChrome } from "@/lib/useModalChrome";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { fetchMe } from "@/lib/authClient";
 import { GameResult } from "@/engine/game";
 import { Color, Move } from "@/engine/types";
@@ -19,6 +28,7 @@ import { ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { TIER_LABEL, TIER_ROMAN } from "@/lib/tiers";
 import { GlossaryText } from "@/components/GlossaryText";
+import { SrSep } from "@/components/SrSep";
 import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/Button";
 
@@ -230,7 +240,7 @@ function DraftedCardRow({
     <li className={"py-1.5" + (buff.nullified ? " opacity-60" : "")}>
       <div className="flex items-center gap-2">
         <span
-          className={`shrink-0 border px-1 font-display text-[11px] font-bold leading-none tier-bg-${buff.tier} tier-${buff.tier}`}
+          className={`shrink-0 border px-1 font-display text-[12px] font-bold leading-none tier-bg-${buff.tier} tier-${buff.tier}`}
           // title stays as the desktop hover gloss; the aria-label carries the
           // same meaning for screen readers (title alone is unreliable there,
           // and never appears on touch — where the roman numeral plus the full
@@ -243,14 +253,14 @@ function DraftedCardRow({
         <span
           className={
             "min-w-0 flex-1 truncate text-[13px] text-parchment-100" +
-            (buff.nullified ? " line-through decoration-parchment-400/60" : "")
+            (buff.nullified ? " line-through decoration-parchment-500" : "")
           }
           title={def.name}
         >
           {def.name}
         </span>
         {state.tag && (
-          <span className={`shrink-0 border px-1.5 py-px text-[11px] leading-none ${tagClass}`}>
+          <span className={`shrink-0 border px-1.5 py-px text-[12px] leading-none ${tagClass}`}>
             {state.tag}
           </span>
         )}
@@ -321,24 +331,124 @@ function DraftedGroup({
   );
 }
 
+// THE ENDING, AS THREE ACTS.
+//
+// Every offset in milliseconds from the moment the panel mounts. The CSS side
+// of each beat lives in globals.css under the same heading; these constants are
+// the single source of truth and are handed down as custom properties, so the
+// numbers a reader finds here are the numbers that run.
+//
+//   act I    the verdict         t=0, no class, never withheld and never late
+//   act II   the two rules       t=200, the opponent's under a lid
+//            the lid lifts       t=780 over 380ms
+//            the rule unseals    t=840 (arrives 840-1160, name lands 1000-1320)
+//   act III  the record          t=1080, cards drafted and the match timeline
+//
+// The whole ending is 1.4s and act I is legible in the first frame of it, which
+// is the only hard rule: the outcome and the way out of the panel are never
+// what a choreography is spending time on.
+//
+// Multiply by `beat` (1 normal, 0.6 fast, 0 reduced) for wall-clock timings.
+const ENDING = {
+  reveal: 200,
+  seal: 780,
+  sealDur: 380,
+  card: 840,
+  record: 1080,
+} as const;
+
 // A single revealed rule row for the post game summary. Both players' rules are
 // shown once the game is over, so the "secret" finally pays off.
-function RuleReveal({ label, nerf, children }: { label: string; nerf: Nerf; children?: ReactNode }) {
+//
+// `unseal` marks THE reveal: the opponent's rule, the one thing you did not
+// know for the whole game, at the moment you break its seal. It used to arrive
+// with no motion at all — a React conditional swapped the sealed button for
+// this box between one frame and the next, which is a strange way to deliver
+// what the roadmap calls the game's most shareable moment. It now plays the
+// same three beats the in-game nerf reveal plays (a band sweeps down, the card
+// arrives, the rule's NAME stamps last), scaled from that effect's two seconds
+// to 480ms because this one sits in a panel, not over the board. See
+// .nerf-unseal in globals.css.
+function RuleReveal({
+  label,
+  nerf,
+  unseal,
+  unsealDelayMs,
+  announce,
+  onUnsealed,
+  children,
+}: {
+  label: string;
+  nerf: Nerf;
+  unseal?: boolean;
+  /** How long the beat waits before it starts, in unscaled milliseconds. On the
+   *  ending stage the rule sits under a lid that takes until ENDING.card to
+   *  clear, and animating underneath it would be the same mistake a previous
+   *  round found inside a closed <details>: a reveal that plays where nobody
+   *  can see it. Scaled by --beat with everything else. */
+  unsealDelayMs?: number;
+  /** This rule is the reveal, motion or no motion: announce it. Deliberately
+   *  separate from `unseal`, which is only the visual beat — a player with
+   *  animations off must still HEAR the reveal, and tying the live region to
+   *  the animation would have silenced exactly the people who cannot see it. */
+  announce?: boolean;
+  /** Fired once the unseal beat has finished, so it never plays twice. */
+  onUnsealed?: () => void;
+  children?: ReactNode;
+}) {
   return (
-    <div className={`border p-3 text-left tier-bg-${nerf.tier}`}>
+    <div
+      className={`relative border p-3 text-left tier-bg-${nerf.tier}` + (unseal ? " nerf-unseal" : "")}
+      style={
+        unseal && unsealDelayMs
+          ? ({ "--unseal-delay": `${unsealDelayMs}ms` } as CSSProperties)
+          : undefined
+      }
+      {...(announce ? { role: "status" as const, "aria-live": "polite" as const } : null)}
+      onAnimationEnd={
+        unseal
+          ? (e) => {
+              // The name is the LAST beat to finish (it starts at 160ms and
+              // runs to 480ms), so disarming on it can never cut the
+              // choreography short the way disarming on the card's own
+              // arrival at 320ms would.
+              if (e.animationName === "nerf-unseal-name") onUnsealed?.();
+            }
+          : undefined
+      }
+    >
+      {/* The seal breaking: one tier-tinted band sweeping down the card. Its
+          wrapper clips it, and it is inert and invisible to assistive tech. */}
+      {unseal && (
+        <span aria-hidden className="nerf-unseal__seal">
+          <i />
+        </span>
+      )}
       <div className="flex items-center justify-between gap-2">
         <span>{label}</span>
+        {/* This whole row is one live-region announcement when it is THE
+            reveal, and label, tier and name are adjacent text to the
+            accessibility tree: without separators the payoff of the entire
+            mode is read as "Opponent ruleTrivialWalking Pace". See SrSep. */}
+        <SrSep />
         <span
-          className={`inline-flex items-center gap-1 border px-1.5 py-0.5 font-display text-[11px] font-bold leading-none tier-bg-${nerf.tier} tier-${nerf.tier}`}
+          className={`inline-flex items-center gap-1 border px-1.5 py-0.5 font-display text-[12px] font-bold leading-none tier-bg-${nerf.tier} tier-${nerf.tier}`}
           title={`Difficulty ${nerf.tier}: ${TIER_LABEL[nerf.tier]}`}
         >
           <span aria-hidden>{TIER_ROMAN[nerf.tier]}</span>
           <span>{TIER_LABEL[nerf.tier]}</span>
         </span>
       </div>
-      <div className={`mt-1 font-display text-base font-semibold leading-tight tier-${nerf.tier}`}>
+      <SrSep text=". " />
+      <div
+        className={
+          `mt-1 font-display text-base font-semibold leading-tight tier-${nerf.tier}` +
+          (unseal ? " nerf-unseal__name" : "")
+        }
+      >
         {nerf.name}
       </div>
+      <SrSep text=". " />
       <p className="mt-1 text-xs leading-snug text-parchment-200">
         {/* Glossary terms in the revealed rule get the tap/hover definition
             popover, so the reveal explains itself to new players. */}
@@ -346,6 +456,22 @@ function RuleReveal({ label, nerf, children }: { label: string; nerf: Nerf; chil
       </p>
       {children}
     </div>
+  );
+}
+
+// The face of a rule nobody has seen yet: a mark and the word for whose rule it
+// is. Shared by the two things that wear it, so the sealed state looks the same
+// however a player reaches it: the lid the ending lifts by itself, and the
+// press-to-reveal button a player gets when they asked to keep the opponent's
+// rule hidden.
+function SealFace({ label }: { label: string }) {
+  return (
+    <>
+      <span aria-hidden className="ending-seal__mark">
+        ?
+      </span>
+      <span className="ending-seal__label">{label}</span>
+    </>
   );
 }
 
@@ -359,20 +485,49 @@ function SummaryFold({
   label,
   count,
   hint,
+  onOpenChange,
   children,
 }: {
   label: string;
   count?: number;
   hint?: string;
+  /** Whether the fold is open, reported on every change. */
+  onOpenChange?: (open: boolean) => void;
   children: ReactNode;
 }) {
+  // The fold is CONTROLLED rather than a plain native <details>, and it has to
+  // be. Measured: a closed <details> in Chromium still runs the animations of
+  // the content inside it, so the reveal beat on the opponent's rule played
+  // itself out, invisibly, seconds before anyone opened the fold; by the time
+  // the player looked, the card was sitting in its finished state. Letting the
+  // browser toggle and adding the class from a React state update a frame
+  // later would be no better: the settled card would paint for one frame and
+  // then jump back to nothing to animate in.
+  //
+  // Intercepting the press (mouse and keyboard alike: Enter and Space both
+  // arrive on <summary> as a click) puts the open state and the beat in the
+  // same commit, so the animation starts on the first frame the card is
+  // actually on screen.
+  const [open, setOpen] = useState(false);
+  const toggle = (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    const next = !open;
+    setOpen(next);
+    onOpenChange?.(next);
+  };
   return (
-    <details className="group mt-5 border border-[color:var(--edge)] bg-ink-900/40 text-left">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 outline-none focus-visible:text-gold-leaf [&::-webkit-details-marker]:hidden">
+    <details
+      open={open}
+      className="group mt-5 border border-[color:var(--edge)] bg-ink-900/40 text-left"
+    >
+      <summary
+        onClick={toggle}
+        className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 outline-none focus-visible:text-gold-leaf [&::-webkit-details-marker]:hidden"
+      >
         <span className="flex min-w-0 items-baseline gap-2">
           <span>{label}</span>
           {count != null && (
-            <span className="font-mono text-[11px] tabular-nums text-parchment-400">{count}</span>
+            <span className="font-mono text-[12px] tabular-nums text-parchment-400">{count}</span>
           )}
         </span>
         <span className="flex shrink-0 items-center gap-2">
@@ -461,7 +616,7 @@ function MatchTimeline({
           />
         ))}
       </div>
-      <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-parchment-400">
+      <div className="mt-1 flex items-center justify-between gap-2 text-[12px] text-parchment-400">
         <span>Opening</span>
         <span>Endgame</span>
       </div>
@@ -583,6 +738,7 @@ export function GameOver({
   // screen instantly (Board.tsx documents the same hazard for its promotion
   // picker).
   const chrome = useModalChrome(!dismissed, dismiss);
+  const { attachDialog } = chrome;
   const [shared, setShared] = useState(false);
   const [pgnCopied, setPgnCopied] = useState(false);
   // The "Shared" / "Copied" flashes reset on a timer; cleared on unmount so a
@@ -612,8 +768,57 @@ export function GameOver({
     };
   }, [spectator]);
   const [oppRevealed, setOppRevealed] = useState(!opponentHidden);
+  // THE REVEAL. Armed for exactly one player: the one sitting at the board who
+  // spent the whole game not knowing what the other side was playing under. It
+  // disarms itself the moment the beat has played (see onAnimationEnd on the
+  // rule card), so re-opening the fold does not replay it, and a spectator —
+  // who never had a secret to keep — never arms it at all.
+  //
+  // There are two ways in and both are the same moment: most players reach it
+  // by opening the "Rules this game" fold (the default: the opponent's rule is
+  // simply printed there, with no beat of any kind before this change), and a
+  // player who turned on "Keep opponent's rule hidden" reaches it by pressing
+  // the sealed card. Arming from render rather than from the click is what
+  // makes the fold path work: the card sits inside a closed <details>, so it is
+  // display:none and its animation cannot start until the fold opens, which is
+  // precisely when the player first lays eyes on the rule.
+  const [unsealArmed, setUnsealArmed] = useState(!spectator);
+  // The beat only exists once the rule is actually on screen. Chromium runs the
+  // animations of content inside a CLOSED <details>, so arming from render
+  // alone played the whole reveal invisibly and left the settled card waiting
+  // behind an unopened fold; SummaryFold reports its open state instead. Only
+  // the spectator path still goes through the fold; a seated player now gets
+  // the reveal on the panel itself, where it cannot animate out of sight.
+  const [rulesOpen, setRulesOpen] = useState(false);
   const primaryRef = useRef<HTMLButtonElement | null>(null);
   const reduceMotion = useReducedMotion();
+  // Tempo. `beat` multiplies every duration and delay in the ending, on both
+  // sides of the CSS boundary: it is handed to the stylesheet as --beat and
+  // used here for the framer springs, the rating count-up and the one timer.
+  // Without it "fast" reached nothing in this panel — globals.css clamps
+  // `transition-duration` only, which is not what a keyframe, a framer
+  // transition or a requestAnimationFrame count-up is made of.
+  const tempo = useMotionTempo();
+  const beat = reduceMotion ? 0 : tempoScale(tempo);
+  const choreograph = beat > 0;
+  // The lid over the opponent's rule retires itself once its beat has played.
+  // Nothing is riding on this timer for correctness — the lid is an overlay on
+  // a card that is already rendered, already announced and already in the
+  // accessibility tree — but a lid that outlived its animation would be sitting
+  // on the one thing the whole mode is about, so it is not left to CSS alone.
+  const [sealTimedOut, setSealTimedOut] = useState(false);
+  // Derived, not stored: with no choreography there is no lid at all, and
+  // deciding that during render rather than from an effect keeps the very
+  // first frame correct for a player who has motion off.
+  const sealLifted = !choreograph || sealTimedOut;
+  useEffect(() => {
+    if (!choreograph) return;
+    const t = window.setTimeout(
+      () => setSealTimedOut(true),
+      (ENDING.seal + ENDING.sealDur + 240) * beat,
+    );
+    return () => window.clearTimeout(t);
+  }, [choreograph, beat]);
   const draw = result.winner === "draw";
   // An aborted game has no winner at all (null, not "draw"): nobody scores
   // and no rating moved, so the screen stays neutral for everyone.
@@ -671,6 +876,7 @@ export function GameOver({
     ratingChange ? Math.round(ratingChange.before) : 0,
     ratingChange ? Math.round(ratingChange.after) : 0,
     !reduceMotion && !!ratingChange,
+    700 * (beat || 1),
   );
   // One feedback row per buff id, even if copies were drafted (Mirror etc.);
   // the server keys votes per player per buff anyway.
@@ -694,6 +900,18 @@ export function GameOver({
   }, [opponentBuffs]);
 
   const modeChip = mode === "nerf" || mode === "buff";
+
+  // The reveal earns the panel itself only when there is genuinely something to
+  // reveal: a seated player, and a rule on BOTH sides so the heading ("what you
+  // were both playing under") is true. A spectator held no secret and never had
+  // the beat armed, and a half-populated game would be a stage with one actor;
+  // both keep the folded reference list, which is all either one needs.
+  const revealStage = !spectator && !!myNerf && !!opponentNerf;
+  // Whether the opponent's rule is on the automatic path (a lid that lifts on
+  // its own) rather than the press-to-reveal path. Captured once at mount: the
+  // press flips `oppRevealed`, and asking that question afterwards would give
+  // the wrong answer to the card that just came up under the player's finger.
+  const [autoReveal] = useState(() => !opponentHidden);
 
   // Share copies a short text summary of the game (result plus both rules) to
   // the clipboard. It works client side today; a hosted replay link can be
@@ -769,7 +987,12 @@ export function GameOver({
       if (playedGameOverKeys.has(key)) return;
       playedGameOverKeys.add(key);
     }
-    playGameOver();
+    // The result screen is the one place that knows how the game ended from
+    // THIS seat, so it voices the outcome rather than the neutral dong: a
+    // rising fanfare for a win, a soft fall for a loss, an unresolved pair for
+    // a draw. A spectator holds no seat and an abort has no winner, so both
+    // keep the neutral voice (passing "loss" to a watcher would be a lie).
+    playGameOver(spectator || aborted ? undefined : won ? "win" : draw ? "draw" : "loss");
     // Victory earns a short success pulse on devices that support haptics.
     if (won && !spectator) haptic("success");
     // Mount-only by design: the key identifies the game, not a render.
@@ -795,12 +1018,25 @@ export function GameOver({
 
   return (
     <motion.div
+      ref={attachDialog}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="game-over-title"
+      // The panel used to be named by the outcome word alone ("Victory"), and
+      // the draft overlay is also a bare role="dialog" over the same board, so
+      // the two were indistinguishable: a screen reader heard "Victory,
+      // dialog" with nothing saying an ending had arrived, and a harness
+      // reaching for `[role="dialog"]` mistook the ending for a draft and
+      // waited for cards that would never deal. The kicker joins the label so
+      // the name reads "Game over, Victory", and `data-dialog` gives anything
+      // automating the page a handle that does not depend on wording.
+      data-dialog="game-over"
+      aria-labelledby="game-over-kicker game-over-title"
       aria-describedby="game-over-reason"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      // One tempo for the whole ending, read by every beat in globals.css from
+      // the victory burst down to the lid on the opponent's rule.
+      style={{ "--beat": beat } as CSSProperties}
       className="fixed inset-0 z-50 grid place-items-center overflow-y-auto overscroll-contain bg-[#0f0d0a]/80 px-4 py-6"
       onPointerDown={chrome.onBackdropPointerDown}
     >
@@ -832,7 +1068,16 @@ export function GameOver({
       <motion.div
         initial={reduceMotion ? { opacity: 0 } : { y: 16, scale: 0.96, opacity: 0 }}
         animate={reduceMotion ? { opacity: 1 } : { y: 0, scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 320, damping: 26 }}
+        // A spring has no duration to clamp, so "fast" is expressed the only
+        // way a spring can express it: stiffer and proportionally more damped.
+        // Settling time goes as 1/sqrt(stiffness) at a fixed damping ratio, so
+        // scaling by 1/beat^2 and 1/beat lands the panel in `beat` times the
+        // wall clock without changing how the arrival feels.
+        transition={{
+          type: "spring",
+          stiffness: 320 / (beat * beat || 1),
+          damping: 26 / (beat || 1),
+        }}
         className="plate plate-raised relative w-[min(94vw,30rem)] max-h-[calc(100dvh-3rem)] overflow-y-auto p-6 text-center sm:p-7"
         onPointerDown={(event) => event.stopPropagation()}
       >
@@ -855,16 +1100,16 @@ export function GameOver({
             }
             initial={{ opacity: 0, scaleX: 0 }}
             animate={{ opacity: [0, 1, 0.45], scaleX: 1 }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
+            transition={{ duration: 0.7 * (beat || 1), ease: "easeOut" }}
           />
         )}
 
         <div className="flex items-center justify-center gap-2">
-          <p>Game over</p>
+          <p id="game-over-kicker">Game over</p>
           {modeChip && (
             <span
               className={
-                "inline-flex items-center rounded-[1px] border px-2 py-0.5 text-[11px] leading-none " +
+                "inline-flex items-center rounded-[1px] border px-2 py-0.5 text-[12px] leading-none " +
                 (mode === "nerf"
                   ? "border-mode-nerf/40 bg-mode-nerf/10 text-mode-nerfGlow"
                   : "border-mode-buff/40 bg-mode-buff/10 text-mode-buffGlow")
@@ -923,11 +1168,91 @@ export function GameOver({
           </div>
         )}
 
-        {(myNerf || opponentNerf) && (
+        {/* ACT II: the reveal.
+            For a seated player in a game where both sides carried a rule, this
+            is the payoff of the entire mode, and it gets the panel rather than
+            a row inside a fold. Three things changed and each one had a reason:
+
+            it is no longer folded, because a beat behind a disclosure is a beat
+            most players never see (and, as a previous round measured, one that
+            can run to `finished` inside the closed <details> while nobody is
+            looking — a hazard that simply cannot exist out here);
+
+            the opponent's card comes up under a LID rather than appearing, so
+            there is a sealed thing on screen before there is a revealed one,
+            which is the whole difference between a reveal and a render;
+
+            and the lid is an overlay on the finished card, so the panel is its
+            final height from the first frame and nothing under it moves.
+
+            The rules still print in full: no truncation, no tooltip. */}
+        {revealStage ? (
+          <section
+            aria-label="Hidden rules"
+            className={"mt-5 text-left" + (choreograph ? " ending-act" : "")}
+            style={
+              choreograph
+                ? ({ "--act-delay": `${ENDING.reveal}ms` } as CSSProperties)
+                : undefined
+            }
+          >
+            <div className="flex items-baseline justify-between gap-2">
+              <span>What you were both playing under</span>
+            </div>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <RuleReveal label="Your rule" nerf={myNerf}>
+                <RuleFeedback nerfId={myNerf.id} gameId={gameId} />
+              </RuleReveal>
+              {oppRevealed ? (
+                // `grid` rather than a plain wrapper so the card still stretches
+                // to the row height it would have had as a direct grid child,
+                // which is also what makes inset-0 the right box for the lid.
+                <div className="relative grid">
+                  <RuleReveal
+                    label="Opponent rule"
+                    nerf={opponentNerf}
+                    unseal={unsealArmed && choreograph}
+                    // On the automatic path the card is under the lid until
+                    // ENDING.card, so its own beat waits for the light.
+                    unsealDelayMs={autoReveal ? ENDING.card : 0}
+                    announce={unsealArmed}
+                    onUnsealed={() => setUnsealArmed(false)}
+                  />
+                  {autoReveal && !sealLifted && (
+                    <span aria-hidden className="ending-seal">
+                      <SealFace label="Opponent's rule" />
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // The player asked to keep this hidden, so the press IS the
+                    // beat: no lid, no delay, the card unseals under their hand.
+                    haptic("medium");
+                    setOppRevealed(true);
+                  }}
+                  className="flex min-h-[6.5rem] flex-col items-center justify-center gap-2 border border-[color:var(--edge)] bg-ink-900/40 p-3 text-parchment-200 transition hover:border-gold/50 hover:bg-gold/10 hover:text-gold-leaf"
+                >
+                  <SealFace label="Reveal opponent's nerf" />
+                </button>
+              )}
+            </div>
+          </section>
+        ) : (
+          (myNerf || opponentNerf) && (
           <SummaryFold
             label="Rules this game"
             count={(myNerf ? 1 : 0) + (opponentNerf ? 1 : 0)}
+            // Deliberately left alone. A hint naming what is inside ("their
+            // secret rule") would draw the eye to the payoff, but it is only
+            // true online: against a bot the opponent's rule is printed in the
+            // rail from move one, and nothing passed down here can tell the
+            // two apart. Copy that is wrong half the time is worse than no
+            // copy, so the beat carries the moment instead.
             hint={!spectator && opponentNerf && !oppRevealed ? "opponent's still sealed" : undefined}
+            onOpenChange={setRulesOpen}
           >
           <div className="grid gap-2 sm:grid-cols-2">
             {myNerf && (
@@ -943,16 +1268,24 @@ export function GameOver({
                 <RuleReveal
                   label={spectator ? `${names[oppColor]} (${sideLabel(oppColor)})` : "Opponent rule"}
                   nerf={opponentNerf}
+                  unseal={unsealArmed && rulesOpen && !reduceMotion}
+                  announce={unsealArmed}
+                  onUnsealed={() => setUnsealArmed(false)}
                 />
               ) : (
                 <button
                   type="button"
-                  onClick={() => setOppRevealed(true)}
+                  onClick={() => {
+                    // The one moment the whole mode is built around. The beat
+                    // is already armed; this just breaks the seal.
+                    haptic("medium");
+                    setOppRevealed(true);
+                  }}
                   className="flex min-h-[6.5rem] flex-col items-center justify-center gap-2 border border-[color:var(--edge)] bg-ink-900/40 p-3 text-parchment-200 transition hover:border-gold/50 hover:bg-gold/10 hover:text-gold-leaf"
                 >
                   <span
                     aria-hidden
-                    className="grid h-8 w-8 place-items-center rounded-full border border-gold/40 bg-gold/10 font-display text-lg font-bold text-gold/80"
+                    className="grid h-8 w-8 place-items-center rounded-full border border-gold/40 bg-gold/10 font-display text-lg font-bold text-gold"
                   >
                     ?
                   </span>
@@ -963,8 +1296,26 @@ export function GameOver({
               ))}
           </div>
           </SummaryFold>
+          )
         )}
 
+        {/* ACT III: the record. What the game was made of, after what it was
+            about. It arrives last and as one block, so the reveal above it is
+            never competing with a card list for the same beat.
+
+            It animates opacity and transform only and holds its full height
+            from the first frame, which is the reason this is safe to delay at
+            all: nothing below it moves, the Rematch button never slides out
+            from under a cursor, and no control here is the way out of the
+            panel. The actions below are outside every act and clickable
+            immediately (design-system.md §6: an animation may never block input
+            after state resolves). */}
+        <div
+          className={choreograph ? "ending-act" : undefined}
+          style={
+            choreograph ? ({ "--act-delay": `${ENDING.record}ms` } as CSSProperties) : undefined
+          }
+        >
         {/* Cards drafted: the grouped summary (compact tier chips with
             spent/nullified/active state, passives-active-first) folds behind a
             counted disclosure row. Spectators see both sides read-only; a
@@ -1008,6 +1359,7 @@ export function GameOver({
         )}
 
         <MatchTimeline moves={moves} cardEvents={cardEvents} />
+        </div>
 
         {opponentLeft && (
           <p

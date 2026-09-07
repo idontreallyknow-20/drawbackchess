@@ -1088,24 +1088,24 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 
 | id | name | family | tier | trigger | rule |
 |---|---|---|---|---|---|
-| bn4_stowaway | Stowaway | boon | 1 | passive | After your next 5 turns, a pawn is discovered aboard and joins your pocket, ready to drop on a later turn. |
 | gm_penny_slots | Penny Slots | item | 1 | activated | Pull the lever: half the time nothing, 35% one random pawn of yours sidesteps, 15% jackpot: a fresh pawn appears on your second rank. |
-| summon_intern | Summon Intern | buff | 1 | passive | The first time your opponent captures one of your pieces, the intern quietly takes over the empty desk: a pawn joins your pocket, to be dropped onto an empty square on a later turn. |
 | bn4_day_laborer | Day Laborer | boon | 2 | activated | Place a pawn on an empty square in your half. It works 5 of your turns, then leaves the board. |
-| bn4_matryoshka_surprise | Matryoshka Surprise | boon | 2 | activated | Paint one of your pawns as a nesting doll. When it is captured, two smaller pawns pop out into your pocket, ready to drop on later turns. |
 | bn4_militia_call | Militia Call | boon | 2 | activated | Place a new pawn on an empty square on your second rank. |
-| bn4_small_consolation | Small Consolation | boon | 2 | passive | The next 2 times your opponent captures one of your rooks or queens, a pawn joins your pocket. |
 | bn4_spare_button | Spare Button | boon | 2 | instant | A pawn slips into your pocket, ready to be dropped onto an empty square on a later turn (the drop spends that turn). |
+| bn4_stowaway | Stowaway | boon | 2 | passive | After your next 5 turns, a pawn is discovered aboard and joins your pocket, ready to drop on a later turn. |
 | emotional_support_pawn | Emotional Support Pawn | buff | 2 | activated | A small round friend refuses to leave your side: place a new pawn on an empty square right beside your king. |
 | fm_boon_hearthbread | Hearthbread | boon | 2 | activated | Choose an empty square on your first two ranks. A new pawn appears there. |
 | gm_card_counting | Card Counting | item | 2 | activated | Three draws, 55% each, streak ends on a miss: one hit and a random pawn sidesteps; two hits and a random pawn also advances; three hits and a fresh pawn joins your second rank. |
 | gm_hardship_jackpot | Hardship Jackpot | boon | 2 | activated | The misery meter pays out: 60% a pawn appears on your second rank, 25% one of your frozen or stuck pieces is thawed, 15% the jackpot doubles: a pawn AND a thaw. |
 | imp_familiar | Imp Familiar | buff | 2 | activated | A smug little imp perches on an empty square of your back rank and fights as a bishop for 3 of your turns, then scampers back through the veil. Using it consumes your next unused reroll, if you have one. |
 | onett | Onett | buff | 2 | passive | After your opponent's next move, a townsperson reports for duty: a new pawn takes the nearest open square on your pawn line, or just ahead of it if the line is packed. |
+| summon_intern | Summon Intern | buff | 2 | passive | The first time your opponent captures one of your pieces, the intern quietly takes over the empty desk: a pawn joins your pocket, to be dropped onto an empty square on a later turn. |
 | wa_conjure_scout | Conjured Scout | buff | 2 | activated | Conjure a knight on an empty square on your back rank. It fights for 2 of your turns, then fades. |
 | ww_reclaim_the_fallen | Reclaim the Fallen | buff | 2 | passive | Battlefield salvage: the next 2 enemy pawns you capture are pressed into service, joining your pocket to be dropped onto empty squares on later turns. |
 | bn4_care_package | Care Package | item | 3 | activated | Open the parcel: at random, either a pawn (half the time), a knight (a quarter), or a bishop (a quarter) joins your pocket, ready to drop on a later turn. |
 | bn4_green_recruit | Green Recruit | boon | 3 | activated | Place a new pawn on an empty square in your half. It spends its first 2 of your turns rooted in place learning the drills, then serves normally. |
+| bn4_matryoshka_surprise | Matryoshka Surprise | boon | 3 | activated | Paint one of your pawns as a nesting doll. When it is captured, two smaller pawns pop out into your pocket, ready to drop on later turns. |
+| bn4_small_consolation | Small Consolation | boon | 3 | passive | The next 2 times your opponent captures one of your rooks or queens, a pawn joins your pocket. |
 | bn4_wind_up_knight | Wind-Up Knight | item | 3 | activated | Place a clockwork knight on an empty square on your home rank. It fights like the real thing, then winds down and leaves the board after 6 of your turns. |
 | clone | Clone | buff | 3 | activated | Run one of your pawns through the photocopier: place an exact copy on an empty square beside it, once. |
 | cs_slot_machine | Slot Machine | buff | 3 | instant | Pull the arm and watch three reels spin. Match all three symbols for the jackpot: a rook and a knight drop into your pocket to place later, plus 45 seconds. Match two for a knight in your pocket. Match none and the machine eats your weakest piece. |
@@ -1114,8 +1114,6 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | gm_underdog_parlay | Underdog Parlay | buff | 3 | passive | Two legs: put the enemy king under attack within 5 of your turns AND capture within 3. Both hit: a knight joins your back rank. One: a pawn joins your second rank. Neither: the parlay busts and nothing happens. |
 | insurance | Insurance | buff | 3 | passive | The first time your queen is captured, a new knight appears on your queen's starting square (d1 for White, d8 for Black), or on the nearest empty square of that rank if her home is taken. Triggers once. |
 | kings_guard | King's Guard | buff | 3 | instant | Add a pawn to your pocket, then spend a later turn to drop it onto any empty square. |
-| legendary_forge | Legendary Forge | buff | 3 | activated | The forge mends what war broke: one of your captured knights or bishops is reforged and returns to your pocket. Spend a later turn to drop it onto any empty square. |
-| wa_conjure_bishop | Conjured Bishop | buff | 3 | activated | Conjure your bishop's reflection: choose one of your bishops whose mirror square (same rank, file flipped left-to-right) is empty, and a new bishop appears there. |
 | we_seedlings | Seedlings | buff | 3 | activated | Plant two seeds on empty squares in your half: they take root after your opponent's next move, and 3 of your turns later a pawn sprouts on each square that is still empty. |
 | bn4_cathedral_choir | Cathedral Choir | boon | 4 | activated | Place a new bishop on any empty square in your half. |
 | bn4_genie_lamp | Genie Lamp | item | 4 | activated | Rub the lamp for one random gift, equal odds each: a knight, a bishop or a rook into your pocket, 3 draft rerolls, or 30 seconds on your clock. |
@@ -1123,6 +1121,7 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | gm_wheel_of_the_cosmos | Wheel of the Cosmos | item | 4 | activated | Twelve equal segments, spun once. Eight are kind: revive a captured minor, march every pawn, a three card draft, stun two enemy pieces, promote a random pawn to knight, two rerolls, thaw your army, or summon a knight. Four are cruel, up to a defecting pawn. |
 | hw3_hydra_hex | Hydra Hex | hex | 4 | activated | Brand one enemy piece as the hydra's head for the next 8 of their turns. If you cut it off, two heads grow back: the two enemy pieces nearest where it fell are each frozen for 2 of their turns. Kings are neither head nor spawn. |
 | hw3_mutiny | Mutiny | hex | 4 | passive | It takes hold after your opponent's next move, then for their next 6 turns: the first time one of their knights captures a piece, it turns its coat on the spot and fights for you for your next 3 turns, then rides back to them. |
+| legendary_forge | Legendary Forge | buff | 4 | activated | The forge mends what war broke: one of your captured knights or bishops is reforged and returns to your pocket. Spend a later turn to drop it onto any empty square. |
 | ov_dev_console | Dev Console | buff | 4 | activated | Open the console once and run the whole macro: spawn a pawn on a chosen empty square in your half, add 20 seconds to your clock, and dump your opponent's next draft offer to your screen. |
 | ov_golden_goose | Golden Goose | buff | 4 | activated | Place a goose (a pawn stuck fast in golden honey) on an empty square in your half. For your next 8 turns it lays 6 seconds onto your clock after each of your moves. If it is captured, the gold stops. |
 | ov_milkmans_round | Milkman's Round | buff | 4 | activated | Spawn a pawn on an empty square of your second rank now, and reserve a second square: in 3 of your turns another pawn is delivered there (or to any free second-rank square if yours got taken). |
@@ -1131,6 +1130,7 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | split_bishop | Split Bishop | buff | 4 | instant | Add a new bishop to your pocket, then spend a later turn to drop it onto any empty square. |
 | summon_knight | Summon Knight | buff | 4 | activated | Place a new knight on any empty square in your half, once. |
 | wa_borrowed_minute | Borrowed Minute | buff | 4 | activated | Borrow one enemy knight for a minute: it fights for you for your next 2 turns, then walks back to their side, or returns the moment it makes a capture. If it dies meanwhile, the loan is settled. |
+| wa_conjure_bishop | Conjured Bishop | buff | 4 | activated | Conjure your bishop's reflection: choose one of your bishops whose mirror square (same rank, file flipped left-to-right) is empty, and a new bishop appears there. |
 | wc_double_trouble | Double Trouble | buff | 4 | activated | One of your knights or bishops splits in two: place its exact twin on an empty square right beside it. |
 | ww_sapper_team | Sapper Team | buff | 4 | activated | The sappers surface behind their lines: place a new pawn on an empty square in your opponent's half of the board. |
 | apotheosis | Apotheosis | buff | 5 | activated | Raise one of your knights, bishops, or rooks to godhood: it leaves the board for a higher plane, and a queen joins your pocket to descend in its place on a later turn. In exchange, you skip your next draft. |
@@ -1138,7 +1138,6 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | bn4_life_insurance | Life Insurance | boon | 5 | activated | Choose one of your pieces (your king excepted). When it is captured, a piece of the same kind pays out into your pocket, ready to drop on a later turn. |
 | bn4_reserve_officer | Reserve Officer | boon | 5 | instant | A knight joins your pocket, ready to be dropped onto an empty square on a later turn (the drop spends that turn). |
 | la_vaca_saturno_saturnita | La Vaca Saturno Saturnita | buff | 5 | activated | The ringed cow swings into orbit: place a new knight on any empty square along the board's outer rim. While it settles it cannot be captured for your opponent's next 2 turns, but this orbit shelter burns out early once the new knight has captured twice. |
-| lich_phylactery | Lich Phylactery | buff | 5 | passive | The first time your queen is captured, a new queen appears on her home square, or on the nearest empty square of your back rank if her home is taken. |
 | mortgage | Mortgage | buff | 5 | activated | Take out a loan against your home: summon a rook on any empty square. Freshly built, the rook cannot capture until after your opponent has replied. The bank keeps the deed, so you can never castle again for the rest of the game. |
 | necromancer | Necromancer | buff | 5 | activated | Raise your strongest fallen piece as a spectre on an empty square in your half. It fights for you, then crumbles to dust after 5 of your turns. If nothing of yours has been captured, nothing rises. |
 | ov_nesting_doll | Nesting Doll | buff | 5 | passive | For 10 of your turns your royal line nests: when your queen is captured, a rook appears on an empty square beside her fall; when that rook falls, a bishop; when that bishop falls, a pawn. The first nested piece to appear skips your next draft. |
@@ -1163,6 +1162,7 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | gm_gacha_banner | Gacha Banner | item | 6 | activated | Three pulls, resolved on the spot: 55% common, a random pawn sidesteps; 30% rare, a pawn spawns on your second rank; 12% epic, a random tier 4 card joins your hand; 3% SSR, a random tier 7 card. Pity rule: three commons upgrade the third to epic. |
 | gm_progressive_jackpot | Progressive Jackpot | buff | 6 | passive | For 6 of your turns every capture by either side drops a soul in the pot. When time is called, whoever made the LAST capture summons the pot: 2 souls a pawn, 4 a knight, 6 or more a rook, placed in their half. No captures, no winner. |
 | grand_summon | Grand Summon | buff | 6 | instant | Add a knight and a bishop to your pocket, then drop them onto empty squares on later turns; your next draft is skipped. |
+| lich_phylactery | Lich Phylactery | buff | 6 | passive | The first time your queen is captured, a new queen appears on her home square, or on the nearest empty square of your back rank if her home is taken. |
 | ov_royal_food_taster | Royal Food Taster | buff | 6 | activated | Place a Taster pawn on an empty square next to your queen. The next time your queen is captured, the Taster dies in her place and your queen returns on the Taster's square. |
 | taking_turns | Taking Turns | nerf | 6 | passive-rule | Can't move a piece a second time until every piece of its type has moved once. A piece a card spawns or teleports in obeys the restriction at once: it counts as an unmoved piece of its type until it makes its own move. |
 | valkyrie | Valkyrie | buff | 6 | passive | For your opponent's next 3 turns, any knight, bishop, or rook of yours they capture is carried home to your pocket instead of being lost for good. Drop it back onto an empty square on a later turn. In exchange, you skip your next draft. |
@@ -1341,7 +1341,6 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | north_star | North Star | boon | 3 | instant | The fixed star steadies your hand: your next draft is fated to offer tier 4 cards. |
 | op_layaway_plan | Layaway Plan | item | 3 | instant | Your next draft offer rolls one tier higher. |
 | ov_insider_trading | Insider Trading | buff | 3 | instant | See the cards of your opponent's next draft, and pocket 10 seconds for the tip. |
-| second_wind_major | Second Wind Major | buff | 3 | activated | Return a captured rook to any empty back-rank square, once. Using it spends your next unused reroll, if any. |
 | wa_arcane_reroll | Arcane Reroll | buff | 3 | passive | Gain two draft rerolls. Any you have not spent within your next two draft offers are reclaimed. |
 | wa_suppress_magic | Suppress Magic | buff | 3 | instant | Your opponent's next draft offer contains no draft-manipulation cards, and the next buff they draft arrives nullified. |
 | will_o_wisp | Will-o'-Wisp | buff | 3 | activated | A cold flame dances ahead of one enemy piece and it follows: lure one enemy piece except a king one square diagonally forward, toward your side, onto an empty square you choose. Using it consumes your next unused reroll, if you have one. |
@@ -1367,6 +1366,7 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | hx4_paper_orders | Paper Orders | hex | 5 | passive | Your opponent's next draft offer excludes draft manipulation cards, and after that draft resolves you gain one reroll. The couriers were paid to lose that satchel. |
 | ov_duplicate_glitch | Duplicate Glitch | buff | 5 | instant | Dupe glitch: gain a second copy of a random unspent card you hold. If your hand is empty, gain 2 draft rerolls instead. |
 | ov_upper_shelf | Upper Shelf | buff | 5 | passive | Your next draft is dealt from one tier higher. If it goes unused, the lift expires after two of your drafts. |
+| second_wind_major | Second Wind Major | buff | 5 | activated | Return a captured rook to any empty back-rank square, once. Using it spends your next unused reroll, if any. |
 | wc_rubber_duck_squad | Rubber Duck Squad | buff | 5 | passive | Your bishops are secretly rubber: for your opponent's next 3 turns, any enemy piece that captures one of your bishops bounces straight back to the square it came from. Rigging the bounce burns your next unused draft reroll, if you have one. |
 | zodiac_wheel | Zodiac Wheel | buff | 5 | instant | You read all twelve houses at once: your next draft shows three cards to pick from, all fated to tier 4. |
 | bn4_ravens_court | Raven's Court | boon | 6 | instant | See both the cards and the tier of your opponent's next draft offer, and gain 2 draft rerolls. |
@@ -1724,7 +1724,6 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | bw3_heir_apparent | Heir Apparent | boon | 3 | passive | The line of succession is settled in advance: the first time your opponent captures one of your knights or bishops, your pawn nearest your home rank is knighted into that same kind of piece where it stands. |
 | gm_jackpot_pawn | Jackpot Pawn | buff | 3 | activated | Fit one pawn with slot reels for 5 of your turns: every time it advances, the reels spin: 20% it banks a king-step charge it can spend later, 3% JACKPOT, it promotes to queen on the spot. |
 | hx4_hollow_fanfare | Hollow Fanfare | hex | 3 | passive | For your opponent's next 7 turns, any pawn they promote arrives as a walnut for 2 of their turns: crowned, celebrated, and unable to do more than shuffle. |
-| promote_now | Promote Now | buff | 3 | activated | Choose one of your pawns on your 6th rank or beyond; it promotes to a queen after your opponent's next move, once. |
 | bn4_coronation_rest | Coronation Rest | boon | 4 | passive | The first time one of your pawns promotes, your nerf is suspended for your next 10 turns. |
 | bw3_battlefield_commission | Battlefield Commission | boon | 4 | activated | If you have fewer pieces than your opponent, kings aside, your most advanced pawn is promoted where it stands: to a knight, or to a rook if you are outnumbered by four or more. The new piece cannot move again on your next turn. |
 | bw3_mummers_dance | Mummers' Dance | boon | 4 | activated | Every one of your knights becomes a bishop and every one of your bishops becomes a knight, all at once, where they stand. Your material is unchanged, only re-tasked. None of the re-tasked minors can be captured on your opponent's next turn. |
@@ -1735,7 +1734,6 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | hx4_iron_quota | Iron Quota | hex | 4 | passive | Starting after your opponent's next move, for their following 6 turns the royal smithy only stocks battlements: any pawn they promote must become a rook. |
 | hx4_velvet_rope | Velvet Rope | hex | 4 | instant | Your back rank is roped off: your opponent's pieces cannot stop anywhere on it for their next 3 turns. No entry, no promotion party. |
 | photosynthesis | Photosynthesis | buff | 4 | passive | After every 3 of your turns, one of your pawns advances a square on its own: the pawn nearest promotion with an empty square ahead. The step only ever moves onto an empty square, so it never captures, and never auto-advances onto the promotion rank. |
-| blood_pact | Blood Pact | buff | 5 | activated | Sign in blood: promote one of your pawns to a queen at once, but another pawn of yours, you choose which, bursts and is lost. |
 | bn4_house_of_banners | House of Banners | boon | 5 | activated | Choose up to two of your pawns that have reached the fifth rank or beyond. After your opponent's next move, each chosen pawn still standing is knighted where it stands. |
 | bw2_alchemists_trade | Alchemist's Trade | boon | 5 | activated | One of your knights, bishops or rooks becomes a queen. In payment, another of your officers (not on a first or last rank) becomes a pawn. |
 | double_queen | Double Queen | buff | 5 | activated | Choose any one of your pawns, even mid-board; after your opponent's next move it promotes to a queen, unless it has moved or been lost. |
@@ -1745,9 +1743,11 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | ov_off_broadway_queen | Off-Broadway Queen | buff | 5 | activated | Choose one of your pawns: it promotes to a queen the moment it stands on your 6th rank. Using it consumes your next unused reroll, if any. |
 | ov_promotion_jubilee | Promotion Jubilee | buff | 5 | passive | For 5 of your turns, the first of your pawns to step or capture onto the seventh rank may promote there, but only to a rook, bishop, or knight. That one early promotion ends the jubilee. |
 | ov_squires_ascension | Squire's Ascension | buff | 5 | activated | After your opponent's next move, one of your pawns is knighted, permanently becoming a knight. If it ever captures a queen, it is crowned a queen. |
+| promote_now | Promote Now | buff | 5 | activated | Choose one of your pawns on your 6th rank or beyond; it promotes to a queen after your opponent's next move, once. |
 | wc_deal_with_the_devil | Deal with the Devil | buff | 5 | activated | Sign here: promote one of your pawns to a queen at once, but the devil collects and you skip your next 2 turns, and the signing burns your next unused draft reroll, if you have one. |
 | amazon_knight | Amazon Knight | buff | 6 | activated | One knight becomes a knight plus queen for 2 turns. |
 | bishop_fan_club | Bishop Fan Club | nerf | 6 | passive-rule | Must promote to bishops. King and queen can only move diagonally. |
+| blood_pact | Blood Pact | buff | 6 | activated | Sign in blood: promote one of your pawns to a queen at once, but another pawn of yours, you choose which, bursts and is lost. |
 | bn4_relay_baton | Relay Baton | boon | 6 | passive | The first time you castle or one of your pawns promotes, you immediately take an extra move. You cannot capture the king on that bonus move: your opponent replies first. The next two castles or promotions each grant one draft reroll, then the baton is dropped. |
 | bw2_early_coronation | Early Coronation | boon | 6 | passive | The heralds cannot wait, though the coronation is a modest one: once, a pawn move of yours that reaches your opponent's second rank may promote on the spot to a rook, bishop, or knight. |
 | hw2_pauper_crown | Pauper's Crown | hex | 6 | activated | Their queen becomes a rook for 4 of their turns, or until she captures. If she is taken while a rook, she is lost as a rook. |
@@ -2006,23 +2006,22 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 
 | id | name | family | tier | trigger | rule |
 |---|---|---|---|---|---|
-| second_wind | Second Wind | buff | 1 | activated | One captured pawn returns to an empty square on your 2nd rank after your opponent's next move, once. |
 | bn4_field_stitches | Field Stitches | boon | 2 | activated | Return one of your captured pawns to an empty square on your second rank. |
 | hw2_long_road_home | The Long Road Home | hex | 2 | activated | Lay a calling on one enemy knight, bishop or rook: every move it makes must bring it closer to its own back rank. The curse lifts the moment it stands on that rank, and otherwise fades after 5 of their turns. |
+| second_wind | Second Wind | buff | 2 | activated | One captured pawn returns to an empty square on your 2nd rank after your opponent's next move, once. |
 | bn4_cobblers_bench | Cobbler's Bench | boon | 3 | activated | Return one of your captured pawns to any empty square in your half. |
 | bn4_florists_trick | Florist's Trick | boon | 3 | activated | Return one of your captured pawns to an empty square on your fourth rank, already halfway down the road. |
 | bn4_lone_crown | Lone Crown | boon | 3 | passive | While no piece of yours stands beside your king, your nerf is suspended. When a piece returns to your king's side, one final turn stays suspended but applies only to movement restrictions: you may move only one square at a time. |
 | bn4_night_gardener | Night Gardener | boon | 3 | passive | The next 2 of your pawns that are captured each return at once to the empty square nearest your home rank. |
-| bw2_queens_testament | Queen's Testament | boon | 3 | passive | Her will is already written: the first time your opponent captures your queen, up to two of your captured knights and bishops immediately return to empty squares nearest your home rank. |
-| bw3_eleventh_hour | Eleventh Hour | boon | 3 | passive | When the last of the line is nearly spent, help arrives: the first time your non-king pieces number three or fewer, your best captured piece returns to the empty square nearest your home rank. |
 | ctrl_z | Ctrl+Z | buff | 3 | activated | Undo, but the tape rewinds a beat late: only after your opponent's next move may you return one of your captured pawns, knights, or bishops to an empty square in your half, once. |
 | regenerate | Regenerate | buff | 3 | passive | After your opponent's next move, revive two of your captured pawns to empty squares on your 2nd rank. |
+| bw2_queens_testament | Queen's Testament | boon | 4 | passive | Her will is already written: the first time your opponent captures your queen, up to two of your captured knights and bishops immediately return to empty squares nearest your home rank. |
+| bw3_eleventh_hour | Eleventh Hour | boon | 4 | passive | When the last of the line is nearly spent, help arrives: the first time your non-king pieces number three or fewer, your best captured piece returns to the empty square nearest your home rank. |
 | hallowed_return | Hallowed Return | buff | 4 | activated | A prayer is answered exactly: one of your captured knights, bishops, or rooks is restored to life on one of its own starting squares, if one is free, once. |
 | ov_ancestral_audience | Ancestral Audience | buff | 4 | activated | Revive your highest-value captured piece onto an empty square in your half. In fairness before the ancestors, your opponent's best captured pawn or minor returns to a random empty square in their half. |
 | wc_lost_and_found | Lost and Found | buff | 4 | activated | Dig through the lost and found: pick the empty square in your half where a captured piece other than the queen will return. It reappears only after your opponent's next move, and only if that square is still empty. The heaviest lost piece comes back first. |
 | we_ancient_grove | Ancient Grove | buff | 4 | activated | Old roots give one piece back: return a captured rook, knight, or bishop to an empty square on your back rank; it returns after your opponent's next move, once. |
 | ww_last_reserves | Last Reserves | buff | 4 | activated | Commit everything: pick empty squares on your back rank; after your opponent's next move, up to two of your captured knights or bishops return to them, once. |
-| ww_recommission | Recommission | buff | 4 | activated | Return one of your captured rooks to an empty square on your back rank. For the rest of the game the refitted rook may pass through one friendly piece on each move, landing only on an empty square (it cannot capture on a phased move). |
 | bn4_field_hospital | Field Hospital | boon | 5 | activated | Return one of your captured pawns to an empty square in your half. It comes back bandaged: it cannot be captured for your opponent's next 2 turns. |
 | bn4_old_guard | The Old Guard | boon | 5 | instant | One of your captured knights and one of your captured bishops both return at once, each to the empty square nearest your home rank. |
 | bn4_veterans_return | Veteran's Return | boon | 5 | activated | Return one of your captured knights or bishops to any empty square in your half. |
@@ -2033,18 +2032,19 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | resurrect | Resurrect | buff | 5 | activated | Bring back your strongest captured piece to your half, once. Using it spends your next unused reroll, if any. |
 | resurrect_major | Resurrect Major | buff | 5 | activated | Revive a captured rook or bishop to any empty square, once. |
 | wa_unmake | Unmake | buff | 5 | passive | The next capture your opponent makes is unmade: their piece snaps back to the square it came from, and your captured piece is restored where it stood. Kings cannot be unmade. |
+| ww_recommission | Recommission | buff | 5 | activated | Return one of your captured rooks to an empty square on your back rank. For the rest of the game the refitted rook may pass through one friendly piece on each move, landing only on an empty square (it cannot capture on a phased move). |
 | bn4_dowry | Dowry | boon | 6 | activated | Return one of your captured rooks to an empty square on your home rank. |
 | bn4_relief_column | Relief Column | boon | 6 | instant | Your best captured rook and your best captured minor (a bishop, or else a knight) both return to empty squares nearest your home rank. The muster costs your next draft, which is skipped. |
 | bw3_from_the_ashes | From the Ashes | boon | 6 | instant | The dead are called back only far enough to make it even: your captured pieces return one at a time to your home rank, strongest first, until your non-king pieces number exactly as many as your opponent's. From ahead or level, nobody rises. |
 | fm_boon_lifebloom | Lifebloom | boon | 6 | activated | One of your captured pawns returns to an empty square on your fourth rank and cannot be captured for your opponent's next 2 turns. |
 | mass_resurrect | Mass Resurrect | boon | 6 | instant | Revive any four captured pawns to empty squares on your 2nd rank. |
-| resurrect_queen | Resurrect Queen | buff | 6 | activated | Bring your captured queen back to any empty square on the board, and she cannot be captured for your opponent's next turn. |
 | bw2_restitution | Restitution | boon | 7 | instant | For every kind of piece where your opponent outnumbers you on the board, one of your captured pieces of that kind returns to the empty square nearest your home rank. The most valuable returning piece is rooted and cannot move on your next turn. |
 | bw3_the_homecoming | The Homecoming | boon | 7 | instant | Your best captured major and best captured minor return to the empty squares nearest your home rank. Your next 2 drafts are skipped. |
 | gm_break_the_bank | Break the Bank | buff | 7 | activated | Three laser grids, 60% each to slip through. Three clean: your best captured piece returns AND a random tier 6 card joins your hand. Two: the tier 6 card. One: a pawn, and a random piece of yours is jailed 2 turns. Zero: two pieces jailed 2 turns. |
 | grand_resurrection | Grand Resurrection | buff | 7 | instant | Revive your queen to your half. |
 | ov_all_the_kings_men | All the King's Men | buff | 7 | activated | Up to four of your captured pieces return at once, strongest first, on random empty squares in your half. |
 | phoenix_line | Phoenix Line | buff | 7 | instant | Revive all your captured pawns to your 2nd rank, once. |
+| resurrect_queen | Resurrect Queen | buff | 7 | activated | Bring your captured queen back to any empty square on the board, and she cannot be captured for your opponent's next turn. |
 | bn4_return_of_the_queen | Return of the Queen | boon | 8 | activated | Your captured queen returns to an empty square on your home rank. She cannot capture until your opponent has replied. |
 | bw2_great_return | The Great Return | boon | 8 | instant | Every captured piece of BOTH sides still owed to the board returns at once, each placed on the empty square nearest its own home rank. Your most valuable returning piece arrives rooted and cannot move on your next turn. |
 | ov_deus_ex_machina | Deus Ex Machina | buff | 8 | activated | The machine god intervenes once. If your queen has fallen she is restored to an empty square of your first two ranks. Otherwise every freeze on your army is cleansed and the last two enemy pieces that moved are stunned for 1 turn. |
@@ -2066,16 +2066,15 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | op_pole_vault | Pole Vault | buff | 1 | passive | Once, one of your knights may make a vault of exactly 3 straight, jumping anything between. Not a capture; the landing square must be empty. |
 | op_spice_run | Spice Run | item | 1 | activated | Use once as a free action: a b- or g-file pawn still on its home square steps one square forward. The square ahead must be empty. |
 | ov_tiny_trebuchet | Tiny Trebuchet | buff | 1 | passive | Launch one of your pawns two squares straight ahead, once. Both squares must be empty; no capturing on landing. It arms only after your opponent's next move. |
-| ww_field_hospital | Field Hospital | buff | 1 | passive | The first time your opponent captures one of your knights, a new pawn is raised on an empty square of your back rank. |
 | free_retreat | Free Retreat | buff | 2 | activated | Return your last-moved piece to the square it came from, once. |
 | hx4_two_step | Two Step | hex | 2 | passive | Starting after your opponent's next move, for their following 3 turns, no move may cover the same distance as their previous move. The dance master insists on variety. |
 | ov_wheelbarrow | Wheelbarrow | buff | 2 | passive | After your opponent's next move, one of your pawns may trundle to any adjacent empty square, once. |
 | royal_handicap | Royal Handicap | hex | 2 | passive | Nerf the crown itself: for your opponent's next 4 turns the patch removes diagonal movement from their king, save one diagonal escape step the king may still take once. |
 | undying_thrall | Undying Thrall | buff | 2 | activated | Bind a restless spirit into service: one of your captured knights or bishops claws back onto an empty square of your back rank and fights for 4 of your turns, then crumbles to dust, once. |
 | warp_field | Warp Field | buff | 2 | activated | Move one of your pieces to an empty square next to it, once. |
+| ww_field_hospital | Field Hospital | buff | 2 | passive | The first time your opponent captures one of your knights, a new pawn is raised on an empty square of your back rank. |
 | bw2_hit_and_run | Hit and Run | boon | 3 | passive | After your opponent's next move, the next time one of your pieces makes a capture, it strikes and slips straight back to the square it came from, dodging any reprisal. Once. |
 | kingfisher | Kingfisher | nerf | 3 | passive-rule | Starting after your third move, when your king can capture it must dive for the richest prize: it has to take the most valuable enemy piece within its reach. |
-| minor_recall | Minor Recall | buff | 3 | activated | Return a captured knight or bishop to your back rank, once. |
 | raise_dead | Raise Dead | buff | 3 | activated | Choose an empty square in your OPPONENT'S half now, and one of your fallen pawns, knights, or bishops rises there after your opponent's next move, once. If the square is taken by then, the revival fizzles and the charge is still spent. |
 | regroup | Regroup | buff | 3 | activated | Return your advanced pawns to their starting rank where empty, once. |
 | rewind_one | Rewind One | buff | 3 | instant | Undo the last two half-moves: send the last piece each side moved back to the square it came from, once. |
@@ -2084,6 +2083,7 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 | cs_blackjack | Blackjack | buff | 4 | instant | The dealer feeds you cards until your hand reaches seventeen, then you stand. Twenty one pays a rook in your pocket and 45 seconds. Seventeen to twenty pays a minor piece. Bust and the house takes your weakest piece while you cool off for two turns. |
 | hx4_crime_scene | Crime Scene | hex | 4 | passive | Starting after your opponent's next move, for their following 4 turns, every capture they make gets roped off: the square where the capture happened is sealed against them for 2 of their turns after the deed. |
 | middle_part | Middle Part | buff | 4 | activated | Not one hair off the axis: choose one of your pieces except the king or queen, and a perfect mirror copy of it materializes on the file-reflected square (a-file to h-file), if that square is empty. Once. |
+| minor_recall | Minor Recall | buff | 4 | activated | Return a captured knight or bishop to your back rank, once. |
 | ov_mole_tunnels | Mole Tunnels | buff | 4 | passive | The tunnels do not open until after your opponent's next move. Then, for 5 of your turns, up to twice: one of your pawns may tunnel to the empty square directly behind an enemy pawn on its own file. |
 | we_flame_lance | Flame Lance | buff | 4 | activated | One of your rooks breathes a lance of flame straight up its own file, without moving: the first enemy piece in the jet, if it is not a king, burns away. Friendly pieces block the flame, once. |
 | wyverns_dive | Wyvern's Dive | buff | 4 | activated | A wyvern folds its wings and dives: one of your knights streaks in a straight line, snatches the first enemy piece it reaches, and lands just beyond, once. |
@@ -2660,7 +2660,7 @@ Cards do several things at once, so the ladder is priority-ordered and first-mat
 
 | id | name | family | tier | trigger | rule |
 |---|---|---|---|---|---|
-| bn4_understudy | Understudy | boon | 1 | passive | The first time one of your pawns is captured, a fresh pawn joins your pocket, ready to drop on a later turn. |
+| bn4_understudy | Understudy | boon | 2 | passive | The first time one of your pawns is captured, a fresh pawn joins your pocket, ready to drop on a later turn. |
 | ov_compost_heap | Compost Heap | buff | 2 | passive | For your next 5 turns, gain 13 seconds whenever one of your pawns is captured. |
 | bn4_pawns_ransom | Pawn's Ransom | boon | 3 | activated | Give up one of your pawns (it is removed and truly lost): your nerf is suspended for your next 6 turns. |
 | bw2_blood_price | Blood Price | boon | 3 | activated | The deck feeds on sacrifice: destroy one of your own pieces (your king excepted), and your next draft is fated to offer tier 6 cards. |

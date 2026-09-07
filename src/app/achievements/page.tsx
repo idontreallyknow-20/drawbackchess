@@ -120,7 +120,13 @@ function RarityFilterRow({
         aria-pressed={filter === "all"}
         onClick={() => onChange("all")}
         className={
-          "inline-flex min-h-[32px] items-center rounded-none border px-2.5 text-[12px] transition-colors " +
+          // A filter button's label is interactive text, so 13px, not the
+          // 12px caption size. The 32px height was also below the 44px touch
+          // floor at every width; it now clears 44 on a finger and tightens to
+          // its dense size once there is a pointer (not once the viewport is
+          // wide: a touchscreen laptop still has fingers).
+          // A one-word chip ("All") is 34.5px wide inside px-2.5 however tall it is.
+          "inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-none border px-2.5 text-[13px] transition-colors [@media(pointer:fine)]:min-h-[32px] [@media(pointer:fine)]:min-w-0 " +
           (filter === "all"
             ? "border-[color:var(--edge-strong)] bg-[color:var(--bg-raised)] text-parchment-100"
             : "border-[color:var(--edge)] text-parchment-400 hover:border-[color:var(--edge-strong)] hover:text-parchment-200")
@@ -139,7 +145,7 @@ function RarityFilterRow({
             type="button"
             aria-pressed={on}
             onClick={() => onChange(on ? "all" : r)}
-            className="inline-flex min-h-[32px] items-center gap-1.5 rounded-none border px-2.5 text-[12px] transition-colors"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-none border px-2.5 text-[13px] transition-colors [@media(pointer:fine)]:min-h-[32px]"
             style={
               on
                 ? { borderColor: theme.border, background: theme.softBg, color: theme.color }
@@ -206,7 +212,7 @@ function AchievementCard({ a }: { a: AchievementView }) {
             ring and soft glow; locked = dimmed embossed disc with a small
             lock badge on the corner. */}
         <div
-          className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full border"
+          className="relative grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full border"
           style={
             a.unlocked
               ? {
@@ -261,9 +267,14 @@ function AchievementCard({ a }: { a: AchievementView }) {
         </div>
       </div>
 
+      {/* The achievement's description is the card's content, not a label on
+          it: a sentence the reader is meant to read. Section 3 puts body copy
+          at 13px and reserves 12px for captions and labels, so this is 13px
+          while the rarity chip above and the "Earned"/progress captions below
+          stay at 12px. */}
       <p
         className={
-          "relative text-[12px] leading-snug " +
+          "relative text-[13px] leading-snug " +
           (a.unlocked ? "text-parchment-200" : "text-parchment-400")
         }
       >
@@ -327,7 +338,9 @@ function CategorySection({
           <h2 className="font-display text-[19px] leading-tight text-parchment-50">
             {CATEGORY_LABEL[category]}
           </h2>
-          <p className="mt-0.5 truncate text-[12px] text-parchment-400">
+          {/* A sentence describing the category, inside the disclosure button:
+              body copy in an interactive row, so 13px. */}
+          <p className="mt-0.5 truncate text-[13px] text-parchment-400">
             {CATEGORY_TAGLINE[category]}
           </p>
         </div>
@@ -494,7 +507,8 @@ function AchievementsContent() {
               </LinkButton>
               <Link
                 href="/login?next=/achievements"
-                className="text-[13px] text-gold-leaf hover:underline"
+                // 41.3x19.5: the one call to action on the signed-out banner.
+                className="-my-3 inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-[13px] text-gold-leaf hover:underline [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:min-w-0"
               >
                 Sign in
               </Link>
@@ -580,7 +594,7 @@ function UnlockPopupToggle() {
         }}
         aria-pressed={!off}
         className={
-          "min-h-[36px] rounded-none border px-3 py-1 text-[12px] transition-colors " +
+          "min-h-[44px] rounded-none border px-3 py-1 text-[13px] transition-colors [@media(pointer:fine)]:min-h-[36px] " +
           (off
             ? "border-[color:var(--edge)] text-parchment-400 hover:border-[color:var(--edge-strong)]"
             : "border-verdigris-glow/50 bg-verdigris/10 text-verdigris-glow")

@@ -533,7 +533,7 @@ export const BOON_WAVE2: Buff[] = [
       name: "Queen's Testament",
       description:
         "Her will is already written: the first time your opponent captures your queen, up to two of your captured knights and bishops immediately return to empty squares nearest your home rank.",
-      tier: 3,
+      tier: 4,
       category: "pieces",
       icon: "Feather",
       flavor: "She provided for the household.",

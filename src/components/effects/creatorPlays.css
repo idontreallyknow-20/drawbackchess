@@ -31,7 +31,25 @@
 }
 
 /* Shared caption styling: the small text elements the catchphrase scenes use.
- * Sized in cqw-free relative units so they scale with the stage. */
+ *
+ * These are real DOM text, so they take the 12px floor like everything else.
+ * They used to run 8 to 10px, and the sizes were load-bearing: a `.cpl-stage`
+ * is ONE BOARD SQUARE, measured at 44.8px at a 360px viewport and 87.1px at
+ * 1440, and the captions are absolute px positioned by percentage. At 12px
+ * "CHAT DECIDES" is 104px on a single line, so `white-space: nowrap` could
+ * only ever have run it off both edges of the square.
+ *
+ * So the floor comes with a layout pass rather than on its own:
+ *   - nowrap is gone and the word captions get a definite width, so a caption
+ *     that no longer fits one line breaks onto two INSIDE the square instead
+ *     of being clipped at both ends by the stage's overflow:hidden. The two
+ *     split readouts ("-0:02") have no break opportunity, so they stay one
+ *     line by construction and did not need it.
+ *   - line-height 1, because a caption's box is the thing that has to fit, and
+ *     the default 1.2 was spending a fifth of the square on leading.
+ * Each caption's own rule then re-places it for the bigger box; the notes are
+ * with the rules. Measured at both square sizes: every one of the five is
+ * closer to fitting its square than it was at 8 to 10px. */
 .cpl-trap-caption,
 .cpl-rook-caption,
 .cpl-vs-caption,
@@ -41,7 +59,7 @@
   font-family: var(--font-display, inherit);
   font-weight: 700;
   letter-spacing: 0.04em;
-  white-space: nowrap;
+  line-height: 1;
   user-select: none;
 }
 
@@ -254,21 +272,32 @@
   100% { opacity: 0; transform: scale(1.4); }
 }
 
-/* The caption, stamp-sized for a hand crop but still not subtle. */
+/* The caption, stamp-sized for a hand crop but still not subtle. The width and
+   the negative margin are what centre a BOX rather than a runaway line, and
+   unlike the translateX(-50%) they replace they survive the `transform: none`
+   that html[data-anim="off"] puts on everything inside a stage: in the still
+   frame this stamp was sitting 41px off the right edge of a 44.8px crop. */
 .cpl-erook-caption {
   position: absolute;
   left: 50%;
-  top: 74%;
-  font-size: 10px;
+  /* Anchored to the BOTTOM of the crop rather than to top: 74%. The stamp sits
+     in the same place at 87.1px, and when it has to take a second line on a
+     44.8px square the box grows UPWARD into the crop instead of off the end of
+     it (measured: 12.3px of the second line was below the square). */
+  bottom: 4%;
+  width: 92%;
+  margin-left: -46%;
+  text-align: center;
+  font-size: 12px;
   color: #ffd76a;
   opacity: 0;
-  transform: translateX(-50%) scale(0.4) rotate(-6deg);
+  transform: scale(0.4) rotate(-6deg);
   animation: cpl-erook-stamp calc(480ms * var(--fx-dur, 1)) cubic-bezier(0.2, 1.5, 0.4, 1) both;
 }
 @keyframes cpl-erook-stamp {
-  0% { opacity: 0; transform: translateX(-50%) scale(0.4) rotate(-6deg); }
-  55% { opacity: 1; transform: translateX(-50%) scale(1.12) rotate(2deg); }
-  100% { opacity: 0.95; transform: translateX(-50%) scale(1) rotate(0deg); }
+  0% { opacity: 0; transform: scale(0.4) rotate(-6deg); }
+  55% { opacity: 1; transform: scale(1.12) rotate(2deg); }
+  100% { opacity: 0.95; transform: scale(1) rotate(0deg); }
 }
 
 /* Family Night entrance: cozy, zero aggression. A lamp glow blooms down from
@@ -394,12 +423,14 @@
   100% { opacity: 0; transform: translateX(32%) scaleX(1); }
 }
 
-/* The one split that matters: still ahead. */
+/* The one split that matters: still ahead. Anchored to the RIGHT edge instead
+   of to left: 72%, so the readout ends where the crop ends at any square size
+   (from left, a 12px "-0:02" started at 72% and needed 105% of the square). */
 .cpl-erun-split {
   position: absolute;
-  left: 72%;
+  right: 5%;
   top: 36%;
-  font-size: 9px;
+  font-size: 12px;
   color: #7ef29a;
   opacity: 0;
   animation: cpl-erun-tick calc(360ms * var(--fx-dur, 1)) cubic-bezier(0.2, 1.2, 0.3, 1) both;
@@ -510,12 +541,17 @@
   100% { opacity: 1; transform: rotate(0deg) scale(1); }
 }
 
-/* The small resigned caption, drifting up beside the fallen bait. */
+/* The small resigned caption, drifting up beside the fallen bait. Still beside
+   the bait rather than over it, but the box now ENDS at the square's edge
+   (left+right insets, not a left% and a runaway nowrap): at 9px it was a
+   35.8px box starting 26px into a 44.8px square, so a phone lost half of it. */
 .cpl-trap-caption {
   position: absolute;
-  left: 58%;
+  left: 30%;
+  right: 4%;
   top: 34%;
-  font-size: 9px;
+  text-align: center;
+  font-size: 12px;
   font-style: italic;
   color: #fff4d6;
   opacity: 0;
@@ -645,21 +681,30 @@
   100% { opacity: 0; transform: scale(1.5) translateY(calc(var(--fx-side, 1) * -22%)); }
 }
 
-/* The caption. It is not subtle. It is not supposed to be. */
+/* The caption. It is not subtle. It is not supposed to be.
+   Already above the 12px floor, but it shares the caption rule, so it takes
+   the same box treatment: a definite width (so dropping nowrap cannot let it
+   shrink-to-fit into the 50% of the square to the right of `left: 50%`), and
+   centring by margin rather than by transform, which html[data-anim="off"]
+   erases along with the animation. In the still frame this caption was sitting
+   half off the right edge of the crop. */
 .cpl-rook-caption {
   position: absolute;
   left: 50%;
   top: 68%;
+  width: 100%;
+  margin-left: -50%;
+  text-align: center;
   font-size: 13px;
   color: #ffd76a;
   opacity: 0;
-  transform: translateX(-50%) scale(0.4) rotate(-6deg);
+  transform: scale(0.4) rotate(-6deg);
   animation: cpl-rook-caption calc(560ms * var(--fx-dur, 1)) cubic-bezier(0.2, 1.5, 0.4, 1) both;
 }
 @keyframes cpl-rook-caption {
-  0% { opacity: 0; transform: translateX(-50%) scale(0.4) rotate(-6deg); }
-  55% { opacity: 1; transform: translateX(-50%) scale(1.15) rotate(2deg); }
-  100% { opacity: 1; transform: translateX(-50%) scale(1) rotate(0deg); }
+  0% { opacity: 0; transform: scale(0.4) rotate(-6deg); }
+  55% { opacity: 1; transform: scale(1.15) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
 }
 
 /* --- Cramling Family Night (Anna Cramling) --------------------------------- */
@@ -777,12 +822,19 @@
   100% { opacity: 0.95; transform: translateX(0); }
 }
 
-/* Green splits ticking on one by one: the run is ahead on every one. */
+/* Green splits ticking on one by one: the run is ahead on every one.
+   Four readouts stacked in one square is the tightest thing in this file: the
+   scene hands them --cpl-y at 20/35/50/65%, a 15% pitch, which is 6.7px on a
+   44.8px square. That was already less than the 8px line they used to be
+   (they overlapped by ~2.9px on a phone). The calc re-spreads the same four
+   values over 3/25.5/48/70.5%, a 22.5% pitch, which is 10.1px on a phone and
+   19.6px at 1440, so the stack is looser at 12px than it was at 8px, and the
+   last readout ends inside the square instead of past it. */
 .cpl-run-split {
   position: absolute;
   left: 5.5%;
-  top: var(--cpl-y, 30%);
-  font-size: 8px;
+  top: calc(var(--cpl-y, 30%) * 1.5 - 27%);
+  font-size: 12px;
   color: #7ef29a;
   opacity: 0;
   transform: translateX(-30%);
@@ -901,21 +953,33 @@
   100% { opacity: 0.9; transform: translateX(0%) scale(1); }
 }
 
+/* "CHAT DECIDES" is the one that cannot be one line at 12px on a board square
+   (104px of text, 87.1px of square at 1440). With a width it breaks after
+   "CHAT" and both lines sit inside the crop; without one it was 78.4px of
+   nowrap centred in a 44.8px phone square, losing 17px off each end. The
+   tracking drops from 0.14em to 0.08em to buy back the width the extra 3px of
+   type costs. */
 .cpl-vs-caption {
   position: absolute;
   left: 50%;
-  top: 66%;
-  font-size: 9px;
-  letter-spacing: 0.14em;
+  /* Bottom-anchored for the same reason as the ROOK stamp: two lines at 12px
+     is 24px, and from a top: 62% on a 44.8px square 7px of the second line
+     fell outside. Lands within 2px of the old placement at 87.1px. */
+  bottom: 8%;
+  width: 94%;
+  margin-left: -47%;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.08em;
   color: #fff4d6;
   opacity: 0;
-  transform: translateX(-50%) translateY(30%);
+  transform: translateY(30%);
   animation: cpl-vs-caption calc(520ms * var(--fx-dur, 1)) cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes cpl-vs-caption {
-  0% { opacity: 0; transform: translateX(-50%) translateY(30%); }
-  45% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  100% { opacity: 0.85; transform: translateX(-50%) translateY(0); }
+  0% { opacity: 0; transform: translateY(30%); }
+  45% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0.85; transform: translateY(0); }
 }
 
 /* --- Motion off ----------------------------------------------------------- */

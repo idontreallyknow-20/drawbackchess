@@ -38,7 +38,7 @@ export default function BuffModePage() {
 
       <InfoSection title="Tiers: from Trivial to Unhinged">
         <p>
-          <GlossaryText text="Every card carries a tier from I to VIII: Trivial, Easy, Common, Severe, Brutal, Cruel, Punishing, Unhinged. Early drafts offer low tiers and the curve climbs round by round, roughly tiers I, II, III, V, then VII, with a small random wobble each round. The very top is gated: above tier VI every level has a 45% chance to slip back down one, so board-clearing, near-invincibility cards stay rare blowout moments instead of the default endgame." />{" "}
+          <GlossaryText text="Every card carries a tier from I to VIII: Trivial, Easy, Common, Severe, Brutal, Cruel, Punishing, Unhinged. Early drafts offer low tiers and the curve climbs round by round: I, II, III, V, then VII, VII, VII, and VIII from there on. One shared wobble is rolled per round, 18 percent up and 18 percent down, and it applies to both players and to both cards in an offer, so you and your opponent are always looking at the same tier. The first draft never wobbles up." />{" "}
           Browse the whole library, tier by tier, in the{" "}
           <Link href="/codex" className="underline">codex</Link>.
         </p>

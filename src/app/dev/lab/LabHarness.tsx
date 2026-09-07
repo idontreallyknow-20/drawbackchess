@@ -567,7 +567,7 @@ export function LabHarness() {
                 </span>
               </div>
               <p className="mt-1 text-xs leading-snug text-parchment-300">{selected.description}</p>
-              <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-parchment-400">
+              <div className="mt-1 flex flex-wrap gap-1 text-[12px] text-parchment-400">
                 <span className="border border-white/10 px-1">{cardKind(selected)}</span>
                 {nerfModeOnly(selected) && (
                   <span className="border border-white/10 px-1">nerf-mode-only</span>
@@ -596,7 +596,7 @@ export function LabHarness() {
                 </button>
               </div>
               {selected.kind === "passive" && (
-                <p className="mt-1 text-[11px] text-parchment-400">
+                <p className="mt-1 text-[12px] text-parchment-400">
                   Passive: grant it, then watch its live status() line in the lifecycle panel while
                   you play moves.
                 </p>
@@ -758,7 +758,7 @@ export function LabHarness() {
                       {color === "w" ? "White" : "Black"} holds {ps.buffs.length}
                     </div>
                     {ps.offer && (
-                      <div className="mt-1 border border-gold/40 bg-gold/5 p-1 text-[11px]">
+                      <div className="mt-1 border border-gold/40 bg-gold/5 p-1 text-[12px]">
                         Offer #{ps.offer.index}:{" "}
                         {ps.offer.cards.map((c, i) => (
                           <button
@@ -783,7 +783,7 @@ export function LabHarness() {
                         </button>
                       </div>
                     )}
-                    <ul className="mt-1 max-h-40 space-y-0.5 overflow-y-auto text-[11px]">
+                    <ul className="mt-1 max-h-40 space-y-0.5 overflow-y-auto text-[12px]">
                       {ps.buffs.map((inst, i) => {
                         const def = BUFF_BY_ID[inst.id];
                         const dead = inst.spent || inst.nullified || inst.usedActivation;
@@ -934,7 +934,7 @@ export function LabHarness() {
                     ({selectedInst!.color === "w" ? "white" : "black"} #{selectedInst!.index})
                   </span>
                 </div>
-                <div className="mt-1 flex flex-wrap gap-1 text-[10px]">
+                <div className="mt-1 flex flex-wrap gap-1 text-[12px]">
                   <span className={`border px-1 ${selInst.spent ? "border-red-400/50 text-red-300" : "border-white/10 text-parchment-400"}`}>
                     spent: {String(!!selInst.spent)}
                   </span>
@@ -957,7 +957,7 @@ export function LabHarness() {
                     })()}
                   </div>
                 )}
-                <pre className="mt-1 max-h-40 overflow-auto border border-white/10 bg-ink-900/60 p-1 text-[10px] leading-tight">
+                <pre className="mt-1 max-h-40 overflow-auto border border-white/10 bg-ink-900/60 p-1 text-[12px] leading-tight">
                   {JSON.stringify(selInst.state, null, 1)}
                 </pre>
               </div>
@@ -969,7 +969,7 @@ export function LabHarness() {
             <div className="mt-2 text-xs font-semibold text-parchment-100">
               Active effects ({bs?.effects.length ?? 0})
             </div>
-            <ul className="mt-1 max-h-32 space-y-0.5 overflow-y-auto text-[11px] text-parchment-300">
+            <ul className="mt-1 max-h-32 space-y-0.5 overflow-y-auto text-[12px] text-parchment-300">
               {(bs?.effects ?? []).map((e, i) => (
                 <li key={i} className="border border-white/10 px-1 py-0.5">
                   {e.kind}
@@ -988,7 +988,7 @@ export function LabHarness() {
               )}
             </ul>
             <div className="mt-2 text-xs font-semibold text-parchment-100">Mutation log</div>
-            <ul className="mt-1 max-h-48 space-y-0.5 overflow-y-auto text-[11px]">
+            <ul className="mt-1 max-h-48 space-y-0.5 overflow-y-auto text-[12px]">
               {[...log].reverse().map((l) => (
                 <li key={l.n} className={l.error ? "text-red-300" : "text-parchment-400"}>
                   #{l.n} {l.msg}
@@ -1039,13 +1039,13 @@ export function LabHarness() {
               {runSummary.total}
             </span>
           )}
-          <span className="text-[11px] text-parchment-500">
+          <span className="text-[12px] text-parchment-500">
             Headless twin: npm run test:lab (scripts/lab-run-all.ts)
           </span>
         </div>
         {shownRows && (
           <div className="mt-2 max-h-[420px] overflow-auto">
-            <table className="w-full border-collapse text-left text-[11px]">
+            <table className="w-full border-collapse text-left text-[12px]">
               <thead className="sticky top-0 bg-ink-900">
                 <tr className="text-parchment-400">
                   <th className="border-b border-white/10 px-2 py-1">Card</th>

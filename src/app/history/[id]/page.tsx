@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Board } from "@/components/Board";
 import { BoardPlayerRow } from "@/components/BoardPlayerRow";
+import { BoardEvalStrip, matchRulePhrases } from "@/components/EvalBar";
 import { Logo } from "@/components/Logo";
 import { MoveList } from "@/components/MoveList";
 import { boardAtPly, replayUci } from "@/lib/gameReview";
 import { CompletedGame, loadGameHistory, timeControlLabel } from "@/lib/gameHistory";
+import { gameToPGN } from "@/lib/pgn";
 import { TIER_LABEL } from "@/lib/tiers";
-import { LinkButton } from "@/components/ui/Button";
+import { useZenHotkey } from "@/lib/useZenMode";
+import { Button, LinkButton } from "@/components/ui/Button";
 
 type State =
   | { kind: "loading" }
@@ -54,7 +57,7 @@ export default function HistoryReplayPage() {
       </nav>
       <section className="max-w-xl mx-auto px-6 py-16 text-center">
         {state.kind === "loading" ? (
-          <div className="text-[11px] text-parchment-400">Loading…</div>
+          <div className="text-[12px] text-parchment-400">Loading…</div>
         ) : state.kind === "no-moves" ? (
           <>
             <h1 className="font-display text-3xl">No moves recorded</h1>
@@ -84,22 +87,89 @@ function Replay({ game }: { game: CompletedGame }) {
   const displayBoard = useMemo(() => boardAtPly(history, ply), [history, ply]);
   const lastMove = displayBoard.history[displayBoard.history.length - 1] ?? null;
 
+  // `z` works on the other two replay surfaces and on both game pages; a
+  // saved game is read the same way, so it works here too. The exit control
+  // is already global (HeaderSettingsMenu renders it), so this is only the
+  // key binding plus marking this page's own chrome as hideable.
+  useZenHotkey();
+
   const oppColor = game.myColor === "w" ? "b" : "w";
   const outcomeLabel =
     game.outcome === "win" ? "You won" : game.outcome === "loss" ? "You lost" : "Draw";
 
+  // The eval bar, and everything it cannot see. A saved game records both
+  // players' handicaps by name, so the caption can name them instead of waving
+  // at "rules"; a line containing a pocket drop is flagged separately, because
+  // that is a position plain chess could not have reached at all.
+  const evalRules = useMemo(
+    () =>
+      matchRulePhrases({
+        whiteNerf: game.myColor === "w" ? game.myNerf?.name : game.opponentNerf?.name,
+        blackNerf: game.myColor === "w" ? game.opponentNerf?.name : game.myNerf?.name,
+        hasDrops: history.some((m) => m.drop),
+      }),
+    [game.myColor, game.myNerf, game.opponentNerf, history],
+  );
+
+  // Export the replayed game. The analysis board and the result screen both
+  // offer PGN and this surface did not, which made a saved game the one place
+  // where the moves were visible but not takeable. Nerfs ride along as
+  // WhiteNerf and BlackNerf tags: a reader that does not know them ignores
+  // them, and one that does can say why a legal-looking move never happened.
+  const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (copyTimer.current != null) window.clearTimeout(copyTimer.current);
+    },
+    [],
+  );
+  const copyPgn = async () => {
+    const pgn = gameToPGN({
+      moves: history,
+      result: null,
+      white: game.myColor === "w" ? "You" : game.opponent,
+      black: game.myColor === "w" ? game.opponent : "You",
+      whiteNerf: game.myColor === "w" ? game.myNerf?.name : game.opponentNerf?.name,
+      blackNerf: game.myColor === "w" ? game.opponentNerf?.name : game.myNerf?.name,
+      startedAt: game.endedAt,
+    });
+    try {
+      await navigator.clipboard.writeText(pgn);
+      setCopied(true);
+      if (copyTimer.current != null) window.clearTimeout(copyTimer.current);
+      copyTimer.current = window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // Clipboard access can be refused (an insecure origin, or a permission
+      // the user declined). Fall back to a download rather than failing
+      // silently, which would look like a dead button.
+      const blob = new Blob([pgn], { type: "application/x-chess-pgn" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `nerfchess-${game.id}.pgn`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
   return (
     <main className="min-h-screen">
-      <nav className="flex items-center justify-between px-5 sm:px-10 py-5">
+      <nav className="zen-hide flex items-center justify-between px-5 sm:px-10 py-5">
         <Logo />
         <Link href="/history" className="px-3 py-1.5 text-sm hover:bg-[color:var(--bg-raised)] text-parchment-100">
           Back to history
         </Link>
       </nav>
       <div className="mx-auto w-full max-w-[1100px] px-3 pb-10 sm:px-6">
-        <div className="mb-2 text-[11px] text-parchment-400">
-          {outcomeLabel} · {game.reason} · {timeControlLabel(game.baseSec, game.incSec)} ·{" "}
-          {new Date(game.endedAt).toLocaleDateString()}
+        <div className="zen-hide mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-parchment-400">
+          <span>
+            {outcomeLabel} · {game.reason} · {timeControlLabel(game.baseSec, game.incSec)} ·{" "}
+            {new Date(game.endedAt).toLocaleDateString()}
+          </span>
+          <Button size="sm" onClick={copyPgn} aria-live="polite">
+            {copied ? "PGN copied" : "Copy PGN"}
+          </Button>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <div className="min-w-0 flex-1">
@@ -128,6 +198,7 @@ function Replay({ game }: { game: CompletedGame }) {
               name="You"
               className="min-w-0 !px-0 !py-1"
             />
+            <BoardEvalStrip board={displayBoard} rules={evalRules} className="w-full max-w-[720px]" />
             <div className="mt-2 space-y-1.5">
               {game.myNerf && <RuleLine label="Your rule" nerf={game.myNerf} />}
               {game.opponentNerf && <RuleLine label="Opponent rule" nerf={game.opponentNerf} />}
@@ -156,7 +227,7 @@ function RuleLine({
 }) {
   return (
     <div className="plate p-2 px-3">
-      <span className="text-[11px] text-parchment-400">{label} </span>
+      <span className="text-[12px] text-parchment-400">{label} </span>
       <span className={`font-display text-sm font-semibold tier-${nerf.tier}`}>{nerf.name}</span>
       <span className="text-xs leading-snug text-parchment-300">
         : {nerf.description} <span className="text-parchment-400">({TIER_LABEL[nerf.tier] ?? ""})</span>

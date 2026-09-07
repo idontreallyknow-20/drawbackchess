@@ -111,7 +111,7 @@ function HouseBotsControl() {
           clears them from the lobby entirely. */}
       <div className={"border-t border-[color:var(--edge)] pt-3 " + (enabled === false ? "opacity-50" : "")}>
         <div className="flex items-baseline justify-between gap-3">
-          <label htmlFor="house-games" className="text-[11px] text-parchment-400">
+          <label htmlFor="house-games" className="text-[12px] text-parchment-400">
             Filler games running
           </label>
           <span className="shrink-0 font-mono text-sm tabular-nums text-parchment-50">
@@ -256,7 +256,7 @@ function HouseStrengthEditor({
   return (
     <div className={"border-t border-[color:var(--edge)] pt-3 " + (disabled ? "opacity-50" : "")}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-[11px] text-parchment-400">Strength by tier</span>
+        <span className="text-[12px] text-parchment-400">Strength by tier</span>
         <div className="flex flex-wrap gap-1.5">
           <ModButton
             size="sm"
@@ -303,7 +303,7 @@ function HouseStrengthEditor({
               <div className="mt-2 grid grid-cols-3 gap-2">
                 {STRENGTH_FIELDS.map((f) => (
                   <label key={f.key} className="block">
-                    <span className="block text-[11px] text-parchment-400">{f.label}</span>
+                    <span className="block text-[12px] text-parchment-400">{f.label}</span>
                     <StrengthInput
                       tier={t}
                       field={f}
@@ -320,8 +320,14 @@ function HouseStrengthEditor({
         })}
       </div>
 
+      {/* From sm up the console gives this table 568px (640 viewport, less the
+          shell's px-5 and this section's p-4), and the eight columns want about
+          390px, so it fits without scrolling. It used to carry a 420px floor,
+          which could never bind at any width where the table is shown and so
+          only implied a scroll that never happened. The wrapper keeps
+          overflow-x-auto as the safety net for a stray wide value. */}
       <div className="mt-2 hidden overflow-x-auto sm:block">
-        <table className="w-full min-w-[420px] border-collapse text-[11px]">
+        <table className="w-full border-collapse text-[12px]">
           <thead>
             <tr className="text-parchment-400">
               <th className="py-1 pr-2 text-left font-normal">Tier</th>
@@ -371,7 +377,7 @@ function HouseStrengthEditor({
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-[11px] leading-snug text-parchment-500">
+      <p className="mt-2 text-[12px] leading-snug text-parchment-500">
         Move-quality weakening (topK / temp / noise), not just time. Changes reach live games within
         ~15s. Ratings drift is expected after a strength change. Highlighted values are overridden.
       </p>

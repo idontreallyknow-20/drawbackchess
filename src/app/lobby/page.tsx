@@ -397,7 +397,10 @@ function LobbyInner() {
                 aria-controls={`lobby-panel-${t.id}`}
                 onClick={() => setTab(t.id)}
                 className={
-                  "-mb-px flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-1 pb-2.5 pt-1 font-display text-sm font-semibold transition-colors sm:text-base " +
+                  // 33.9px WIDE before this. The height was fixed and the width never was,
+                  // which is the same half-fix as the home footer: a short label like
+                  // "Play" inside px-1 is a 34px target however tall it is.
+                  "-mb-px flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-1 pb-2.5 pt-1 font-display text-sm font-semibold transition-colors [@media(pointer:fine)]:min-w-0 sm:text-base " +
                   (selected
                     ? "border-[color:var(--accent)] text-gold-leaf"
                     : "border-transparent text-parchment-300 hover:border-[color:var(--edge-strong)] hover:text-parchment-50")
@@ -436,7 +439,7 @@ function LobbyInner() {
                   <div className="flex items-center gap-3">
                     <Link
                       href="/tv"
-                      className="inline-flex min-h-[44px] items-center sm:min-h-0 text-xs text-gold-leaf hover:text-gold transition-colors"
+                      className="inline-flex min-h-[44px] items-center [@media(pointer:fine)]:min-h-0 text-[13px] text-gold-leaf hover:text-gold transition-colors"
                     >
                       Open Nerf Chess TV
                     </Link>
@@ -475,7 +478,7 @@ function LobbyInner() {
                     {filteredGames.length > WATCH_TAB_FOLD && (
                       <Button tone="ghost"
                         onClick={() => setShowAllGames((v) => !v)}
-                        className="mt-2.5 sm:min-h-0 w-full px-3 py-2 text-xs font-medium text-parchment-300">
+                        className="mt-2.5 [@media(pointer:fine)]:min-h-0 w-full px-3 py-2 text-xs font-medium text-parchment-300">
                         {showAllGames
                           ? "Show fewer"
                           : `View all ${filteredGames.length} games`}
@@ -585,7 +588,7 @@ function LobbyInner() {
                           setTab("watch");
                           setFriendsOpen(true);
                         }}
-                        className="inline-flex min-h-[44px] items-center sm:min-h-0 text-xs text-gold-leaf hover:text-gold transition-colors"
+                        className="inline-flex min-h-[44px] items-center [@media(pointer:fine)]:min-h-0 text-xs text-gold-leaf hover:text-gold transition-colors"
                       >
                         Create a friend game
                       </button>
@@ -675,7 +678,7 @@ function LobbyInner() {
                     >
                       <Link
                         href={`/u/${encodeURIComponent(p.name)}`}
-                        className="flex min-h-[44px] min-w-0 items-center gap-2 sm:min-h-0 text-parchment-100 hover:text-gold-leaf transition-colors"
+                        className="flex min-h-[44px] min-w-0 items-center gap-2 [@media(pointer:fine)]:min-h-0 text-parchment-100 hover:text-gold-leaf transition-colors"
                       >
                         <span className="min-w-0 truncate">{p.name}</span>
                         {p.rating != null && (
@@ -695,7 +698,7 @@ function LobbyInner() {
                   <Button tone="ghost"
                    
                     onClick={() => setShowAllPlayers((v) => !v)}
-                    className="mt-2 sm:min-h-0 w-full px-3 py-2 text-xs font-medium text-parchment-300">
+                    className="mt-2 [@media(pointer:fine)]:min-h-0 w-full px-3 py-2 text-xs font-medium text-parchment-300">
                     {showAllPlayers
                       ? "Show fewer"
                       : `View all ${sortedPlayers.length} players`}
@@ -757,7 +760,7 @@ function LobbyInner() {
                     <Button tone="ghost"
                      
                       onClick={() => setTab("watch")}
-                      className="mt-2 sm:min-h-0 w-full px-3 py-2 text-xs font-medium text-parchment-300">
+                      className="mt-2 [@media(pointer:fine)]:min-h-0 w-full px-3 py-2 text-xs font-medium text-parchment-300">
                       {`See all ${lobby.games.length} live games`}
                     </Button>
                   )}
@@ -966,7 +969,12 @@ function ModeFilter({
           aria-pressed={value === o.id}
           onClick={() => onChange(o.id)}
           className={
-            "min-h-[44px] px-4 py-1 text-xs font-medium transition-colors sm:min-h-[34px] " +
+            // A segmented tab's label is interactive text, so 13px, not the
+            // 12px caption size. The tightening was behind `sm:`, which reads a
+            // WIDTH as a proxy for a mouse: a 768px tablet and a touchscreen
+            // laptop both got 34px targets with fingers on them. It is now
+            // behind (pointer: fine), like Button.tsx.
+            "min-h-[44px] px-4 py-1 text-[13px] font-medium transition-colors [@media(pointer:fine)]:min-h-[34px] " +
             (i > 0 ? "border-l border-[color:var(--edge)] " : "") +
             (value === o.id
               ? "bg-[color:var(--accent)] text-[color:var(--text-on-accent)]"
@@ -1065,7 +1073,7 @@ function LobbyRailError({ message, onRetry }: { message: string; onRetry: () => 
       <Button tone="ghost"
        
         onClick={onRetry}
-        className="sm:min-h-0 px-3 py-2 text-xs font-medium text-parchment-200">
+        className="[@media(pointer:fine)]:min-h-0 px-3 py-2 text-[13px] font-medium text-parchment-200">
         Retry
       </Button>
     </div>
@@ -1130,7 +1138,7 @@ function PlayerNameLink({
     <Link
       href={`/u/${encodeURIComponent(name)}`}
       className={
-        "inline-flex min-h-[44px] min-w-0 items-center sm:min-h-0 hover:text-gold-leaf hover:underline transition-colors " +
+        "inline-flex min-h-[44px] min-w-0 items-center [@media(pointer:fine)]:min-h-0 hover:text-gold-leaf hover:underline transition-colors " +
         className
       }
     >
@@ -1284,14 +1292,14 @@ function RailWatchRow({ game }: { game: MPLobbyGame }) {
           <span className="min-w-0 truncate">
             {game.players.w.name}
             {game.players.w.rating != null && (
-              <span className="font-mono text-[11px] tabular-nums text-parchment-400"> {game.players.w.rating}</span>
+              <span className="font-mono text-[12px] tabular-nums text-parchment-400"> {game.players.w.rating}</span>
             )}
           </span>
           <span className="shrink-0 text-parchment-400">vs</span>
           <span className="min-w-0 truncate">
             {game.players.b.name}
             {game.players.b.rating != null && (
-              <span className="font-mono text-[11px] tabular-nums text-parchment-400"> {game.players.b.rating}</span>
+              <span className="font-mono text-[12px] tabular-nums text-parchment-400"> {game.players.b.rating}</span>
             )}
           </span>
         </div>

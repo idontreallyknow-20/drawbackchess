@@ -80,8 +80,10 @@ function KnightPreview({ theme, color, size = 20 }: { theme: PieceTheme; color: 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em]"
-      style={{ color: "var(--text-muted)" }}
+      // Section 3: "A section label is a plain bold heading at the body size,
+      // not an uppercase tracked-out device." This was the device.
+      className="mb-1.5 text-[12px] font-semibold"
+      style={{ color: "var(--text-secondary)" }}
     >
       {children}
     </div>
@@ -243,7 +245,7 @@ export function HeaderSettingsMenu({
         title="Quick settings"
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="nav-icon-btn relative grid h-11 w-11 place-items-center text-parchment-300 hover:bg-[color:var(--bg-hover)] hover:text-parchment-50 sm:h-10 sm:w-10"
+        className="nav-icon-btn relative grid h-[44px] w-[44px] place-items-center text-parchment-300 hover:bg-[color:var(--bg-hover)] hover:text-parchment-50 [@media(pointer:fine)]:h-[40px] [@media(pointer:fine)]:w-[40px]"
         onClick={() => {
           const next = !open;
           // Re-read on the way open so a value changed elsewhere is current.
@@ -311,7 +313,7 @@ export function HeaderSettingsMenu({
           <div className="flex items-center justify-between gap-3">
             <span style={{ color: "var(--text-primary)" }}>
               Zen mode
-              <span className="ml-1.5 font-mono text-[11px]" style={{ color: "var(--text-muted)" }}>
+              <span className="ml-1.5 font-mono text-[12px]" style={{ color: "var(--text-muted)" }}>
                 z
               </span>
             </span>

@@ -4,6 +4,38 @@
 //  - "classic": the original synthesized wood-knock clicks (Web Audio only).
 // Sample playback always falls back to the synth while a file is still
 // loading or failed to load, so a sound never silently goes missing.
+//
+// WHICH PATH A CUE TAKES. Exactly eight events have a vendored recording
+// (Move, Capture, Select, Error, LowTime, CountDown0, GenericNotify,
+// SocialNotify); those call playSample() first and drop through to their synth
+// voice when the theme is "classic" or the file is not ready. Every other cue
+// is synthesized in both themes, which is a deliberate choice rather than an
+// omission: there is no lichess recording for castling, a promotion, a refused
+// input, a premove, a draw offer or a win/loss/draw ending, and inventing an
+// asset for each would trade a two-line function for a licence question and a
+// network fetch on the move it fires. When a cue that DOES have a sample needs
+// a variant the recording cannot express, it bends the sample (gain and
+// playbackRate) rather than abandoning it: see playMove/playCapture.
+//
+// GATES. Every cue, in both themes, passes through the same three checks
+// before it makes a sound, and a cue that skips one is a bug:
+//   1. soundPrefs.enabled, the master switch, plus the per-event pref that
+//      owns it (move / capture / check / gameEnd / effects), plus uiSounds for
+//      interface blips. Set from Settings via configureSoundPrefs. Two audio
+//      settings are enforced at the CALL SITE instead, because they gate a
+//      whole surface rather than a voice: the low-time warning toggle reaches
+//      ClockPill as its `warnLowTime` prop (which also owns the module-level
+//      dedupe that stops the duplicated mobile and desktop clocks from
+//      double-ticking), and the clock-tenths toggle is a display setting with
+//      no voice at all.
+//   2. isMuted(), applied inside knock(), tone() and playSample() so no voice
+//      can forget it.
+//   3. getVolume(), applied in those same three places (nowhere else: applying
+//      it again at a call site squares the slider).
+// Motion settings (html[data-anim], prefers-reduced-motion) deliberately do
+// NOT gate audio: reduced motion is a request about movement, and silencing
+// somebody's move click because they dislike animation is not what they asked
+// for. scripts/check-sound-coverage.cjs enforces gate 1 statically.
 
 let ctx: AudioContext | null = null;
 let muted = false;
@@ -115,8 +147,14 @@ export function preloadSounds() {
 }
 
 /** Play a lichess sample. Returns true when the sound was handled (played, or
- *  intentionally silent because the player muted); false = use the fallback. */
-function playSample(name: SampleName, gain = 1): boolean {
+ *  intentionally silent because the player muted); false = use the fallback.
+ *  `rate` retunes the sample on playback: the sample set has one Move and one
+ *  Capture recording, so pitch is the only lever available for the two things
+ *  the chess set needs from them, the darker "that was the opponent" reading
+ *  and the per-hit micro-variation that stops 200 moves sounding like a
+ *  metronome. Kept inside a few percent so it reads as the same physical
+ *  piece, never as a different sound. */
+function playSample(name: SampleName, gain = 1, rate = 1): boolean {
   if (soundPrefs.theme !== "lichess") return false;
   if (isMuted()) return true;
   const a = audio();
@@ -129,6 +167,7 @@ function playSample(name: SampleName, gain = 1): boolean {
   if (buf === null) return false;
   const src = a.createBufferSource();
   src.buffer = buf;
+  if (rate !== 1) src.playbackRate.value = rate;
   const g = a.createGain();
   g.gain.value = gain * getVolume();
   src.connect(g);
@@ -256,7 +295,14 @@ function tone(opts: {
   if (!a) return;
   const t0 = a.currentTime + (opts.delay ?? 0);
   const m = a.createGain();
-  m.gain.value = opts.master ?? 1.0;
+  // The volume slider applies HERE, exactly as it does in knock(). It used to
+  // not, which meant every tonal voice (the check bell, game start/over, the
+  // clock warnings, the error blip, every card chime) ignored the setting
+  // entirely: at volume 0.2 a check rang out at five times the level of the
+  // move click next to it, and turning the slider down quietened only half the
+  // game. Anything passing an explicit `master` now passes a plain ratio and
+  // lets this line do the scaling.
+  m.gain.value = (opts.master ?? 1.0) * getVolume();
   m.connect(a.destination);
 
   const osc = a.createOscillator();
@@ -275,65 +321,318 @@ function tone(opts: {
   osc.stop(t0 + opts.dur + (opts.release ?? 0.05) + 0.02);
 }
 
-// --- Public API ---
+// --- Chess sounds -----------------------------------------------------------
+// This is the set a player hears hundreds of times a session, so it is tuned by
+// different rules than the card voices below:
+//
+//  1. SHORT AND DRY. A move is 40ms of click and gone. Anything with a ring or
+//     a tail becomes unbearable by move 60, which is why the move click is a
+//     bandpassed noise burst over a fast pitch-dropping body thump (a wooden
+//     piece meeting a wooden board) and not a tone.
+//  2. TELL THEM APART BY COLOUR, NOT BY LEVEL. A capture must be obvious
+//     without being startling, so it separates from a quiet move mostly in the
+//     spectrum (a capture sits around 1.2kHz, a move around 1.9kHz) and in the
+//     weight of its body thump. It is only slightly louder. Turning up the
+//     volume of the thing that happens when you lose a piece is exactly the
+//     wrong instinct: you already know it is bad news.
+//  3. NEVER A METRONOME. Every move and capture pulls the next entry from
+//     moveVariation() below, so no two consecutive hits are identical.
+//  4. ONE GATE FOR EVERYTHING. Every cue here runs through soundPrefs plus
+//     isMuted() via knock()/tone()/playSample(). A cue that skips the gate is
+//     a bug, not a feature.
+//
+// The figures in the comments below are measured, not guessed: every cue is
+// rendered offline and its duration, peak, RMS and spectral centroid compared
+// against the rest of the set. Everything that is a real board event lands
+// between 0.10 and 0.26 peak (a 2.6x band, at the default volume of 0.8), with
+// only the two deliberate whispers below it, the piece-select blip at about
+// 0.05 and the premove tick at about 0.04. The same set used to span 17x, from
+// a select blip too quiet to hear on laptop speakers up to a pocket drop that
+// hit harder than a capture.
 
-// Standard move: a single short, mid-frequency wood click.
-export function playMove() {
+/** Which side made the move. The opponent's pieces land a shade darker and
+ *  softer than yours: you already know when you moved (you pressed the square),
+ *  so the useful information a sound can carry is "the board changed and it was
+ *  not you", the cue that makes you look up. Kept to a semitone of pitch and
+ *  14% of level so it reads as the same board, not a second sound set.
+ *  Both chess.com (move-self vs move-opponent) and every serious board GUI
+ *  make this split; lichess does not, so it is opt-in per call site. */
+export type MoveSide = { opponent?: boolean };
+
+// Non-repeating micro-variation for the two highest-frequency cues. A real
+// wooden piece never lands twice the same way, and a synthesized one that does
+// turns into a tick-tock by move 60. Two tables of different length are stepped
+// by a stride coprime to their length: each one therefore visits every entry
+// before repeating any and can never hand out the same entry twice in a row,
+// and because 7 and 5 are coprime the pair only repeats every 35 moves, which
+// is long enough that no rhythm is audible. Deterministic (no Math.random) so
+// the sound is reproducible in a test.
+const V_TIMBRE = [1.0, 1.07, 0.94, 1.11, 0.9, 1.04, 0.97];
+const V_LEVEL = [1.0, 0.93, 1.07, 0.96, 1.03];
+let vTimbre = 0;
+let vLevel = 0;
+
+function moveVariation(): { timbre: number; level: number } {
+  vTimbre = (vTimbre + 3) % V_TIMBRE.length;
+  vLevel = (vLevel + 2) % V_LEVEL.length;
+  return { timbre: V_TIMBRE[vTimbre], level: V_LEVEL[vLevel] };
+}
+
+// Sample playback has only two levers (gain and playbackRate), so the same
+// variation is projected onto them: a third of the timbre swing as pitch (about
+// +/- 3.5%, under a semitone) and the level swing straight through. This
+// matters more than the synth path, because "lichess" is the default theme and
+// most players hear the sampled Move/Capture, not the knocks.
+const varyRate = (timbre: number) => 1 + (timbre - 1) * 0.35;
+
+// How far the opponent's pieces sit from yours: about a semitone down and 14%
+// quieter. The level cut is applied to the whole voice at once (the knock
+// master) rather than to its layers separately, because trimming the noise
+// burst and the body thump by different amounts changes the timbre as well as
+// the level and can leave the "quieter" version measuring louder.
+const OPP_PITCH = 0.94;
+const OPP_LEVEL = 0.86;
+
+/** Standard move: one short, dry, mid-frequency wood click. */
+export function playMove(side: MoveSide = {}) {
   if (!soundPrefs.enabled || !soundPrefs.move) return;
-  if (playSample("Move")) return;
+  const v = moveVariation();
+  const opp = side.opponent === true;
+  if (playSample("Move", v.level * (opp ? OPP_LEVEL : 1), varyRate(v.timbre) * (opp ? OPP_PITCH : 1))) return;
   knock({
-    filterFreq: 1100,
+    filterFreq: 1100 * v.timbre * (opp ? OPP_PITCH : 1),
     filterQ: 3.5,
     dur: 0.05,
-    gain: 0.55,
-    bodyFreq: 220,
-    bodyGain: 0.22,
+    gain: 0.52 * v.level,
+    bodyFreq: 220 * (opp ? OPP_PITCH : 1),
+    bodyGain: 0.215 * v.level,
     bodyDur: 0.06,
+    master: opp ? OPP_LEVEL : 1,
   });
 }
 
-// Capture: lower, thicker click with a slight "thud" body.
-export function playCapture() {
+/** Capture: lower and thicker, with a real thud under it. Only a shade louder
+ *  than a quiet move (about 1.2x peak): the spectrum and the body do the
+ *  telling, so a capture-heavy scramble does not turn into a volume war. */
+export function playCapture(side: MoveSide = {}) {
   if (!soundPrefs.enabled || !soundPrefs.capture) return;
-  if (playSample("Capture")) return;
+  const v = moveVariation();
+  const opp = side.opponent === true;
+  // The sampled pair is left at its own relative level: lichess balanced
+  // Move.mp3 against Capture.mp3 themselves, and second-guessing that from
+  // here would only break a set that already works. The variation and the
+  // opponent offset ride on top of it; the synth figures below are the ones
+  // this pass rebalanced.
+  if (playSample("Capture", v.level * (opp ? OPP_LEVEL : 1), varyRate(v.timbre) * (opp ? OPP_PITCH : 1))) return;
   knock({
-    filterFreq: 700,
+    filterFreq: 700 * v.timbre * (opp ? OPP_PITCH : 1),
     filterQ: 2.5,
     dur: 0.07,
-    gain: 0.6,
-    bodyFreq: 140,
-    bodyGain: 0.45,
-    bodyDur: 0.10,
+    gain: 0.42 * v.level,
+    bodyFreq: 140 * (opp ? OPP_PITCH : 1),
+    bodyGain: 0.3 * v.level,
+    bodyDur: 0.1,
+    master: opp ? OPP_LEVEL : 1,
   });
 }
 
-// Check: a brighter, bell-like ping (two-note overtone).
-export function playCheck() {
+/** Castling: two knocks, not one. The king slides, then the rook lands on the
+ *  far side of it about 90ms later, which is exactly what your hands do at a
+ *  real board. The double knock is the whole point: it is instantly
+ *  recognizable in peripheral hearing without being any louder than a move, so
+ *  you can tell your opponent castled while you are reading the other wing.
+ *  Every popular site voices castling separately; lichess is the exception. */
+export function playCastle(side: MoveSide = {}) {
+  if (!soundPrefs.enabled || !soundPrefs.move) return;
+  const v = moveVariation();
+  const opp = side.opponent === true;
+  const dark = opp ? OPP_PITCH : 1;
+  const level = opp ? OPP_LEVEL : 1;
+  // The king: lighter, it only steps two squares.
+  knock({
+    filterFreq: 1150 * v.timbre * dark,
+    filterQ: 3.5,
+    dur: 0.04,
+    gain: 0.36 * v.level,
+    bodyFreq: 230 * dark,
+    bodyGain: 0.14 * v.level,
+    bodyDur: 0.05,
+    master: level,
+  });
+  // The rook: the heavier of the pair, and the one that says "castle".
+  knock({
+    filterFreq: 820 * v.timbre * dark,
+    filterQ: 3,
+    dur: 0.055,
+    gain: 0.42 * v.level,
+    bodyFreq: 175 * dark,
+    bodyGain: 0.22 * v.level,
+    bodyDur: 0.08,
+    delay: 0.09,
+    master: level,
+  });
+}
+
+/** Promotion: the piece lands, then a short rising fifth confirms the upgrade.
+ *  The click comes first so the move still reads as a move, and the flourish
+ *  is quiet and brief (under half the click's level, gone in 230ms) because a
+ *  promotion in a queening race can happen three times in ten seconds. Call it
+ *  AFTER the move/capture voice, not instead of it. */
+export function playPromotion(side: MoveSide = {}) {
+  if (!soundPrefs.enabled || !soundPrefs.move) return;
+  const opp = side.opponent === true;
+  const p = opp ? 0.94 : 1;
+  tone({ freq: 784 * p, dur: 0.08, type: "triangle", gain: 0.1, sweep: 1175 * p, release: 0.08, delay: 0.04 });
+  tone({ freq: 1568 * p, dur: 0.1, type: "sine", gain: 0.065, attack: 0.006, release: 0.16, delay: 0.11 });
+}
+
+/** Premove accepted: the quietest thing in the whole set. A queued premove is
+ *  not an event on the board, it is a note to yourself, so it gets an 11ms
+ *  tick up at 2.8kHz, measuring about two thirds the piece-select blip and a
+ *  fifth of a move. Gated by the interface-sounds pref, not the move pref:
+ *  nothing has actually moved on the board yet. */
+export function playPremoveSet() {
+  if (!soundPrefs.enabled || !uiSounds) return;
+  knock({ filterFreq: 2800, filterQ: 9, dur: 0.022, gain: 0.36 });
+}
+
+/** A queued premove fired. The move you already committed to has just landed,
+ *  and the distinction worth drawing is against the opponent's move that
+ *  triggered it a fraction of a second earlier. Deliberately NOT a second
+ *  sound: it is a 3kHz tick layered on the front of the move click, which
+ *  sharpens the attack (it lifts the measured centroid of the whole cue by
+ *  about 160Hz) without adding an event. In bullet a premove fires on most
+ *  moves, so anything that reads as its own noise would be unbearable. Pair it
+ *  with playMove/playCapture; playMoveCue does that for you. */
+export function playPremoveFired() {
+  if (!soundPrefs.enabled || !soundPrefs.move) return;
+  knock({ filterFreq: 3000, filterQ: 10, dur: 0.02, gain: 0.46 });
+}
+
+/** One landed move, voiced correctly, from the move itself. Call sites hold a
+ *  Move and should not have to re-derive which of five cues it deserves, so the
+ *  whole decision lives here: drop, castle, capture or quiet click, plus the
+ *  promotion flourish after it and the premove tick layered into its attack.
+ *  Structurally typed (no engine import) so a Move can be handed straight in,
+ *  and null-tolerant so a caller with no move in hand (a takeback landing, a
+ *  resync) still gets the plain click. */
+export function playMoveCue(
+  move:
+    | { captured?: unknown; castle?: unknown; promotion?: unknown; drop?: unknown }
+    | null
+    | undefined,
+  opts: MoveSide & { premove?: boolean } = {},
+) {
+  const side: MoveSide = { opponent: opts.opponent };
+  if (opts.premove) playPremoveFired();
+  if (move?.drop) playDrop();
+  else if (move?.castle) playCastle(side);
+  else if (move?.captured) playCapture(side);
+  else playMove(side);
+  if (move?.promotion) playPromotion(side);
+}
+
+/** An input the board refused: a piece with no legal moves, a drop on a square
+ *  that cannot take it, a drag released somewhere the piece cannot reach. Two
+ *  dull thuds around a downward growl: dry, over in 150ms, and centred at
+ *  840Hz, less than half the brightness of a move landing (1.8kHz) and a
+ *  quarter of playError below (3.1kHz), which means a different thing anyway:
+ *  the server said no, rather than the board did. Deliberately not a buzzer,
+ *  because this fires on fumbled drags all game long. */
+export function playIllegal() {
+  if (!soundPrefs.enabled) return;
+  knock({ filterFreq: 260, filterQ: 2, dur: 0.05, gain: 0.3, bodyFreq: 118, bodyGain: 0.26, bodyDur: 0.05 });
+  tone({ freq: 110, dur: 0.1, type: "triangle", gain: 0.13, sweep: 96, release: 0.05, delay: 0.055 });
+  knock({ filterFreq: 230, filterQ: 2, dur: 0.05, gain: 0.22, delay: 0.055 });
+}
+
+/** A draw was offered to you. A soft two-note rise, the shape of a spoken
+ *  question, with the second note bending up a little further: it asks rather
+ *  than announces. Warm and quiet on purpose (about two thirds the notify dong
+ *  and half a game ending): a draw offer is not urgent, and being mistaken for
+ *  the game being over is the one thing it must never do. */
+export function playDrawOffer() {
+  if (!soundPrefs.enabled) return;
+  tone({ freq: 523, dur: 0.11, type: "triangle", gain: 0.125, attack: 0.006, release: 0.1 });
+  tone({ freq: 622, dur: 0.16, type: "triangle", gain: 0.14, sweep: 660, attack: 0.006, release: 0.18, delay: 0.12 });
+  tone({ freq: 1245, dur: 0.14, type: "sine", gain: 0.042, attack: 0.01, release: 0.18, delay: 0.13 });
+}
+
+/** Check. The one cue in the set that is allowed to be an alarm rather than a
+ *  chime (owner request: a check must be unmissable). A bright strike carrying
+ *  its fifth and octave partials, then a second toll a shade lower: the classic
+ *  two-ring alarm shape, which the ear recognizes as an alarm even through
+ *  another sound landing on top of it.
+ *
+ *  `onMe` splits the two directions. Being checked is the one you must react to
+ *  and keeps both rings; a check you just delivered gets the single opening
+ *  toll, so an attacking sequence does not ring the full alarm at you three
+ *  moves running. It defaults to the full alarm, which is what every existing
+ *  call site (which cannot tell the two apart) already asked for. The gains are
+ *  scaled up a fifth from the pre-volume-fix figures so the bell keeps the
+ *  level it had before tone() started honouring the volume slider. */
+export function playCheck(opts: { onMe?: boolean } = {}) {
   if (!soundPrefs.enabled || !soundPrefs.check) return;
-  // Alarm bell, not a polite chime (owner request: a check must be
-  // unmissable): a bright strike with its fifth and octave partials, then a
-  // quick second toll a shade lower — the classic two-ring alarm shape.
-  tone({ freq: 1320, dur: 0.22, type: "sine", gain: 0.2, attack: 0.002, release: 0.22 });
-  tone({ freq: 1980, dur: 0.2, type: "sine", gain: 0.09, attack: 0.002, release: 0.2, delay: 0.01 });
-  tone({ freq: 2640, dur: 0.14, type: "sine", gain: 0.045, attack: 0.002, release: 0.14, delay: 0.01 });
-  tone({ freq: 1188, dur: 0.24, type: "sine", gain: 0.16, attack: 0.002, release: 0.24, delay: 0.16 });
-  tone({ freq: 1782, dur: 0.2, type: "sine", gain: 0.07, attack: 0.002, release: 0.2, delay: 0.17 });
+  tone({ freq: 1320, dur: 0.22, type: "sine", gain: 0.24, attack: 0.002, release: 0.22 });
+  tone({ freq: 1980, dur: 0.2, type: "sine", gain: 0.108, attack: 0.002, release: 0.2, delay: 0.01 });
+  tone({ freq: 2640, dur: 0.14, type: "sine", gain: 0.054, attack: 0.002, release: 0.14, delay: 0.01 });
+  if (opts.onMe === false) return;
+  tone({ freq: 1188, dur: 0.24, type: "sine", gain: 0.19, attack: 0.002, release: 0.24, delay: 0.16 });
+  tone({ freq: 1782, dur: 0.2, type: "sine", gain: 0.084, attack: 0.002, release: 0.2, delay: 0.17 });
 }
 
 // Nerf trigger: soft two-note descending notification.
 export function playNerf() {
   if (!soundPrefs.enabled || !soundPrefs.gameEnd) return;
-  tone({ freq: 660, dur: 0.18, type: "triangle", gain: 0.14, attack: 0.005, release: 0.18 });
-  tone({ freq: 494, dur: 0.22, type: "triangle", gain: 0.12, attack: 0.005, release: 0.22, delay: 0.13 });
+  tone({ freq: 660, dur: 0.18, type: "triangle", gain: 0.175, attack: 0.005, release: 0.18 });
+  tone({ freq: 494, dur: 0.22, type: "triangle", gain: 0.15, attack: 0.005, release: 0.22, delay: 0.13 });
 }
 
-// Game over: lichess notify dong, or a two-note descending chime.
-export function playGameOver() {
+/** How a game ended, from the listening player's seat. */
+export type GameOutcome = "win" | "loss" | "draw";
+
+/** Game over. This is the one moment of the session where the sound is allowed
+ *  to have an opinion, and it fires exactly once, so it carries the result:
+ *
+ *   - win  : a rising two-chord fanfare (G major, root then the fifth above),
+ *            wide and open, with a high sparkle on the second chord.
+ *   - loss : the same shape inverted, falling into a minor third with a low
+ *            root underneath it. Two voices where the win has five, so it
+ *            lands thinner and darker at the same length and level: rubbing it
+ *            in is not the job.
+ *   - draw : two notes a fourth apart at equal weight that never resolve, with
+ *            the opening note still sounding under the second. Nothing about it
+ *            rises or falls, which is the point.
+ *
+ *  With no outcome (a spectator, an abort, any caller that does not know) it
+ *  keeps the old neutral behaviour: the lichess notify dong, else a two-note
+ *  descending chime. The outcome variants are always synthesized because the
+ *  sample set has one dong and cannot say which of the three happened. */
+export function playGameOver(outcome?: GameOutcome) {
   if (!soundPrefs.enabled || !soundPrefs.gameEnd) return;
+  if (outcome === "win") {
+    tone({ freq: 392, dur: 0.16, type: "triangle", gain: 0.175, attack: 0.005, release: 0.16 });
+    tone({ freq: 494, dur: 0.16, type: "triangle", gain: 0.135, attack: 0.005, release: 0.16, delay: 0.01 });
+    tone({ freq: 587, dur: 0.34, type: "triangle", gain: 0.175, attack: 0.005, release: 0.34, delay: 0.17 });
+    tone({ freq: 784, dur: 0.34, type: "triangle", gain: 0.15, attack: 0.005, release: 0.34, delay: 0.18 });
+    tone({ freq: 1568, dur: 0.26, type: "sine", gain: 0.06, attack: 0.008, release: 0.34, delay: 0.2 });
+    return;
+  }
+  if (outcome === "loss") {
+    tone({ freq: 587, dur: 0.16, type: "sine", gain: 0.185, attack: 0.006, release: 0.16 });
+    tone({ freq: 466, dur: 0.34, type: "sine", gain: 0.2, attack: 0.006, release: 0.34, delay: 0.15 });
+    tone({ freq: 175, dur: 0.4, type: "triangle", gain: 0.09, attack: 0.01, release: 0.4, delay: 0.15 });
+    return;
+  }
+  if (outcome === "draw") {
+    tone({ freq: 523, dur: 0.44, type: "sine", gain: 0.235, attack: 0.006, release: 0.3 });
+    tone({ freq: 392, dur: 0.34, type: "sine", gain: 0.235, attack: 0.006, release: 0.3, delay: 0.16 });
+    return;
+  }
   if (playSample("GenericNotify")) return;
-  tone({ freq: 880, dur: 0.18, type: "sine", gain: 0.18, attack: 0.005, release: 0.18 });
-  tone({ freq: 698, dur: 0.30, type: "sine", gain: 0.18, attack: 0.005, release: 0.28, delay: 0.13 });
-  tone({ freq: 1318, dur: 0.30, type: "sine", gain: 0.06, attack: 0.005, release: 0.28, delay: 0.13 });
+  tone({ freq: 880, dur: 0.18, type: "sine", gain: 0.22, attack: 0.005, release: 0.18 });
+  tone({ freq: 698, dur: 0.30, type: "sine", gain: 0.22, attack: 0.005, release: 0.28, delay: 0.13 });
+  tone({ freq: 1318, dur: 0.30, type: "sine", gain: 0.075, attack: 0.005, release: 0.28, delay: 0.13 });
 }
 
 // Generic notification: something in the game needs your attention right now.
@@ -341,8 +640,8 @@ export function playGameOver() {
 export function playNotify() {
   if (!soundPrefs.enabled) return;
   if (playSample("GenericNotify", 0.85)) return;
-  tone({ freq: 880, dur: 0.18, type: "sine", gain: 0.16, attack: 0.005, release: 0.18 });
-  tone({ freq: 1108, dur: 0.22, type: "sine", gain: 0.10, attack: 0.005, release: 0.20, delay: 0.09 });
+  tone({ freq: 880, dur: 0.18, type: "sine", gain: 0.2, attack: 0.005, release: 0.18 });
+  tone({ freq: 1108, dur: 0.22, type: "sine", gain: 0.125, attack: 0.005, release: 0.20, delay: 0.09 });
 }
 
 // Draft offer: a soft glistening shimmer, deliberately gentler than the
@@ -429,51 +728,72 @@ export function playChallenge() {
 // master switch + mute like the other notify voices (no per-event pref).
 export function playGameStart() {
   if (!soundPrefs.enabled) return;
-  tone({ freq: 523, dur: 0.14, type: "triangle", gain: 0.16, attack: 0.004, release: 0.12 });
-  tone({ freq: 659, dur: 0.14, type: "triangle", gain: 0.15, attack: 0.004, release: 0.12, delay: 0.09 });
-  tone({ freq: 784, dur: 0.16, type: "triangle", gain: 0.15, attack: 0.004, release: 0.14, delay: 0.18 });
-  tone({ freq: 1046, dur: 0.30, type: "sine", gain: 0.15, attack: 0.004, release: 0.30, delay: 0.28 });
-  tone({ freq: 2093, dur: 0.24, type: "sine", gain: 0.05, attack: 0.006, release: 0.26, delay: 0.30 });
+  tone({ freq: 523, dur: 0.14, type: "triangle", gain: 0.22, attack: 0.004, release: 0.12 });
+  tone({ freq: 659, dur: 0.14, type: "triangle", gain: 0.21, attack: 0.004, release: 0.12, delay: 0.09 });
+  tone({ freq: 784, dur: 0.16, type: "triangle", gain: 0.21, attack: 0.004, release: 0.14, delay: 0.18 });
+  tone({ freq: 1046, dur: 0.30, type: "sine", gain: 0.21, attack: 0.004, release: 0.30, delay: 0.28 });
+  tone({ freq: 2093, dur: 0.24, type: "sine", gain: 0.07, attack: 0.006, release: 0.26, delay: 0.30 });
 }
 
-// Low time: urgent double tick, like a clock tapping your shoulder.
+// --- The clock ladder -------------------------------------------------------
+// Three rungs, each fired once as the clock crosses its threshold (ClockPill
+// re-arms them only if increment lifts the time back above), so this is an
+// escalation the player hears as a sequence over a single losing scramble, not
+// a repeating tick. Each rung is faster, higher and louder than the one before
+// it: two spaced taps, then a tighter pair, then a hard triple. Pitch alone is
+// not enough (a player deep in a scramble is not listening analytically), so
+// the tempo carries most of the urgency.
+
+/** 10 seconds: the clock taps you on the shoulder. Two even taps and a lift. */
 export function playLowTime() {
   if (!soundPrefs.enabled) return;
   if (playSample("LowTime")) return;
-  tone({ freq: 988, dur: 0.09, type: "square", gain: 0.10, attack: 0.003, release: 0.08 });
-  tone({ freq: 988, dur: 0.09, type: "square", gain: 0.10, attack: 0.003, release: 0.08, delay: 0.16 });
-  tone({ freq: 1319, dur: 0.12, type: "square", gain: 0.08, attack: 0.003, release: 0.10, delay: 0.32 });
+  tone({ freq: 988, dur: 0.09, type: "square", gain: 0.125, attack: 0.003, release: 0.08 });
+  tone({ freq: 988, dur: 0.09, type: "square", gain: 0.125, attack: 0.003, release: 0.08, delay: 0.16 });
+  tone({ freq: 1319, dur: 0.12, type: "square", gain: 0.1, attack: 0.003, release: 0.1, delay: 0.32 });
 }
 
-// Countdown tick: short urgent blip for the last seconds of the grace timer.
+/** A single countdown blip: the grace timer running out, one per second. Sits
+ *  between the two clock warnings in pitch and well under both in level, since
+ *  it is the only rung here that repeats. */
 export function playCountdownTick() {
   if (!soundPrefs.enabled) return;
   if (playSample("CountDown0", 0.8)) return;
-  tone({ freq: 988, dur: 0.09, type: "square", gain: 0.10, attack: 0.002, release: 0.09 });
+  tone({ freq: 1108, dur: 0.07, type: "square", gain: 0.11, attack: 0.002, release: 0.07 });
 }
 
-// Urgent low-clock tick: a sharp, insistent two-note blip for the final
-// seconds of your own clock, pitched a step above the low-time warning so the
-// escalation is audible. Synthesized (no sample) and honours mute/enabled via
-// tone().
+/** 5 seconds: out of time. A hard triple at twice the tempo of the 10-second
+ *  warning and a fourth above it, ending on the highest note in the whole chess
+ *  set. Synthesized (no sample) and gated through tone() like the rest. */
 export function playUrgentTick() {
   if (!soundPrefs.enabled) return;
-  tone({ freq: 1245, dur: 0.06, type: "square", gain: 0.11, attack: 0.002, release: 0.06 });
-  tone({ freq: 1660, dur: 0.07, type: "square", gain: 0.08, attack: 0.002, release: 0.07, delay: 0.08 });
+  tone({ freq: 1245, dur: 0.05, type: "square", gain: 0.15, attack: 0.002, release: 0.05 });
+  tone({ freq: 1245, dur: 0.05, type: "square", gain: 0.15, attack: 0.002, release: 0.05, delay: 0.075 });
+  tone({ freq: 1661, dur: 0.08, type: "square", gain: 0.145, attack: 0.002, release: 0.09, delay: 0.15 });
 }
 
-// Select: very brief, soft pickup tick.
+/** Piece picked up. The most frequent sound in the app (it fires on selects,
+ *  drags and inspections, several times per move), so it is the quietest thing
+ *  with a real body: about a quarter of a move click, 25ms, and high enough to
+ *  sit out of the way of the click that follows it a moment later. It used to
+ *  be quieter still (about a twelfth of a move), which made it inaudible on
+ *  laptop speakers at anything but full volume. */
 export function playSelect() {
   if (!soundPrefs.enabled || !uiSounds) return;
   if (playSample("Select", 0.6)) return;
-  knock({ filterFreq: 1600, filterQ: 5, dur: 0.025, gain: 0.18 });
+  knock({ filterFreq: 1600, filterQ: 5, dur: 0.025, gain: 0.28, bodyFreq: 420, bodyGain: 0.05, bodyDur: 0.02 });
 }
 
-// Error: a move (or premove) failed to reach the server, or was rejected.
+/** Something went wrong between you and the server: a move or premove did not
+ *  arrive, or came back rejected. A bright square blip, which is the one timbre
+ *  in the set that sounds synthetic on purpose. Distinct from playIllegal above
+ *  in both meaning and colour: that one is the board refusing your input, this
+ *  one is the connection failing you, and the two land an octave and a half
+ *  apart with opposite spectral weight. */
 export function playError() {
   if (!soundPrefs.enabled) return;
   if (playSample("Error", 0.7)) return;
-  tone({ freq: 330, dur: 0.14, type: "square", gain: 0.10, attack: 0.003, release: 0.10 });
+  tone({ freq: 330, dur: 0.14, type: "square", gain: 0.125, attack: 0.003, release: 0.1 });
 }
 
 // --- Card / board effect sounds ---------------------------------------------
@@ -531,10 +851,26 @@ export function playSummon() {
 /** Pocket drop (crazyhouse): a fresh piece is planted from your reserve onto an
  * empty square. A firm wooden set-down, chunkier and lower than a plain move
  * click and drier than the airy summon poof, so placing a banked piece reads as
- * its own deliberate action. */
+ * its own deliberate action.
+ *
+ * Gated by the MOVE pref, not the effects pref. A drop is a move: it spends the
+ * turn, it lands a piece on a square, and it belongs with the move click in
+ * every way a player thinks about it. Under the old effects gate, someone who
+ * turned card effects off went deaf to their own placements while someone who
+ * turned move sounds off still heard them, which is backwards on both counts.
+ * Trimmed to sit just under a capture rather than just over one. */
 export function playDrop() {
-  if (!fx()) return;
-  knock({ filterFreq: 780, filterQ: 3, dur: 0.06, gain: 0.5, bodyFreq: 155, bodyGain: 0.42, bodyDur: 0.12 });
+  if (!soundPrefs.enabled || !soundPrefs.move || isMuted()) return;
+  const v = moveVariation();
+  knock({
+    filterFreq: 780 * v.timbre,
+    filterQ: 3,
+    dur: 0.06,
+    gain: 0.31 * v.level,
+    bodyFreq: 155,
+    bodyGain: 0.245 * v.level,
+    bodyDur: 0.12,
+  });
 }
 
 // --- Per-card audio fingerprints (overhaul) ----------------------------------
@@ -994,24 +1330,24 @@ export function playBustTrombone() {
 // subtler than the marquee attack voices above (they fire on every reveal), and
 // dispatched through the rate-limited playPassiveCue so a burst of reveals on
 // game load or reconnect can never stack into a painful chord. All gated by the
-// effects pref + mute via fx(). tone() does not self-apply the volume setting
-// (only knock() does), so tone masters below are scaled by getVolume().
+// effects pref + mute via fx(). The `master` figures below are plain ratios:
+// both knock() and tone() apply the volume setting themselves, so nothing here
+// multiplies by getVolume() (doing so used to be necessary and now double-
+// applies it, squaring the slider).
 
 /** Decree: rules of authority (movement bans, compulsions, most nerfs). A
  * dry stone gavel knock capped by a short, low authoritative fifth. */
 export function playCueDecree(v: CueVariation = NEUTRAL_CUE) {
   if (!fx()) return;
-  const vol = getVolume();
   knock({ filterFreq: 340 * v.bright, filterQ: 2.4, dur: 0.09, gain: 0.34, bodyFreq: 132, bodyGain: 0.3, bodyDur: 0.1, master: 0.8 });
-  tone({ freq: 196 * v.pitch, dur: 0.14, type: "triangle", gain: 0.06, sweep: 147 * v.pitch, release: 0.12, delay: 0.03 + v.delay, master: 0.8 * vol });
+  tone({ freq: 196 * v.pitch, dur: 0.14, type: "triangle", gain: 0.06, sweep: 147 * v.pitch, release: 0.12, delay: 0.03 + v.delay, master: 0.8 });
 }
 
 /** Strike: instant punishment / a hit lands. A sharp electric crack. */
 export function playCueStrike(v: CueVariation = NEUTRAL_CUE) {
   if (!fx()) return;
-  const vol = getVolume();
   knock({ filterFreq: 2200 * v.bright, filterQ: 1.2, dur: 0.05, gain: 0.36, master: 0.8 });
-  tone({ freq: 1400 * v.pitch, dur: 0.1, type: "sawtooth", gain: 0.05, sweep: 300 * v.pitch, release: 0.08, master: 0.75 * vol });
+  tone({ freq: 1400 * v.pitch, dur: 0.1, type: "sawtooth", gain: 0.05, sweep: 300 * v.pitch, release: 0.08, master: 0.75 });
 }
 
 /** Bind: chains, freezes, locks, leashes. A metallic clink into a lock thunk. */
@@ -1024,49 +1360,43 @@ export function playCueBind(v: CueVariation = NEUTRAL_CUE) {
 /** Territory: zones, walls, forbidden ground. A low airy sweep. */
 export function playCueTerritory(v: CueVariation = NEUTRAL_CUE) {
   if (!fx()) return;
-  const vol = getVolume();
-  tone({ freq: 220 * v.pitch, dur: 0.28, type: "sine", gain: 0.08, sweep: 130 * v.pitch, release: 0.14, master: 0.8 * vol });
-  tone({ freq: 330 * v.pitch, dur: 0.2, type: "sine", gain: 0.035, sweep: 180 * v.pitch, release: 0.12, delay: 0.05 + v.delay, master: 0.7 * vol });
+  tone({ freq: 220 * v.pitch, dur: 0.28, type: "sine", gain: 0.08, sweep: 130 * v.pitch, release: 0.14, master: 0.8 });
+  tone({ freq: 330 * v.pitch, dur: 0.2, type: "sine", gain: 0.035, sweep: 180 * v.pitch, release: 0.12, delay: 0.05 + v.delay, master: 0.7 });
 }
 
 /** Tempo: clocks, turn timing, cadence. A crisp clock tick into a soft chime. */
 export function playCueTempo(v: CueVariation = NEUTRAL_CUE) {
   if (!fx()) return;
-  const vol = getVolume();
   knock({ filterFreq: 3200 * v.bright, filterQ: 10, dur: 0.02, gain: 0.22, master: 0.8 });
-  tone({ freq: 1046 * v.pitch, dur: 0.14, type: "sine", gain: 0.05, release: 0.14, delay: 0.06 + v.delay, master: 0.8 * vol });
+  tone({ freq: 1046 * v.pitch, dur: 0.14, type: "sine", gain: 0.05, release: 0.14, delay: 0.06 + v.delay, master: 0.8 });
 }
 
 /** Blessing: boons, wards, buffs that help you. A warm rising chime. */
 export function playCueBlessing(v: CueVariation = NEUTRAL_CUE) {
   if (!fx()) return;
-  const vol = getVolume();
-  tone({ freq: 523 * v.pitch, dur: 0.16, type: "triangle", gain: 0.08, sweep: 784 * v.pitch, release: 0.14, master: 0.8 * vol });
-  tone({ freq: 1046 * v.pitch, dur: 0.16, type: "sine", gain: 0.045, attack: 0.01, release: 0.2, delay: 0.08 + v.delay, master: 0.8 * vol });
+  tone({ freq: 523 * v.pitch, dur: 0.16, type: "triangle", gain: 0.08, sweep: 784 * v.pitch, release: 0.14, master: 0.8 });
+  tone({ freq: 1046 * v.pitch, dur: 0.16, type: "sine", gain: 0.045, attack: 0.01, release: 0.2, delay: 0.08 + v.delay, master: 0.8 });
 }
 
 /** Summon: pieces, spawns, portals. A soft rising whoosh into a poof. */
 export function playCueSummon(v: CueVariation = NEUTRAL_CUE) {
   if (!fx()) return;
-  const vol = getVolume();
-  tone({ freq: 300 * v.pitch, dur: 0.16, type: "sine", gain: 0.06, sweep: 620 * v.pitch, release: 0.08, master: 0.8 * vol });
+  tone({ freq: 300 * v.pitch, dur: 0.16, type: "sine", gain: 0.06, sweep: 620 * v.pitch, release: 0.08, master: 0.8 });
   knock({ filterFreq: 850 * v.bright, filterQ: 1, dur: 0.1, gain: 0.24, bodyFreq: 150, bodyGain: 0.2, bodyDur: 0.1, delay: 0.1 + v.delay, master: 0.8 });
 }
 
 /** Fracture: breaks, shatters, decay, losses. A glassy double crack. */
 export function playCueFracture(v: CueVariation = NEUTRAL_CUE) {
   if (!fx()) return;
-  const vol = getVolume();
   knock({ filterFreq: 3400 * v.bright, filterQ: 6, dur: 0.04, gain: 0.3, master: 0.8 });
   knock({ filterFreq: 1800 * v.bright, filterQ: 5, dur: 0.05, gain: 0.2, delay: 0.03 + v.delay, master: 0.7 });
-  tone({ freq: 900 * v.pitch, dur: 0.12, type: "sawtooth", gain: 0.03, sweep: 400 * v.pitch, release: 0.1, delay: 0.02 + v.delay, master: 0.6 * vol });
+  tone({ freq: 900 * v.pitch, dur: 0.12, type: "sawtooth", gain: 0.03, sweep: 400 * v.pitch, release: 0.1, delay: 0.02 + v.delay, master: 0.6 });
 }
 
 /** Veil: shadow, hidden information, visibility effects. A muffled low hush. */
 export function playCueVeil(v: CueVariation = NEUTRAL_CUE) {
   if (!fx()) return;
-  const vol = getVolume();
-  tone({ freq: 180 * v.pitch, dur: 0.24, type: "sine", gain: 0.07, sweep: 120 * v.pitch, release: 0.16, master: 0.8 * vol });
+  tone({ freq: 180 * v.pitch, dur: 0.24, type: "sine", gain: 0.07, sweep: 120 * v.pitch, release: 0.16, master: 0.8 });
   knock({ filterFreq: 500 * v.bright, filterQ: 0.7, dur: 0.16, gain: 0.12, master: 0.6 });
 }
 

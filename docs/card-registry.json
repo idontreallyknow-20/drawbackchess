@@ -28,15 +28,14 @@
       "mass-shield": 14,
       "clock-gain-self": 41,
       "self-movement-restriction": 107,
-      "instant-piece-spawn": 96,
       "enemy-movement-restriction": 99,
-      "forced-sacrifice": 19,
       "freeze-cleanse": 12,
       "info-reveal": 58,
       "piece-swap": 31,
       "special-rule-grant": 17,
       "extra-move": 28,
       "randomness-gamble": 23,
+      "instant-piece-spawn": 96,
       "piece-mind-control": 19,
       "special-rule-denial": 7,
       "move-budget-change": 37,
@@ -53,9 +52,10 @@
       "retaliation-damage": 16,
       "clock-drain-enemy": 17,
       "alt-win-loss-condition": 48,
-      "piece-revival": 43,
       "teleport-relocate": 49,
       "mass-removal": 48,
+      "piece-revival": 43,
+      "forced-sacrifice": 19,
       "card-tutor-gain": 6,
       "draft-denial": 29,
       "forced-move": 77,
@@ -79,10 +79,10 @@
       "decree": 273,
       "territory": 263,
       "tempo": 110,
-      "summon": 46,
       "bind": 220,
       "fracture": 39,
-      "veil": 37
+      "veil": 37,
+      "summon": 46
     },
     "note": "Every card is voiced: passive-rule nerfs and passive-kind buffs play their family soundCue on spawn (see sounds.ts playPassiveCue); instant/activated buffs voice through the cast/signature system (playCardUse + signature voices). Fields are derived, not hand-authored."
   },
@@ -697,30 +697,6 @@
       "target": "piece"
     },
     {
-      "id": "bn4_stowaway",
-      "name": "Stowaway",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "instant-piece-spawn",
-      "tier": 1,
-      "mechanic": "passive",
-      "implemented": true,
-      "descriptionLength": 106,
-      "description": "After your next 5 turns, a pawn is discovered aboard and joins your pocket, ready to drop on a later turn.",
-      "soundSource": "passive-cue",
-      "animation": {
-        "family": "summon",
-        "primitives": [
-          "dropImpact",
-          "shockRing"
-        ],
-        "sigil": "Package"
-      },
-      "soundCue": "passive/summon",
-      "soundFamily": "summon",
-      "target": "square"
-    },
-    {
       "id": "bn4_stutter_step",
       "name": "Stutter Step",
       "kind": "buff",
@@ -787,29 +763,6 @@
       },
       "soundCue": "passive/blessing",
       "soundFamily": "blessing",
-      "target": "square"
-    },
-    {
-      "id": "bn4_understudy",
-      "name": "Understudy",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "forced-sacrifice",
-      "tier": 1,
-      "mechanic": "passive",
-      "implemented": true,
-      "descriptionLength": 108,
-      "description": "The first time one of your pawns is captured, a fresh pawn joins your pocket, ready to drop on a later turn.",
-      "soundSource": "passive-cue",
-      "animation": {
-        "family": "summon",
-        "primitives": [
-          "dropImpact"
-        ],
-        "sigil": "Drama"
-      },
-      "soundCue": "passive/summon",
-      "soundFamily": "summon",
       "target": "square"
     },
     {
@@ -7313,23 +7266,6 @@
       "target": "piece"
     },
     {
-      "id": "second_wind",
-      "name": "Second Wind",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "piece-revival",
-      "tier": 1,
-      "mechanic": "activated",
-      "implemented": true,
-      "descriptionLength": 100,
-      "description": "One captured pawn returns to an empty square on your 2nd rank after your opponent's next move, once.",
-      "soundSource": "cast-voice",
-      "animation": null,
-      "soundCue": null,
-      "soundFamily": null,
-      "target": null
-    },
-    {
       "id": "sentinel_pawn",
       "name": "Sentinel Pawn",
       "kind": "buff",
@@ -7475,29 +7411,6 @@
       "soundCue": null,
       "soundFamily": null,
       "target": null
-    },
-    {
-      "id": "summon_intern",
-      "name": "Summon Intern",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "instant-piece-spawn",
-      "tier": 1,
-      "mechanic": "passive",
-      "implemented": true,
-      "descriptionLength": 181,
-      "description": "The first time your opponent captures one of your pieces, the intern quietly takes over the empty desk: a pawn joins your pocket, to be dropped onto an empty square on a later turn.",
-      "soundSource": "passive-cue",
-      "animation": {
-        "family": "summon",
-        "primitives": [
-          "dropImpact"
-        ],
-        "sigil": "UserPlus"
-      },
-      "soundCue": "passive/summon",
-      "soundFamily": "summon",
-      "target": "square"
     },
     {
       "id": "teleport_knight",
@@ -7747,29 +7660,6 @@
       "soundCue": "passive/blessing",
       "soundFamily": "blessing",
       "target": "piece"
-    },
-    {
-      "id": "ww_field_hospital",
-      "name": "Field Hospital",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "delayed-contract",
-      "tier": 1,
-      "mechanic": "passive",
-      "implemented": true,
-      "descriptionLength": 117,
-      "description": "The first time your opponent captures one of your knights, a new pawn is raised on an empty square of your back rank.",
-      "soundSource": "passive-cue",
-      "animation": {
-        "family": "summon",
-        "primitives": [
-          "dropImpact"
-        ],
-        "sigil": "Cross"
-      },
-      "soundCue": "passive/summon",
-      "soundFamily": "summon",
-      "target": "rank"
     },
     {
       "id": "anchor",
@@ -8259,23 +8149,6 @@
       "target": "piece"
     },
     {
-      "id": "bn4_matryoshka_surprise",
-      "name": "Matryoshka Surprise",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "instant-piece-spawn",
-      "tier": 2,
-      "mechanic": "activated",
-      "implemented": true,
-      "descriptionLength": 137,
-      "description": "Paint one of your pawns as a nesting doll. When it is captured, two smaller pawns pop out into your pocket, ready to drop on later turns.",
-      "soundSource": "cast-voice",
-      "animation": null,
-      "soundCue": null,
-      "soundFamily": null,
-      "target": null
-    },
-    {
       "id": "bn4_measured_breath",
       "name": "Measured Breath",
       "kind": "buff",
@@ -8504,30 +8377,6 @@
       "target": null
     },
     {
-      "id": "bn4_small_consolation",
-      "name": "Small Consolation",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "instant-piece-spawn",
-      "tier": 2,
-      "mechanic": "passive",
-      "implemented": true,
-      "descriptionLength": 94,
-      "description": "The next 2 times your opponent captures one of your rooks or queens, a pawn joins your pocket.",
-      "soundSource": "passive-cue",
-      "animation": {
-        "family": "summon",
-        "primitives": [
-          "dropImpact",
-          "shockRing"
-        ],
-        "sigil": "Gift"
-      },
-      "soundCue": "passive/summon",
-      "soundFamily": "summon",
-      "target": "square"
-    },
-    {
       "id": "bn4_spare_button",
       "name": "Spare Button",
       "kind": "buff",
@@ -8583,6 +8432,30 @@
       "soundCue": null,
       "soundFamily": null,
       "target": null
+    },
+    {
+      "id": "bn4_stowaway",
+      "name": "Stowaway",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "instant-piece-spawn",
+      "tier": 2,
+      "mechanic": "passive",
+      "implemented": true,
+      "descriptionLength": 106,
+      "description": "After your next 5 turns, a pawn is discovered aboard and joins your pocket, ready to drop on a later turn.",
+      "soundSource": "passive-cue",
+      "animation": {
+        "family": "summon",
+        "primitives": [
+          "dropImpact",
+          "shockRing"
+        ],
+        "sigil": "Package"
+      },
+      "soundCue": "passive/summon",
+      "soundFamily": "summon",
+      "target": "square"
     },
     {
       "id": "bn4_third_wind",
@@ -8652,6 +8525,29 @@
       "soundCue": "passive/strike",
       "soundFamily": "strike",
       "target": "pieceClass"
+    },
+    {
+      "id": "bn4_understudy",
+      "name": "Understudy",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "forced-sacrifice",
+      "tier": 2,
+      "mechanic": "passive",
+      "implemented": true,
+      "descriptionLength": 108,
+      "description": "The first time one of your pawns is captured, a fresh pawn joins your pocket, ready to drop on a later turn.",
+      "soundSource": "passive-cue",
+      "animation": {
+        "family": "summon",
+        "primitives": [
+          "dropImpact"
+        ],
+        "sigil": "Drama"
+      },
+      "soundCue": "passive/summon",
+      "soundFamily": "summon",
+      "target": "square"
     },
     {
       "id": "bn4_window_shopping",
@@ -13378,6 +13274,23 @@
       "target": null
     },
     {
+      "id": "second_wind",
+      "name": "Second Wind",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "piece-revival",
+      "tier": 2,
+      "mechanic": "activated",
+      "implemented": true,
+      "descriptionLength": 100,
+      "description": "One captured pawn returns to an empty square on your 2nd rank after your opponent's next move, once.",
+      "soundSource": "cast-voice",
+      "animation": null,
+      "soundCue": null,
+      "soundFamily": null,
+      "target": null
+    },
+    {
       "id": "shieldmaiden",
       "name": "Shieldmaiden",
       "kind": "buff",
@@ -13573,6 +13486,29 @@
       "soundCue": "passive/strike",
       "soundFamily": "strike",
       "target": "piece"
+    },
+    {
+      "id": "summon_intern",
+      "name": "Summon Intern",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "instant-piece-spawn",
+      "tier": 2,
+      "mechanic": "passive",
+      "implemented": true,
+      "descriptionLength": 181,
+      "description": "The first time your opponent captures one of your pieces, the intern quietly takes over the empty desk: a pawn joins your pocket, to be dropped onto an empty square on a later turn.",
+      "soundSource": "passive-cue",
+      "animation": {
+        "family": "summon",
+        "primitives": [
+          "dropImpact"
+        ],
+        "sigil": "UserPlus"
+      },
+      "soundCue": "passive/summon",
+      "soundFamily": "summon",
+      "target": "square"
     },
     {
       "id": "timid_king",
@@ -13923,6 +13859,29 @@
       "soundCue": null,
       "soundFamily": null,
       "target": null
+    },
+    {
+      "id": "ww_field_hospital",
+      "name": "Field Hospital",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "delayed-contract",
+      "tier": 2,
+      "mechanic": "passive",
+      "implemented": true,
+      "descriptionLength": 117,
+      "description": "The first time your opponent captures one of your knights, a new pawn is raised on an empty square of your back rank.",
+      "soundSource": "passive-cue",
+      "animation": {
+        "family": "summon",
+        "primitives": [
+          "dropImpact"
+        ],
+        "sigil": "Cross"
+      },
+      "soundCue": "passive/summon",
+      "soundFamily": "summon",
+      "target": "rank"
     },
     {
       "id": "ww_reclaim_the_fallen",
@@ -14644,6 +14603,23 @@
       "target": "pieceClass"
     },
     {
+      "id": "bn4_matryoshka_surprise",
+      "name": "Matryoshka Surprise",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "instant-piece-spawn",
+      "tier": 3,
+      "mechanic": "activated",
+      "implemented": true,
+      "descriptionLength": 137,
+      "description": "Paint one of your pawns as a nesting doll. When it is captured, two smaller pawns pop out into your pocket, ready to drop on later turns.",
+      "soundSource": "cast-voice",
+      "animation": null,
+      "soundCue": null,
+      "soundFamily": null,
+      "target": null
+    },
+    {
       "id": "bn4_night_gardener",
       "name": "Night Gardener",
       "kind": "buff",
@@ -15033,6 +15009,30 @@
       "target": "piece"
     },
     {
+      "id": "bn4_small_consolation",
+      "name": "Small Consolation",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "instant-piece-spawn",
+      "tier": 3,
+      "mechanic": "passive",
+      "implemented": true,
+      "descriptionLength": 94,
+      "description": "The next 2 times your opponent captures one of your rooks or queens, a pawn joins your pocket.",
+      "soundSource": "passive-cue",
+      "animation": {
+        "family": "summon",
+        "primitives": [
+          "dropImpact",
+          "shockRing"
+        ],
+        "sigil": "Gift"
+      },
+      "soundCue": "passive/summon",
+      "soundFamily": "summon",
+      "target": "square"
+    },
+    {
       "id": "bn4_sparring_rhythm",
       "name": "Sparring Rhythm",
       "kind": "buff",
@@ -15347,30 +15347,6 @@
       "target": "zone"
     },
     {
-      "id": "bw2_queens_testament",
-      "name": "Queen's Testament",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "piece-revival",
-      "tier": 3,
-      "mechanic": "passive",
-      "implemented": true,
-      "descriptionLength": 185,
-      "description": "Her will is already written: the first time your opponent captures your queen, up to two of your captured knights and bishops immediately return to empty squares nearest your home rank.",
-      "soundSource": "passive-cue",
-      "animation": {
-        "family": "territory",
-        "primitives": [
-          "zoneSweep",
-          "beamHorizontal"
-        ],
-        "sigil": "Feather"
-      },
-      "soundCue": "passive/territory",
-      "soundFamily": "territory",
-      "target": "rank"
-    },
-    {
       "id": "bw3_castle_in_the_storm",
       "name": "Castle in the Storm",
       "kind": "buff",
@@ -15409,30 +15385,6 @@
       },
       "soundCue": "passive/fracture",
       "soundFamily": "fracture",
-      "target": "rank"
-    },
-    {
-      "id": "bw3_eleventh_hour",
-      "name": "Eleventh Hour",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "piece-revival",
-      "tier": 3,
-      "mechanic": "passive",
-      "implemented": true,
-      "descriptionLength": 192,
-      "description": "When the last of the line is nearly spent, help arrives: the first time your non-king pieces number three or fewer, your best captured piece returns to the empty square nearest your home rank.",
-      "soundSource": "passive-cue",
-      "animation": {
-        "family": "territory",
-        "primitives": [
-          "zoneSweep",
-          "beamHorizontal"
-        ],
-        "sigil": "Hourglass"
-      },
-      "soundCue": "passive/territory",
-      "soundFamily": "territory",
       "target": "rank"
     },
     {
@@ -17827,23 +17779,6 @@
       "target": "piece"
     },
     {
-      "id": "legendary_forge",
-      "name": "Legendary Forge",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "instant-piece-spawn",
-      "tier": 3,
-      "mechanic": "activated",
-      "implemented": true,
-      "descriptionLength": 164,
-      "description": "The forge mends what war broke: one of your captured knights or bishops is reforged and returns to your pocket. Spend a later turn to drop it onto any empty square.",
-      "soundSource": "cast-voice",
-      "animation": null,
-      "soundCue": null,
-      "soundFamily": null,
-      "target": null
-    },
-    {
       "id": "magnet",
       "name": "Magnet",
       "kind": "buff",
@@ -17871,23 +17806,6 @@
       "implemented": true,
       "descriptionLength": 143,
       "description": "One of your pieces gets plot armor: it cannot be captured for your opponent's next 4 turns, but the armor drops the instant it makes a capture.",
-      "soundSource": "cast-voice",
-      "animation": null,
-      "soundCue": null,
-      "soundFamily": null,
-      "target": null
-    },
-    {
-      "id": "minor_recall",
-      "name": "Minor Recall",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "delayed-contract",
-      "tier": 3,
-      "mechanic": "activated",
-      "implemented": true,
-      "descriptionLength": 59,
-      "description": "Return a captured knight or bishop to your back rank, once.",
       "soundSource": "cast-voice",
       "animation": null,
       "soundCue": null,
@@ -18848,23 +18766,6 @@
       "target": "zone"
     },
     {
-      "id": "promote_now",
-      "name": "Promote Now",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "promotion-grant",
-      "tier": 3,
-      "mechanic": "activated",
-      "implemented": true,
-      "descriptionLength": 114,
-      "description": "Choose one of your pawns on your 6th rank or beyond; it promotes to a queen after your opponent's next move, once.",
-      "soundSource": "cast-voice",
-      "animation": null,
-      "soundCue": null,
-      "soundFamily": null,
-      "target": null
-    },
-    {
       "id": "raise_dead",
       "name": "Raise Dead",
       "kind": "buff",
@@ -19042,23 +18943,6 @@
       "implemented": true,
       "descriptionLength": 237,
       "description": "Send one of your knights or bishops across to the other side, and one of your captured rooks returns in its place, on the square that knight or bishop just vacated. Casting the circle also spends your next unused reroll, if you have one.",
-      "soundSource": "cast-voice",
-      "animation": null,
-      "soundCue": null,
-      "soundFamily": null,
-      "target": null
-    },
-    {
-      "id": "second_wind_major",
-      "name": "Second Wind Major",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "draft-advantage",
-      "tier": 3,
-      "mechanic": "activated",
-      "implemented": true,
-      "descriptionLength": 108,
-      "description": "Return a captured rook to any empty back-rank square, once. Using it spends your next unused reroll, if any.",
       "soundSource": "cast-voice",
       "animation": null,
       "soundCue": null,
@@ -19548,23 +19432,6 @@
       "implemented": true,
       "descriptionLength": 98,
       "description": "Steal up to 20 seconds from your opponent's clock and freeze one enemy piece for its next 2 turns.",
-      "soundSource": "cast-voice",
-      "animation": null,
-      "soundCue": null,
-      "soundFamily": null,
-      "target": null
-    },
-    {
-      "id": "wa_conjure_bishop",
-      "name": "Conjured Bishop",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "instant-piece-spawn",
-      "tier": 3,
-      "mechanic": "activated",
-      "implemented": true,
-      "descriptionLength": 162,
-      "description": "Conjure your bishop's reflection: choose one of your bishops whose mirror square (same rank, file flipped left-to-right) is empty, and a new bishop appears there.",
       "soundSource": "cast-voice",
       "animation": null,
       "soundCue": null,
@@ -21555,6 +21422,30 @@
       "target": "pieceClass"
     },
     {
+      "id": "bw2_queens_testament",
+      "name": "Queen's Testament",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "piece-revival",
+      "tier": 4,
+      "mechanic": "passive",
+      "implemented": true,
+      "descriptionLength": 185,
+      "description": "Her will is already written: the first time your opponent captures your queen, up to two of your captured knights and bishops immediately return to empty squares nearest your home rank.",
+      "soundSource": "passive-cue",
+      "animation": {
+        "family": "territory",
+        "primitives": [
+          "zoneSweep",
+          "beamHorizontal"
+        ],
+        "sigil": "Feather"
+      },
+      "soundCue": "passive/territory",
+      "soundFamily": "territory",
+      "target": "rank"
+    },
+    {
       "id": "bw3_battlefield_commission",
       "name": "Battlefield Commission",
       "kind": "buff",
@@ -21587,6 +21478,30 @@
       "soundCue": null,
       "soundFamily": null,
       "target": null
+    },
+    {
+      "id": "bw3_eleventh_hour",
+      "name": "Eleventh Hour",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "piece-revival",
+      "tier": 4,
+      "mechanic": "passive",
+      "implemented": true,
+      "descriptionLength": 192,
+      "description": "When the last of the line is nearly spent, help arrives: the first time your non-king pieces number three or fewer, your best captured piece returns to the empty square nearest your home rank.",
+      "soundSource": "passive-cue",
+      "animation": {
+        "family": "territory",
+        "primitives": [
+          "zoneSweep",
+          "beamHorizontal"
+        ],
+        "sigil": "Hourglass"
+      },
+      "soundCue": "passive/territory",
+      "soundFamily": "territory",
+      "target": "rank"
     },
     {
       "id": "bw3_kings_road",
@@ -24315,6 +24230,23 @@
       "target": null
     },
     {
+      "id": "legendary_forge",
+      "name": "Legendary Forge",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "instant-piece-spawn",
+      "tier": 4,
+      "mechanic": "activated",
+      "implemented": true,
+      "descriptionLength": 164,
+      "description": "The forge mends what war broke: one of your captured knights or bishops is reforged and returns to your pocket. Spend a later turn to drop it onto any empty square.",
+      "soundSource": "cast-voice",
+      "animation": null,
+      "soundCue": null,
+      "soundFamily": null,
+      "target": null
+    },
+    {
       "id": "mass_recall",
       "name": "Mass Recall",
       "kind": "buff",
@@ -24393,6 +24325,23 @@
       "implemented": true,
       "descriptionLength": 149,
       "description": "Choose one enemy knight or bishop; after your opponent's next move it turns to your color for the rest of the game, unless it has moved or been lost.",
+      "soundSource": "cast-voice",
+      "animation": null,
+      "soundCue": null,
+      "soundFamily": null,
+      "target": null
+    },
+    {
+      "id": "minor_recall",
+      "name": "Minor Recall",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "delayed-contract",
+      "tier": 4,
+      "mechanic": "activated",
+      "implemented": true,
+      "descriptionLength": 59,
+      "description": "Return a captured knight or bishop to your back rank, once.",
       "soundSource": "cast-voice",
       "animation": null,
       "soundCue": null,
@@ -25989,6 +25938,23 @@
       "target": null
     },
     {
+      "id": "wa_conjure_bishop",
+      "name": "Conjured Bishop",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "instant-piece-spawn",
+      "tier": 4,
+      "mechanic": "activated",
+      "implemented": true,
+      "descriptionLength": 162,
+      "description": "Conjure your bishop's reflection: choose one of your bishops whose mirror square (same rank, file flipped left-to-right) is empty, and a new bishop appears there.",
+      "soundSource": "cast-voice",
+      "animation": null,
+      "soundCue": null,
+      "soundFamily": null,
+      "target": null
+    },
+    {
       "id": "wa_dominate_minor",
       "name": "Dominate",
       "kind": "buff",
@@ -26789,23 +26755,6 @@
       "target": null
     },
     {
-      "id": "ww_recommission",
-      "name": "Recommission",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "piece-revival",
-      "tier": 4,
-      "mechanic": "activated",
-      "implemented": true,
-      "descriptionLength": 234,
-      "description": "Return one of your captured rooks to an empty square on your back rank. For the rest of the game the refitted rook may pass through one friendly piece on each move, landing only on an empty square (it cannot capture on a phased move).",
-      "soundSource": "cast-voice",
-      "animation": null,
-      "soundCue": null,
-      "soundFamily": null,
-      "target": null
-    },
-    {
       "id": "ww_sapper_team",
       "name": "Sapper Team",
       "kind": "buff",
@@ -26949,23 +26898,6 @@
       "implemented": true,
       "descriptionLength": 134,
       "description": "Choose 3 empty squares on the two centre ranks. After your opponent's next move, one of your pawns appears on each square still empty.",
-      "soundSource": "cast-voice",
-      "animation": null,
-      "soundCue": null,
-      "soundFamily": null,
-      "target": null
-    },
-    {
-      "id": "blood_pact",
-      "name": "Blood Pact",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "promotion-grant",
-      "tier": 5,
-      "mechanic": "activated",
-      "implemented": true,
-      "descriptionLength": 125,
-      "description": "Sign in blood: promote one of your pawns to a queen at once, but another pawn of yours, you choose which, bursts and is lost.",
       "soundSource": "cast-voice",
       "animation": null,
       "soundCue": null,
@@ -29853,30 +29785,6 @@
       "target": null
     },
     {
-      "id": "lich_phylactery",
-      "name": "Lich Phylactery",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "instant-piece-spawn",
-      "tier": 5,
-      "mechanic": "passive",
-      "implemented": true,
-      "descriptionLength": 149,
-      "description": "The first time your queen is captured, a new queen appears on her home square, or on the nearest empty square of your back rank if her home is taken.",
-      "soundSource": "passive-cue",
-      "animation": {
-        "family": "summon",
-        "primitives": [
-          "dropImpact",
-          "shockRing"
-        ],
-        "sigil": "FlaskRound"
-      },
-      "soundCue": "passive/summon",
-      "soundFamily": "summon",
-      "target": "rank"
-    },
-    {
       "id": "lone_sovereign",
       "name": "Lone Sovereign",
       "kind": "buff",
@@ -30743,6 +30651,23 @@
       "target": null
     },
     {
+      "id": "promote_now",
+      "name": "Promote Now",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "promotion-grant",
+      "tier": 5,
+      "mechanic": "activated",
+      "implemented": true,
+      "descriptionLength": 114,
+      "description": "Choose one of your pawns on your 6th rank or beyond; it promotes to a queen after your opponent's next move, once.",
+      "soundSource": "cast-voice",
+      "animation": null,
+      "soundCue": null,
+      "soundFamily": null,
+      "target": null
+    },
+    {
       "id": "pucks_mischief",
       "name": "Puck's Mischief",
       "kind": "buff",
@@ -30977,6 +30902,23 @@
       "implemented": true,
       "descriptionLength": 195,
       "description": "Your opponent cannot enter the 4th or 5th ranks for their next 3 turns, save one bridge: the square on their king's file, on whichever of the two ranks sits nearer their own side, stays passable.",
+      "soundSource": "cast-voice",
+      "animation": null,
+      "soundCue": null,
+      "soundFamily": null,
+      "target": null
+    },
+    {
+      "id": "second_wind_major",
+      "name": "Second Wind Major",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "draft-advantage",
+      "tier": 5,
+      "mechanic": "activated",
+      "implemented": true,
+      "descriptionLength": 108,
+      "description": "Return a captured rook to any empty back-rank square, once. Using it spends your next unused reroll, if any.",
       "soundSource": "cast-voice",
       "animation": null,
       "soundCue": null,
@@ -32110,6 +32052,23 @@
       "target": null
     },
     {
+      "id": "ww_recommission",
+      "name": "Recommission",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "piece-revival",
+      "tier": 5,
+      "mechanic": "activated",
+      "implemented": true,
+      "descriptionLength": 234,
+      "description": "Return one of your captured rooks to an empty square on your back rank. For the rest of the game the refitted rook may pass through one friendly piece on each move, landing only on an empty square (it cannot capture on a phased move).",
+      "soundSource": "cast-voice",
+      "animation": null,
+      "soundCue": null,
+      "soundFamily": null,
+      "target": null
+    },
+    {
       "id": "ww_relentless_assault",
       "name": "Relentless Assault",
       "kind": "buff",
@@ -32328,6 +32287,23 @@
       "implemented": true,
       "descriptionLength": 181,
       "description": "Take one bonus move now, then one more stored bonus move on your next turn after your opponent replies. You cannot capture the king during a bonus move: your opponent replies first.",
+      "soundSource": "cast-voice",
+      "animation": null,
+      "soundCue": null,
+      "soundFamily": null,
+      "target": null
+    },
+    {
+      "id": "blood_pact",
+      "name": "Blood Pact",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "promotion-grant",
+      "tier": 6,
+      "mechanic": "activated",
+      "implemented": true,
+      "descriptionLength": 125,
+      "description": "Sign in blood: promote one of your pawns to a queen at once, but another pawn of yours, you choose which, bursts and is lost.",
       "soundSource": "cast-voice",
       "animation": null,
       "soundCue": null,
@@ -34904,6 +34880,30 @@
       "target": "piece"
     },
     {
+      "id": "lich_phylactery",
+      "name": "Lich Phylactery",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "instant-piece-spawn",
+      "tier": 6,
+      "mechanic": "passive",
+      "implemented": true,
+      "descriptionLength": 149,
+      "description": "The first time your queen is captured, a new queen appears on her home square, or on the nearest empty square of your back rank if her home is taken.",
+      "soundSource": "passive-cue",
+      "animation": {
+        "family": "summon",
+        "primitives": [
+          "dropImpact",
+          "shockRing"
+        ],
+        "sigil": "FlaskRound"
+      },
+      "soundCue": "passive/summon",
+      "soundFamily": "summon",
+      "target": "rank"
+    },
+    {
       "id": "lightning_strike",
       "name": "Lightning Strike",
       "kind": "buff",
@@ -35600,23 +35600,6 @@
       "implemented": true,
       "descriptionLength": 227,
       "description": "In one move, your queen slides along one straight line to an empty square without capturing, then freezes every enemy piece beside her landing square for their next turn; the line stops at the first piece of either color, once.",
-      "soundSource": "cast-voice",
-      "animation": null,
-      "soundCue": null,
-      "soundFamily": null,
-      "target": null
-    },
-    {
-      "id": "resurrect_queen",
-      "name": "Resurrect Queen",
-      "kind": "buff",
-      "category": "pieces",
-      "effectCategory": "piece-revival",
-      "tier": 6,
-      "mechanic": "activated",
-      "implemented": true,
-      "descriptionLength": 122,
-      "description": "Bring your captured queen back to any empty square on the board, and she cannot be captured for your opponent's next turn.",
       "soundSource": "cast-voice",
       "animation": null,
       "soundCue": null,
@@ -39199,6 +39182,23 @@
       "implemented": true,
       "descriptionLength": 157,
       "description": "In one move, your queen sweeps along one straight line you choose and removes every enemy piece on it; a friendly piece or an enemy king ends the line, once.",
+      "soundSource": "cast-voice",
+      "animation": null,
+      "soundCue": null,
+      "soundFamily": null,
+      "target": null
+    },
+    {
+      "id": "resurrect_queen",
+      "name": "Resurrect Queen",
+      "kind": "buff",
+      "category": "pieces",
+      "effectCategory": "piece-revival",
+      "tier": 7,
+      "mechanic": "activated",
+      "implemented": true,
+      "descriptionLength": 122,
+      "description": "Bring your captured queen back to any empty square on the board, and she cannot be captured for your opponent's next turn.",
       "soundSource": "cast-voice",
       "animation": null,
       "soundCue": null,

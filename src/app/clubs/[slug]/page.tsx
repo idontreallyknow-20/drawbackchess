@@ -6,6 +6,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays, Crown, LogIn, LogOut, Paintbrush, Trash2, Trophy, Upload, Users } from "lucide-react";
 import { ClubIcon, renderClubIconGlyph } from "@/components/ClubIcon";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { PlayerLink } from "@/components/PlayerLink";
 import { SiteHeader } from "@/components/SiteHeader";
 import { AccountUser, fetchMe } from "@/lib/authClient";
 import { CLUB_ICON_COLORS, CLUB_ICON_NAMES, encodeClubIcon, isUploadedClubIcon, parseClubIcon } from "@/lib/clubIcons";
@@ -313,7 +314,17 @@ export default function ClubPage() {
       <SiteHeader active="/clubs" />
       <section className="mx-auto max-w-6xl px-5 pt-6 sm:px-6 sm:pt-8">
         {!club ? (
-          <p className="py-16 text-center text-sm text-parchment-400">Loading…</p>
+          // loading.tsx carries an sr-only h1, but it only renders on a hard
+          // navigation. Arriving from inside the app (a link on /clubs) skips
+          // it entirely and lands straight in this branch, which left the
+          // route with no heading at all for the whole fetch. Same generic
+          // wording as loading.tsx; the loaded page replaces it with the real
+          // club name. This page is not used as a Suspense fallback anywhere,
+          // so there is no phase where two of these are live at once.
+          <>
+            <h1 className="sr-only">Club</h1>
+            <p className="py-16 text-center text-sm text-parchment-400">Loading…</p>
+          </>
         ) : (
           <>
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -323,10 +334,10 @@ export default function ClubPage() {
                 <h1 className="truncate page-title">{club.name}</h1>
                 <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-parchment-400">
                   <span className="flex items-center gap-1.5">
-                    <Crown size={13} className="text-gold-leaf" />
-                    <Link href={`/u/${encodeURIComponent(club.owner_name)}`} className="hover:text-gold-leaf">
-                      {club.owner_name}
-                    </Link>
+                    <Crown size={13} className="shrink-0 text-gold-leaf" aria-hidden />
+                    {/* 66.1x18 on a coarse pointer while it spelled its own
+                        anchor; PlayerLink is where the 44px hit area lives. */}
+                    <PlayerLink name={club.owner_name} className="min-w-0 hover:text-gold-leaf" />
                   </span>
                   <span className="flex items-center gap-1.5">
                     <Users size={13} /> {data.memberCount} member{data.memberCount === 1 ? "" : "s"}
@@ -394,17 +405,23 @@ export default function ClubPage() {
                 {/* Members, sorted by rating, doubles as the club leaderboard. */}
                 <div className="plate overflow-hidden">
                   <div className="flex items-center justify-between gap-2 border-b border-[color:var(--edge)] px-5 py-3">
-                    <span className="text-[11px] text-parchment-400">Leaderboard</span>
-                    <span className="text-[11px] text-parchment-500">
+                    <span className="text-[12px] text-parchment-400">Leaderboard</span>
+                    <span className="text-[12px] text-parchment-500">
                       {data.memberCount} member{data.memberCount === 1 ? "" : "s"}
                     </span>
                   </div>
                   <ul className="max-h-96 divide-y divide-[color:var(--edge)] overflow-y-auto">
                     {data.members.map((m, i) => (
                       <li key={m.user_id}>
+                        {/* The row IS the link (design system: interactive rows
+                            are clickable, not just their text), so the row is
+                            what has to reach 44px. It measured 36 tall on a
+                            coarse pointer. Nothing here can go through
+                            PlayerLink: the name already sits inside this
+                            anchor, and an anchor cannot nest. */}
                         <Link
                           href={`/u/${encodeURIComponent(m.username)}`}
-                          className="flex items-center gap-2.5 px-5 py-2 transition-colors hover:bg-[color:var(--bg-raised)]"
+                          className="flex min-h-[44px] items-center gap-2.5 px-5 py-2 transition-colors hover:bg-[color:var(--bg-raised)] [@media(pointer:fine)]:min-h-0"
                         >
                           <span className="w-4 shrink-0 font-mono text-[12px] text-parchment-500">{i + 1}</span>
                           <PlayerAvatar name={m.username} avatar={m.avatar} size={22} />
@@ -425,7 +442,7 @@ export default function ClubPage() {
 
                 {/* Club events */}
                 <div className="plate overflow-hidden">
-                  <div className="border-b border-[color:var(--edge)] px-5 py-3 text-[11px] text-parchment-400">
+                  <div className="border-b border-[color:var(--edge)] px-5 py-3 text-[12px] text-parchment-400">
                     Events
                   </div>
                   {data.tournaments.length === 0 ? (
@@ -435,7 +452,7 @@ export default function ClubPage() {
                       {data.tournaments.map((t) => (
                         <li key={t.id} className="px-5 py-2.5">
                           <div className="truncate text-sm text-parchment-100">{t.name}</div>
-                          <div className="mt-0.5 text-[11px] text-parchment-400">
+                          <div className="mt-0.5 text-[12px] text-parchment-400">
                             {t.status === "finished" ? "finished" : tournamentPhase(t.starts_at, t.duration_min)} ·{" "}
                             {t.players}/{t.max_players} players
                             {t.starts_at ? ` · ${new Date(t.starts_at).toLocaleString()}` : ""}
@@ -449,7 +466,7 @@ export default function ClubPage() {
 
               {/* Message board */}
               <div className="plate flex h-fit flex-col overflow-hidden">
-                <div className="border-b border-[color:var(--edge)] px-5 py-3 text-[11px] text-parchment-400">
+                <div className="border-b border-[color:var(--edge)] px-5 py-3 text-[12px] text-parchment-400">
                   Club board
                 </div>
                 {isMember ? (
@@ -466,12 +483,12 @@ export default function ClubPage() {
                       {postError ? (
                         <span className="text-xs text-oxblood-glow">{postError}</span>
                       ) : (
-                        <span className="text-[11px] text-parchment-500">Visible to everyone; members can post.</span>
+                        <span className="text-[12px] text-parchment-500">Visible to everyone; members can post.</span>
                       )}
                       <Button tone="leaf"
                         type="submit"
                         disabled={!postText.trim()}
-                        className="px-4 py-1.5 text-xs font-semibold disabled:opacity-50">
+                        className="px-4 py-1.5 text-[13px] font-semibold disabled:opacity-50">
                         Post
                       </Button>
                     </div>
@@ -488,14 +505,12 @@ export default function ClubPage() {
                     {data.posts.map((p) => (
                       <li key={p.id} className="group px-5 py-3">
                         <div className="flex items-center gap-2">
-                          <PlayerAvatar name={p.username} avatar={p.avatar} size={20} />
-                          <Link
-                            href={`/u/${encodeURIComponent(p.username)}`}
-                            className="text-sm font-medium text-parchment-100 hover:text-gold-leaf"
-                          >
-                            {p.username}
-                          </Link>
-                          <span className="text-[11px] text-parchment-500">{timeAgo(p.created_at)}</span>
+                          <PlayerLink
+                            name={p.username}
+                            avatar={p.avatar}
+                            className="min-w-0 text-sm font-medium text-parchment-100 hover:text-gold-leaf"
+                          />
+                          <span className="text-[12px] text-parchment-500">{timeAgo(p.created_at)}</span>
                           {(mayModerate || p.user_id === me?.id) && (
                             <button
                               onClick={() => deletePost(p.id)}

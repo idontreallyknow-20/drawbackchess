@@ -80,10 +80,11 @@ export function HeroTv() {
     return (
       <div className="w-full max-w-[600px] mx-auto">
         <div className="flex items-center justify-between gap-2 pb-2">
-          <span className="text-[12px] text-parchment-400">Live games appear here</span>
+          {/* The empty state's one sentence is body copy, not a caption. */}
+          <span className="text-[13px] text-parchment-400">Live games appear here</span>
           <Link
             href="/tv"
-            className="text-[12px] text-parchment-400 no-underline transition hover:text-gold-leaf"
+            className="-my-1 inline-flex min-h-[44px] items-center text-[13px] text-parchment-400 no-underline transition hover:text-gold-leaf [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
           >
             Watch TV &rarr;
           </Link>
@@ -180,7 +181,7 @@ export function HeroTv() {
           {/* LIVE while streaming, "Just finished" while the result lingers. */}
           <span
             className={
-              "flex items-center gap-1.5 border px-2 py-1 text-[11px] " +
+              "flex items-center gap-1.5 border px-2 py-1 text-[12px] " +
               (!over
                 ? "border-[rgb(var(--accent-positive-rgb)_/_0.4)] bg-[rgb(var(--accent-positive-rgb)_/_0.1)] text-[rgb(var(--accent-positive-rgb))]"
                 : "border-[color:var(--edge)] bg-[color:var(--bg-zebra)] text-parchment-300")
@@ -192,7 +193,7 @@ export function HeroTv() {
           {shownMode ? (
             <span
               className={
-                "border px-2 py-1 text-[11px] " +
+                "border px-2 py-1 text-[12px] " +
                 (shownMode === "nerf"
                   ? "border-mode-nerf/40 bg-mode-nerf/10 text-mode-nerfGlow"
                   : "border-mode-buff/40 bg-mode-buff/10 text-mode-buffGlow")
@@ -202,7 +203,7 @@ export function HeroTv() {
             </span>
           ) : null}
           {timeControl ? (
-            <span className="hidden border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-2 py-1 font-mono text-[11px] tabular-nums text-parchment-300 sm:inline">
+            <span className="hidden border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-2 py-1 font-mono text-[12px] tabular-nums text-parchment-300 sm:inline">
               {timeControl}
             </span>
           ) : null}
@@ -223,7 +224,7 @@ export function HeroTv() {
           ) : null}
           <Link
             href={`/game/${shownId}`}
-            className="text-[12px] font-medium text-gold-leaf no-underline transition hover:text-parchment-50"
+            className="-my-1 inline-flex min-h-[44px] items-center text-[13px] font-medium text-gold-leaf no-underline transition hover:text-parchment-50 [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
           >
             Watch live →
           </Link>

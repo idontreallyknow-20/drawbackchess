@@ -292,7 +292,7 @@ export default function TournamentsPage() {
                       onClick={() => setClockIdx(i)}
                       aria-pressed={clockIdx === i}
                       className={
-                        "min-h-[44px] sm:min-h-0 border px-2.5 py-1 font-mono text-xs transition-colors " +
+                        "min-h-[44px] [@media(pointer:fine)]:min-h-0 border px-2.5 py-1 font-mono text-xs transition-colors " +
                         (clockIdx === i
                           ? "border-[color:var(--edge-strong)] bg-[color:var(--bg-raised)] text-gold-leaf"
                           : "border-[color:var(--edge)] text-parchment-300 hover:border-[color:var(--edge-strong)]")
@@ -540,7 +540,7 @@ function TournamentRow({ t, now }: { t: TournamentListRow; now: number }) {
               <span className="shrink-0 border border-[color:var(--edge-strong)] px-1.5 py-0.5 text-[12px] font-medium text-gold-leaf">Rated</span>
             ) : null}
           </div>
-          <div className="mt-0.5 text-[12px] font-medium text-parchment-400">
+          <div className="mt-0.5 text-[13px] font-medium text-parchment-400">
             {formatLabel(t.format)} · {durationLabel(t.duration_min)}
             {t.club_name ? ` · ${t.club_name}` : ""} · by {t.creator_name}
           </div>

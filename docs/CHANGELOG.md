@@ -826,3 +826,1565 @@ Draft:
 
 Clocks:
 - Animations switch off on their own while either clock is under 20 seconds and come back once both are above it again (increment). Works through the same html[data-anim] gate as the Settings switch, so a settings write during low time cannot turn motion back on.
+
+## 2026-09-07 02:00 EDT
+
+Route loading and error states
+
+The five system states in docs/design-system.md section 8 were only half wired
+at the route level: 62 routes had 8 loading.tsx files and one error.tsx (the
+root one), so most routes either popped in with nothing in between or dead
+ended on a render failure.
+
+Loading:
+- 21 new loading.tsx files, each a skeleton in the route's own final geometry:
+  achievements, analysis, clubs/[slug], codex/suggest, the four codex card
+  pages (buff, nerf, hex, boon), history/[id], inbox, inbox/[username],
+  leaderboard, login, mod (the console frame all four mod screens share),
+  play, profile, profile/edit, tournaments, tournaments/[id],
+  tutorial/first-game, tutorial/walkthrough.
+- Four of those existed only to stop a nested route inheriting the wrong
+  skeleton: /clubs/[slug] was getting the club directory, /history/[id] the
+  archive list, /codex/suggest and the card pages the nine-card library grid.
+  A skeleton in the wrong geometry is worse than none.
+- New SkeletonHeader (src/components/ui/Skeleton.tsx) replaces the top bar the
+  eight existing skeletons had each copied. It stands at SiteHeader's real
+  height (48px, 60px from sm), drops three inconsistent inline borderRadius
+  values that the globals.css geometry rule overrides anyway, and retires the
+  one remaining border-white/5 alpha hairline in the set.
+
+Errors:
+- 18 per-section error.tsx boundaries: achievements, analysis, clubs, codex,
+  community, game, history, inbox, leaderboard, lobby, login, mod, play,
+  profile, tournaments, tutorial, tv, u/[username]. Each names what actually
+  failed, which the generic root boundary cannot.
+- Shared body in src/components/ui/RouteError.tsx: plain-words sentence, the
+  error digest when there is one, Retry, and a way out. Retry is wired to
+  next 16.3's retry() (re-fetches the segment) rather than reset().
+- Static marketing and guide pages, the dev harnesses, and the /friend and
+  /stats redirect shims deliberately got neither.
+
+Verified with npx tsc --noEmit, npm run lint, and the emdash, rounded, and
+buttons guards.
+
+---
+
+## 2026-09-07 05:50 EDT
+
+Continuous improvement run, PR #488 (OPEN), branch
+`claude/ralph-loop-optimization-nl2902`. One commit per round; the standing
+work list lives in `docs/ralph-backlog.md`.
+
+Balance, the material ladder:
+- The tier ladder was sublinear in material: a card handing you three points
+  sat at tier 3, the third draft anyone sees, while a card handing you nine
+  sat at tier 6. Nothing had caught it because no invariant anywhere covered
+  spawn or revival material.
+- `scripts/material-model.ts` scores every active card for effective material
+  and charges a floor of half a tier per point, anchored on the two floors the
+  2026-09 pass already pinned (extra piece-class tier 4, amazon-class tier 7)
+  rather than fitted to the sim. The measurement can establish a direction and
+  a lower bound but not a rate: its buckets hold 8 to 14 cards against a median
+  error bar of 12.2 points. The script says so, and prints the fit that looks
+  authoritative (a queen at tier 43) with a do-not-use beside it.
+- 18 cards moved up. Ten of the 28 reported violations were parser bugs rather
+  than library errors, including the worst one: `apotheosis` scored 8.55
+  because "it leaves the board for a higher plane" sat past a colon, so the
+  minor it spends was never subtracted. Corrected, it does not move.
+- Pinned as section 1b of `scripts/test-balance-pass-2026-09.ts`: the ladder as
+  data plus a monotone function, tied to the existing pins, 37 hand-checked
+  cards, and ten ordering assertions stated without reference to any number so
+  they still bind if every measurement turns out wrong.
+- Recorded, not fixed: the pocket multiplier has the wrong sign. `legalMoves`
+  appends drops AFTER every nerf and effect filter, onto any empty square, and
+  counts them in `resolveNoMoves`, so a pocketed piece is strictly stronger
+  than the same piece on the board and the model charges 0.95 for it. That is
+  why `bn4_care_package` measures +41.7 at tier 3 while the model insists tier
+  3 is right. Backlog A8; it moves a whole family and wants its own round.
+
+Sound:
+- `tone()` never applied `getVolume()` while `knock()` did, so every tonal
+  voice in the app (check, game start and end, clock warnings, errors, every
+  card chime and passive cue) ignored the volume slider outright. At volume 0.2
+  a check rang at five times the move click beside it.
+- Set spread falls from 17.3x to 6.8x on peak and 13.9x to 5.4x on RMS,
+  measured with an offline WebAudio shim rather than by ear. New cues for
+  castling, promotion, premove set and fired, illegal input, draw offers and
+  outcome-aware endings, all wired to their events and verified firing by
+  instrumenting AudioContext and matching frequency signatures.
+
+Accessibility:
+- The board is now playable from the keyboard. Squares carried
+  `role="gridcell"` with no `role="grid"` parent, so the roles were orphaned
+  and invalid, and there was no tabIndex and no keydown: not one move could be
+  made without a pointer. Now a real grid with roving tabindex, a live region
+  that names card state per square, a flip control with `f`, and a `?` sheet
+  rendered from the keymap table so bindings and documentation cannot drift.
+- Modal dialogs trap focus, which `aria-modal="true"` had been promising at
+  nine dialogs without delivering. Restoring focus needed a recent-focus
+  history rather than the obvious remembered element: the settings panel's
+  opener is unmounted in the same React commit that opens the panel.
+- Every rem-based touch target was 12.5 percent short. `html` is 14px and
+  `tailwind.config.ts` never overrides `spacing`, so `h-11` is 38.5px. 24 call
+  sites converted to literal pixels, matching the 85 already using
+  `min-h-[44px]`.
+- Eight routes rendered no `h1`. `/game` lost its heading the moment a game
+  started, because the only one on the route is in the pre-game draft branch.
+
+Design system:
+- `--bg-raised` shipped a step lighter than section 1 documents, which by
+  itself moved muted text from 4.57:1 to 3.94:1 on every menu, modal and
+  hovered row. Light had the rungs out of order: raised was darker than the
+  page it rises from. Both restored, `--bg-hover` documented for the first
+  time, and the ladder now carries its measured contrast.
+- Sentence case restored in the main nav and the quick-settings section heads,
+  the last survivors of the letterspaced device section 3 retired sitewide.
+  `.allcaps` deleted (zero call sites, and an unused retired utility is how a
+  retired pattern returns). Guarded by `scripts/check-case.ts` with a
+  shrink-only baseline, which immediately found a file the manual sweep missed.
+- 301 sub-12px text sites fixed, 244 of them at once: `text-xs` resolved to
+  10.5px because the root is 14px. `parchment-500` raised to clear AA in all
+  three palettes; alpha-dimmed text retired, since the light theme's overrides
+  never matched the alpha variants and those sites measured as low as 1.34:1.
+
+Clocks:
+- Urgency now scales with the time control (one eighth of the initial time,
+  clamped 10 to 60 seconds, as lila does it) instead of a fixed 30 and 10
+  seconds. In a 1+0 game 30 seconds is half the clock, so the warning was on
+  for most of the game and meant nothing.
+- The separator blinks while a clock is charging. It matters more here than on
+  Lichess because this clock genuinely stops: a draft charges it and the
+  first-move grace shields it.
+
+Coverage:
+- `e2e/sweep.spec.ts`: 48 routes, six widths, three themes, 828 cells, 13.5
+  minutes. Infrastructure failures are excluded by construction, so an
+  OOM-killed dev server cannot enter the backlog as a product defect.
+- `docs/lichess-parity-2026-09.md`: a behaviour study read out of lila and
+  chessground source, since lichess.org is blocked by the sandbox proxy. The
+  useful half is what it says not to build.
+
+Needs an owner decision (backlog C32): the whole spacing scale is 87.5 percent
+of the px values the design system speaks in, because the root is 14px and
+Tailwind's rem scale is never overridden. `p-4` is 14px where section 4 says
+16. Correcting it centrally makes the app roughly 14 percent roomier, and
+density is valued here on purpose.
+
+---
+
+## 2026-09-07 06:10 EDT
+
+Tablet band (768 to 1279) on the match surfaces. The 640-to-1024 range had no
+layout of its own: everything switched on at `sm` and did not adapt again until
+`lg`. Measured on the local bot game, board width against the vertical space
+left unused under it:
+
+| viewport | board before | dead column below | board after |
+|---|---|---|---|
+| 768x1024 | 424px | 540px | 720px |
+| 834x1112 | 490px | 562px | 720px |
+| 900x1200 | 556px | 584px | 720px |
+| 1024x1366 | 324px | 732px | 720px |
+
+The board was width-bound by a 252px move rail every time while half the screen
+went unpainted, and at 1024 the `lg` command rail landed on top of that and took
+the board from 636px (at 980) down to 324px.
+
+- `src/components/matchLayout.ts` (new): one place for the portrait-tablet band,
+  `(min-width:768px) and (max-width:1279.98px) and (orientation:portrait)`, as
+  literal class strings so the JIT emits them. The band is orientation-aware on
+  purpose: in landscape the height is the scarce axis and a stacked column would
+  push the game actions below the fold, so landscape keeps the rail.
+- In the band both match views (`OnlineMatch`, `/game`) now use the column that
+  design-system.md section 9 already describes for phones: board across the
+  column, player strips with their clocks above and below, and `MobileMatchStack`
+  under it carrying the actions, move strip, rule, dock, chat and stakes. Chat
+  and the dock had no home at all between 640 and 1024 before this.
+- The buff drawer stands down in the band (the dock is inline there) and is left
+  to the sm..lg landscape range, per section 9.
+
+Hit areas. Several controls used `sm:` as a proxy for "has a mouse", which is
+wrong for every tablet. Measured at 768x1024 with a coarse pointer:
+
+- `Button` size `md` rendered 40px (`sm:min-h-[40px]`). Now `(pointer: fine)`,
+  which is what the comment above it already claimed. The history filter chips
+  (36px), and the buff-targeting Done/Cancel buttons, get the same treatment.
+- `MoveList` nav buttons measured 25px at 1024x768 (`sm:h-7`). Now 44px on touch.
+- `h-11` is 38.5px at this interface's 14px root, not 44px (see backlog C32).
+  `MoveStrip` (the phone move navigation) and the buff drawer's toggle now spell
+  44px in pixels; the drawer's bar measures 46px and `mobileChrome` reserves
+  exactly that, up from a 2.75rem reserve that was about 7px short.
+
+Sub-44px controls on the touch sweep: history 8 to 4 at 768 and 834, game 9 to 5
+at 1024x768, phone counts down across the board. No horizontal overflow at any
+of the fifteen widths checked, and 1280 and up is byte-for-byte unchanged.
+
+Not fixed, needs a decision: at 1024 to 1279 in LANDSCAPE the three-column
+desktop layout still leaves the board 324px (at 1024x768) to 494px (at
+1194x834), against 640px and 706px for the two-column shape at the same widths.
+Moving the command rail to `xl` fixes it, but chat only exists in that rail and
+in `MobileMatchStack`, so it would disappear for that band until chat has a
+second home. See the report for the numbers.
+
+## 2026-09-07 06:07 EDT
+
+The two moments that carry this game: the card draft and the secret-nerf
+reveal. Everything below is transform/opacity only, uses the `--ease-*` /
+`--dur-*` vocabulary, respects `data-anim` and the low-time hold, and never
+delays authoritative state. Not committed; working tree only.
+
+The draft (`src/components/DraftOverlay.tsx`, `DraftOverlay.css`):
+- The flight into the pocket was invisible. `.plate` sets `overflow-y: auto`,
+  which forces the browser to compute `overflow-x` as `auto` too, so the
+  confirmed card was hard-clipped at the panel's edge about a third of the way
+  to the buff dock, every single time. The card is now handed to a fixed
+  position layer outside the panel (its rect is measured at confirm time and
+  the in-grid copy drops in the same frame), so the whole journey is on screen.
+  Same 550ms, same commit-on-landing, same 900ms fallback.
+- The flight is now an arc rather than a diagonal slide: the card swells for
+  100ms, then x runs on `--ease-out` while y runs on `--ease-io`, so the axes
+  fall out of step and the path bows. The flare and mote trail ride with it.
+- The deal is ordered by tier, weakest first, so the beat builds to the card
+  that matters. The old `tier * 12` nudge only biased a slot-ordered delay and
+  routinely lost: a tier 1 card in the last slot flipped after a tier 10 in the
+  first. The best card now lands last and turns over last, a beat slower.
+- The card flip runs on `--ease-spring` (a reveal, one of the three sanctioned
+  uses), so a card turns a few degrees past flat and rocks back. That is the
+  settle the deal never had.
+- Cards fade up as they fly instead of appearing pre-formed, so the stagger is
+  something you can count.
+- The vault used to burn out completely and leave the stage empty for about a
+  quarter of a second before the first card appeared, even though its own
+  stylesheet says the cards deal out of the light. The deal now starts 160ms
+  early, while the core, flash and shockwave are still fading, and a new
+  `.draft-deal-bloom` seam carries that light as the cards fly out of it.
+- Selecting a card had no motion at all. A single ring now closes onto it over
+  320ms; the check badge lands on `--ease-spring` at `--dur-2` instead of an
+  off-vocabulary 160ms.
+- Every anonymous bezier in the file was replaced by a named constant mirroring
+  the CSS tokens.
+- A pick committed mid-flight when motion is switched off (the low-time hold
+  does exactly this under 20 seconds) now commits at once instead of waiting
+  out the fallback timer.
+
+The reveal (`src/components/GameOver.tsx`, `globals.css`):
+- The secret nerf reveal was a React conditional. The sealed card was replaced
+  by the rule between one frame and the next, with no transition of any kind.
+  It now plays the same beats as the in-game nerf reveal, at 480ms instead of
+  two seconds: the card rises and fades in over `--dur-3`, a tier tinted band
+  sweeps down it, and the rule's NAME lands last on `--ease-spring`.
+- It fires on both routes to the same moment: opening the "Rules this game"
+  fold (the default path, which had no beat at all) and pressing the sealed
+  card. Armed from render rather than from the click, so the animation starts
+  when the fold opens rather than a frame late. It disarms after one play and
+  spectators never arm it.
+- The reveal is announced through `role="status"` in every motion mode, not
+  only when the animation runs.
+
+Route transitions: deliberately not added. See the report reasoning; the short
+version is that every route already ships a `loading.tsx` skeleton in the final
+geometry, and a transition would put frames between a player and a board whose
+clock is running.
+
+---
+
+## 2026-09-07 12:20 UTC
+
+Puzzles: the daily puzzle, capture-the-king shaped (roadmap Priority 1 item 2,
+lichess-parity P1). Branch `claude/ralph-loop-optimization-nl2902`, `db76e0d`.
+
+Why the formats are what they are. `docs/lichess-parity-2026-09.md` section 7 is
+explicit that classic tactics puzzles do not transfer: there is no checkmate here
+and no stable piece value, so an imported puzzle usually has no solution or
+several. Three formats were built instead, and all three are proved rather than
+asserted:
+
+- `king-hunt` (28): capture the king in N under a named handicap. 25 are forced
+  in two of the solver's own moves against every defence; 3 are one-movers, kept
+  only where the handicap is what picks the move (several pieces could take the
+  king and the rule allows exactly one of them).
+- `card-choice` (31): two cards are offered mid-game, one of them wins. No chess
+  analogue. The winning card is proved to create a forced king capture and the
+  other is proved, by exhaustive search, not to.
+- `only-move` (12): the handicap leaves exactly one legal move out of ten or more
+  on the board. Reading your own rule is the puzzle.
+
+How a solution is proved unique (`src/lib/puzzles/solve.ts`, imported by both the
+generator and the route, so the code that proved a puzzle is the code that judges
+the player):
+
+- An AND/OR search over real `NerfGame` states through the real `legalMoves` and
+  `playMove`, so every nerf filter, buff hook and loss condition is in force at
+  every node. Nothing about the rules is re-modelled.
+- The claim is "capture the king", not "win": a branch that ends with the
+  defender losing to their own rule does NOT count, so the proven statement is
+  narrower than the engine's idea of winning.
+- Uniqueness means every other legal move at that node was played out and shown
+  to fail, re-checked at every position the solver will be asked to move in, not
+  only the first.
+- A search that hits the node cap is discarded as unproven, so the cap can lose
+  puzzles and can never invent one.
+
+New files: `scripts/gen-puzzles.ts` (mines 2,451 real positions from 90 bot games
+at two strengths, proves candidates, writes and then re-verifies the file it just
+wrote by re-parsing it), `public/puzzle-data/puzzles.json` (71 puzzles, 266 KB,
+37 distinct handicaps, no winning card used more than twice),
+`src/lib/puzzles/{types,solve,daily,session,useCorpus}.ts`,
+`src/components/puzzles/{PuzzleBoard,PuzzleRunner}.tsx`,
+`src/app/puzzles/{page,layout,loading,error}.tsx`,
+`src/app/puzzles/_components/PuzzleStates.tsx`,
+`src/app/puzzles/[id]/{page,layout,loading,error}.tsx`.
+
+Route surface: `/puzzles` is the daily (deterministic from the UTC date, so every
+player worldwide is on the same one and no backend is involved; `?date=` opens an
+earlier day) with the corpus folded behind a disclosure; `/puzzles/[id]` is any
+single puzzle, shareable. Both carry a self-canonical, a `loading.tsx`, an
+`error.tsx` and exactly one `h1`.
+
+Small additions elsewhere: "Daily puzzle" in the Play nav menu and `/puzzles`
+mapped to that section (`src/components/SiteHeader.tsx`); `/puzzles` in the
+sitemap at daily change frequency (`src/app/sitemap.ts`).
+
+The board is a new lightweight component rather than `Board.tsx`: a puzzle needs a
+position, a click and an answer, and the match board would drag framer-motion and
+the card database into a route whose job is to load fast for a search visitor.
+Its squares are focusable `gridcell` controls with spoken names, so the route is
+playable from the keyboard (verified), which `Board.tsx` still is not (X1).
+
+Verified in a browser: solving and failing all three formats, an illegal-under-
+the-rule move answered in the rule's own words, the daily stable across two loads
+and different on six different dates against an independent implementation of the
+selection, all five system states (loading, empty, error plus a working Retry,
+disconnected, recovered), keyboard-only solving, reduced motion, mobile at 390px
+with no horizontal scroll, and the unknown-id empty state.
+
+---
+
+## 2026-09-07 13:40 UTC
+
+Two things: a stale-live-state fix with the 13px type floor behind it, and the
+root cause of `amazon_army`'s -25.
+
+### The connection banner, and where a connection banner is a lie
+
+`design-system.md` section 8 asks every async surface for five states. The gap
+audit said 18 routes were missing "disconnected" and "recovered". One got them.
+
+The line drawn: states 1-3 (loading, empty, error) apply to any fetch. States 4
+and 5 presuppose a *connection*, something repeating or persistent that can drop
+and come back on its own. A route that fetches once can only error, and its
+recovery is the reader pressing Retry, which is state 3 and already there. A
+banner on such a route narrates a socket that does not exist.
+
+`/inbox/[username]` was the real case: it polls every 5s, and its failure path
+was `if (!loaded) setLoadError(true)`, i.e. **silent after the first successful
+load**, so a dead connection looked like a quiet conversation.
+
+`ConnectionBanner.tsx` was refactored so the phase machine and the pill are
+shared and the signal source is pluggable: `ConnectionBanner({session})` is
+unchanged for game and TV, new `PollConnectionBanner({healthy})` for polled
+routes. Section 8.5's "silent when fast (under 2s)" is now honoured, which the
+original did not do, so a sub-2s blip no longer flashes red then green.
+
+The 17 skips, each with its reason, are in the round-6 report. The one worth
+repeating: `/tournaments` has a `setInterval`, but it is a purely local 1s clock
+tick that re-buckets rows, so the page *looks* live while its data is a one-shot
+snapshot. Its staleness is by design; a banner would promise self-healing that
+does not happen.
+
+Verified in a browser across a full cycle: lost pill with a live counter,
+`role="status" aria-live="polite"`, "Reconnected" on recovery, auto-dismiss.
+The message bubble and the unsent composer draft both survived the outage.
+
+### The 13px floor
+
+Same probe over 42 routes, guest signed in.
+
+| | before | after |
+|---|---|---|
+| sub-13px elements with their own text | 942 | 671 |
+| of those, in an interactive context | 312 | 151 |
+
+Biggest movers: `/codex` 186 to 66 (interactive 181 to 61), `/achievements` 327
+to 208 (18 to 1), `/` 38 to 23 (20 to 6).
+
+Fixed as body or interactive text: 102 achievement descriptions, 60 codex card
+descriptions, 60 codex Copy buttons, and 48 `Button`/`LinkButton` and raw
+`button`/`a`/`Link`/`summary` call sites whose `className` overrode the
+primitive's own 13px with `text-xs` (Resign, Draw, Takeback, Abort, Accept,
+Decline, Claim win, Confirm, four Retries, Reload, Mark all read, Send, View
+all, Watch, Post). Also the home page's **local duplicate `SiteFooter`**, which
+had drifted to 12px with no tap target while the shared one was already
+13px/44px.
+
+Left at 12px, as labels rather than body: rarity and tier chips, the header
+Guest badge (it qualifies the username; the button's accessible name is the
+username), the Bullet/Blitz/Rapid speed chips, 104 progress counters, 64 board
+coordinates, 30 `/updates` timestamps, form labels, `kbd` hints, and On/Off
+inside the privacy switch (a state readout, and 13px does not fit a 72px
+control).
+
+Every touch-target fix went behind `[@media(pointer:fine)]`, never `sm:`,
+including `src/app/lobby/page.tsx`, which was tightening to 34px behind `sm:`
+and so handed 34px targets to every tablet.
+
+Two left for a decision: `.rule-ornament` in `globals.css` is a 12px uppercase
+letterspaced section rule, and section 3 retires that device in favour of a
+plain bold heading at body size, but restyling a shared ornament is not a type
+fix. And `DraftOverlay.tsx:1796` has a 12px Skip button.
+
+Also: `sr-only` `h1` added to the in-flight branch of `/clubs/[slug]` and
+`/tournaments/[id]`. Frame-by-frame over a client-side navigation, 63 samples in
+4s at 1920: zero frames with no `h1`.
+
+### A6: `amazon_army` root-caused, and the hypothesis that was wrong
+
+Round 5 left this open with a named hypothesis and the experiment that would
+settle it. The experiment was run and the hypothesis was **wrong**, which is
+worth as much as the answer.
+
+`pickAIMove` now takes an optional write-only `SearchStats` reporting the
+deepest ply it actually completed and the root move count, so "the bot played
+worse while holding this" and "this card is bad" can be told apart. The guess
+was that a 43% wider tree buys fewer plies out of the bot's 60ms floor budget.
+Measured: depth 3 to 3 at medium/60ms, 3 to 3 at medium/700ms, 3 to 3 at
+hard/60ms, 4 to 4 at hard/700ms. **Zero plies lost at every level and budget.**
+Alpha-beta with move ordering absorbs the width, and `medium` is capped at
+`maxDepth: 3` anyway, so 60ms was never the binding constraint.
+
+The real mechanism is worse. `negamax` and `quiesce` take a bare `BoardState`.
+Only the root calls `legalMoves(game)`, and `legalMoves` is the only place
+`def.augmentMoves` runs:
+
+```
+ply 0   legalMoves(game)      57 moves, 17 of them granted by the card
+ply 1+  generateMoves(board)  42 moves, 0 of them granted by the card
+```
+
+Both lines are the same position, two of White's turns into a three-turn card.
+The bot plays a move that exists **only** because of the card, then evaluates
+every follow-up as if the piece were an ordinary knight. It cannot see a plan
+needing the buff twice, cannot see the opponent's buffed replies at all, and
+never models expiry in either direction. Holding a move-granting card makes the
+bot's own move real and its picture of the future false, which is worse than not
+holding it. That is enough to turn a strictly-additive card negative.
+
+It is not one card. It is every move-granting card in the library. **Do not
+retier one downward on win-rate evidence** until the search is fixed.
+
+Not fixed here, deliberately: the per-node augment closure has three hazards and
+the second is disqualifying for an unsupervised change. `makeBuffApi` captures
+`game.board` by value, so a per-node augment means rebuilding a 20-closure
+object per node or mutating a shared one. Not every `augmentMoves` generator is
+board-pure, and one touching `api.rng` would advance the game's RNG stream once
+per searched node, which is what `test:desync`, `test:snapshot` and
+`test:spectator-sync` exist to catch and would corrupt live games rather than
+mis-score them. And applying the augment at every ply ignores expiry, so a
+12-ply `hard` search would over-value a three-turn card instead of
+under-valuing it.
+
+New guard `npm run test:search-buffs`
+(`scripts/test-search-buff-visibility.ts`) is a known-issue lock, not a red
+guard: it states the defect, pins its size at 17 granted moves in a fixed
+position so the file cannot quietly stop measuring anything, keeps the refuted
+depth hypothesis refuted, and inverts its own message the moment the search
+starts seeing buffs. Verified to fail when the pin is moved by one.
+
+---
+
+## 2026-09-07 15:10 UTC
+
+Round 7. The search-blindness finding confirmed from the data, the board made
+keyboard-playable end to end, `/settings` given a real URL, and a measurement
+harness caught measuring the wrong thing twice.
+
+### A6 confirmed from the win-rate data, by the interaction it predicts
+
+Round 6 established from the source that `negamax` cannot see buff-granted
+moves below the root. `scripts/analyze-search-bias.ts` asks whether that leaves
+a fingerprint in the 617 measured cards. It is a harder question than it looks,
+because the obvious comparison proves nothing: move-granting cards do measure
+below everything else (+2.6 against +5.8, widening to -19.1 at t7), but at
+those tiers the comparison group is mass-removal and spawn cards which are
+genuinely enormous.
+
+The obvious test fails too. If invisible moves alone made a card measure badly,
+the residual would scale with the grant. It does not (1.2 sigma), and a
+threshold split PEAKS at 12 granted moves and decays above it, which no real
+dose-response does. The three largest grants in the library are `warp_step`
+(108 moves), `overclock_major` (39) and `reposition` (37), with residuals -8.6,
+-5.1 and **+19.4**. Those should be the worst cards on the board.
+
+The reason is in their text: "once", "for 1 turn". A card spent on the turn it
+fires cannot be hurt by a search that forgets it one ply down, because there is
+no future left to get wrong. A card that lasts three turns is wrong about every
+ply it searches. So the defect predicts an interaction, not a main effect.
+
+| | slope, points per granted move | sigma | n | r2 | mean residual |
+|---|---|---|---|---|---|
+| expires in 2 to 4 turns | **-1.26 +-0.28** | **4.5** | 20 | 0.53 | -6.1pt |
+| never expired in the probe | -0.38 +-1.04 | 0.4 | 6 | 0.03 | **+10.1pt** |
+| spent on the turn it fires | -0.05 +-0.09 | 0.5 | 18 | 0.02 | -1.2pt |
+
+Duration alone is 0.3 sigma and grant size alone is 1.2 sigma. The signal lives
+entirely in their interaction. The permanent row is the third leg and it
+sharpens the story: no expiry to miss, and a buffed root on every move of the
+game rather than two or three, so the search's wrongness never has to be cashed
+into a plan. **The penalty is worst exactly where a card demands a multi-turn
+plan**, which is the one thing a search that forgets the buff after one ply
+cannot build.
+
+`amazon_army` grants 17 moves over three turns: 1.26 x 17 is about 21 points
+against a measured -25.
+
+Section 1c of the balance pass now holds a tier FLOOR for all 26 affected
+cards, so a later blanket wave cannot cut one on numbers that are an artefact
+of the instrument. The asymmetry is deliberate: the bias only pushes
+measurements down, so a card here that still measures well may be raised
+freely. The block retires when A13 lands.
+
+The ladder was checked for contamination and cleared. The biased cards carry no
+material, so they sit in the M=0 baseline the tier floor is fitted against;
+excluding all 26 moves that baseline from +3.99 to **+4.06**. A6 corrupts one
+family's per-card readings and does not reach the ladder.
+
+One measurement trap, recorded because it inverted the answer on the first
+attempt: probing a card's duration by playing QUIET moves reports a "once" card
+as permanent, because its charge is spent by playing the granted move, not by
+taking a turn. The probe has to play the card's own moves.
+
+### A8 closed: the pocket discount is not backwards
+
+The plan said "measure the family, then move the multiplier". The family was
+measured and the multiplier stays. Pocket cards sit at **+1.1pt** residual
+against their own tier (n=13); the other 71 material-carrying cards sit at
+**+7.3pt**; the difference is **-6.3 +-5.0pt, 1.3 sigma**, in the opposite
+direction to the hypothesis and unresolvable either way.
+
+The hypothesis came from one row, `bn4_care_package` at +41.7 +-14.9, which is
+the top of a spread reaching down to `legendary_forge` at -16.7. Those two
+carry the same payload class and sit 58 points apart on 12 pairs each. That is
+the error bar, the same one round 1 found between `legendary_forge` and
+`bodyguard`. The mechanical argument for the change is still good and the sweep
+may simply not resolve 5%, but repricing a whole family on the largest number
+in a noisy column is the failure mode the model exists to avoid.
+
+### The sweep was measuring touch targets with a mouse
+
+The 44px rule is about a finger. Playwright's default context is a desktop
+mouse, so `pointer: fine` matched, so every `[@media(pointer:fine)]:min-h-*`
+step-down applied, so a control CORRECTLY fixed to 44px-on-touch was still
+counted as a defect. On one tree that is **258 findings at 360 with a fine
+pointer against 81 with a coarse one.** The fine number is not a stricter
+version of the right answer; it is an answer to a different question, and
+`sweep-baseline.json` had been encoding it.
+
+Two more things were wrong with the same check. It ran only at widths <= 390,
+so the whole 768 to 1024 tablet band went unchecked, and a 1024px tablet is a
+coarse pointer with no keyboard. And it read its numbers off the same per-cell
+report as everything else, so the pass was tied to the theme loop even though a
+hit area does not change colour.
+
+Now: one pass per route, in its own `hasTouch: true` context, across 360, 390,
+768 and 1024, theme-independent. Measured after: `/guide/glossary` goes 19
+touch-target findings to **0** (those controls were fixed and the sweep was
+still reporting them), `/play` goes 8 to 16 (four real defects, now also seen
+at 768 and 1024) and then to **0** once they were fixed.
+
+CDP looked like the cheap way to do this and does not work: with
+`Emulation.setEmulatedMedia` sent `{name:"pointer", value:"coarse"}`,
+`matchMedia("(pointer: coarse)")` still reports false. A sweep built on it
+would have gone on reporting fine-pointer numbers under a coarse-pointer label.
+Both paths were measured before the change was written.
+
+The inline-in-prose exemption was too narrow for the third time. It was
+`tagName === "A"` (241 false positives), then a `closest("p, li, ...")` list,
+which missed "New here? [Take the tour]: a guided first game" because that
+sentence lives in a `<span>` inside a `role="note"`. It now tests the property
+itself: does the control sit among real text in its own parent? Whitespace
+between two nav links does not count.
+
+### The board is playable without a pointer, and reachable on a phone
+
+`BoardTools` (flip, `f`, a shortcuts sheet) was already on `/game`, but the rail
+is `hidden sm:grid`, so at 360 the flip button measured **0.0 x 0.0**: a phone
+had a keyboard shortcut and no button, which is the whole of what the backlog
+item complained about. `FlipBoardButton` is extracted (button only, no keymap,
+so a second mount cannot double-bind `useBoardKeys` and turn `f` into a no-op)
+and placed in the mobile player strip, exactly complementary to the rail. Now
+44 x 44 coarse at 360/390/768/1024 and 36 x 36 fine.
+
+Keyboard play was already correct and is now measured rather than assumed: a
+real move lands on board state (`sq12` white pawn to `sq28`) at 1440 fine and
+390 coarse, in both orientations, and the arrow keys move in SCREEN space
+(`ArrowRight dx=+87.1 dy=0` with either colour at the bottom), with exactly one
+`[tabindex="0"]` per board. `f` is also bound on `/analysis`, locally, because
+its flip is local state and must not write the global `flipBoard`.
+
+The last `role="lead"` is gone (it was in `src/app/dev/plays/PlaysGallery.tsx`,
+latent rather than live, one `{...props}` from the DOM), and the `/analysis`
+nav buttons went from 31.5 x 31.5 to 44 x 44 on coarse pointers at every width.
+
+`/game/[id]` served no `h1` while connecting, which is where a nonexistent game
+id sits until the socket gives up. Every terminal branch had one. Fixed, and
+measured across 14 samples over 5.6s: zero frames without an `h1`.
+
+### Touch targets, by shape
+
+The wordmark link was 147.3 x **34** on every one of 39 routes: 37 of the 81
+coarse findings were that one control. New shared `Breadcrumbs` and
+`SearchInput` primitives replace one hand-rolled breadcrumb (19.5px) and four
+hand-rolled search boxes (19.5 to 40.5px); the min-height goes on the INPUT,
+not the wrapper, because a 44px box around a 19.5px field is not a 44px target.
+
+Two defects the route sweep structurally cannot see, found by hand: the desktop
+nav dropdown rows are 194 x **35** and only exist while hovered, and the band
+where they ARE the navigation is 768 to 1024, which is a tablet; and the header
+icon buttons are `w-[44px]` flex items with no `shrink-0`, so a long generated
+username squeezed all of them to **43.2px** on 34 routes in one probe run and 0
+in the next. An intermittent 44px violation is the worst kind.
+
+Coarse-pointer findings, same probe both times, 39 routes: **81 to 20 at 360**
+and **122 to 29 at 1024**. The 1024 re-run is the proof that no width
+breakpoint was used as a pointer proxy.
+
+The home page's local `SiteFooter` copy had the height fixed and the WIDTH
+never was, so "FAQ" was a 24.7px-wide target that happened to be 44px tall. The
+padding cannot come out of the existing 16px gap without neighbouring hit areas
+overlapping, and no padding that fits inside that gap gets a 24.7px word to 44,
+so on a coarse pointer the links take their padding and the gap shrinks to
+compensate, and on a fine pointer both revert exactly. Measured: six links all
+44px+ at 360 coarse with zero overlaps across two wrapped rows, and byte-identical
+geometry at 1440 fine.
+
+### `/settings` is a real route
+
+Settings lived only in a panel opened from the header, so they were not
+linkable, bookmarkable or deep-linkable. `/settings` and `/settings/<section>`
+now exist, and the deep link is a PATH segment rather than a fragment: a path
+reaches the server, so a section gets its own title, its own canonical, browser
+history, and a real 404 for an unknown name.
+
+Sync is structural rather than copied. The entire settings surface moved out of
+`SettingsPanel.tsx` into `src/components/settings/rows.tsx` (the model, the one
+switch over `Control.kind`, every picker, the row layout), leaving the panel as
+dialog chrome only: **901 lines to 178**. Both surfaces read the same config and
+the same controls, and the model subscribes to `SETTINGS_CHANGED_EVENT`, so a
+write on either lands on the other with nothing passed between them. Verified
+both directions, including a route row flipping live behind the open modal.
+
+Two measured trade-offs. `/settings/nope` returned **200 plus a soft 404** at
+first, because a `loading.tsx` puts a Suspense boundary above the section route
+and `notFound()` then fires after the shell has started streaming. Moving the
+index into a `(all)` route group scopes that boundary to `/settings` only:
+measured 200 before, **404 after**, with the specific 404 UI intact.
+`dynamicParams = false` also gave a 404 but discarded the specific UI. And
+`/settings#appearance` did not scroll, because the browser resolves the
+fragment while parsing, before the rows exist behind the hydration gate:
+measured `#appearance` at 2680px down with `scrollY: 0`, and after the fix
+section top 14px, `scrollY` 2681.
+
+### 404s, and one route that was 404ing on every load
+
+`src/app/not-found.tsx` plus segment boundaries for `/u/[username]`,
+`/game/[id]`, `/tournaments/[id]` and `/settings/[section]`. Each says what was
+not found in that thing's own words: "No player by that name", "No game with
+that id". All five measured at 360 and 1440, dark and light: 404 status, one
+`h1`, zero overflow, zero sub-44px targets.
+
+`/api/lobby` was 404ing twice per load on 8 routes under `next dev`:
+`lobbyClient.ts` fetches it and only `worker.ts` served it. A handler now
+exists, rather than teaching the client to swallow a 404, because a deaf client
+would also go quiet on a real routing regression in production. Production is
+untouched: the worker matches `/api/lobby` before falling through to Next, and
+the handler returns 503 under `NODE_ENV=production` rather than inventing an
+empty lobby on a live site. Lobby-related console errors per load: **4 to 0**.
+
+### Board feel, measured
+
+`e2e/feel.spec.ts` plays a real game and puts numbers on what a player notices.
+What is already right, now pinned so nobody "fixes" it: legal-move dots appear
+**50 to 79ms after pointerdown**, not pointerup, which is the Lichess behaviour;
+a move commits in **171 to 272ms** with origin and destination updating in the
+same frame; the easy bot replies in **807 to 826ms** including any draft its
+move triggers; the clock reads `5:00` on a five-minute game and `0:08.0` inside
+the emergency band.
+
+Three findings filed. Every buff game opens with a modal over the board for
+about **4.6 seconds** (4571 / 4577 / 5258ms across three runs) before a move is
+possible, because the cards are not interactive until the deal finishes. Draft
+cards carry no `aria-pressed` or `aria-selected`, so the only signal a card is
+chosen is the commit button renaming itself. And badge spans concatenate with no
+separator, so a card announces as "Walking Pace,
+PleaseMovementPassiveITrivialOnce, your a-file..." and the live region as
+"black knight g8 to f6 | Special OrderIBot played a buffYour next draft is
+dealt from tier 2."
+
+### Notes for the next session
+
+Six verification probes were wrong before the code was, every one of them
+because the probe measured the wrong thing rather than because the measurement
+was hard. The board's squares carry `data-sq` as a numeric index and are
+addressable only by `aria-label`. Draft cards are inert until the decision
+timer appears, and clicking early silently does nothing. The commit button
+renames itself on selection, so matching its first label waits forever. `t` is
+SECONDS per side, so `t=1` is a one-second game. The clock digits change size
+deliberately between phone and desktop, which reads as a broken arbitrary value
+if you check the computed size without the classes. And an overlap check that
+sorts hit areas by `left` reports a false positive the moment the row wraps.
+
+`next dev` leaks: after about seven hours it held **9.1 GB resident**, 57% of
+the box, and was the whole of a near-OOM this round. Killing it took available
+memory from 1.1 GB to 12.9 GB in three seconds, before anything else was
+touched. Check `ps -eo rss,args --sort=-rss | head` before blaming the workers.
+When memory does get tight, `pkill` and `pkill -9` themselves fail or return
+144, and `pgrep -f pat | xargs -r kill -9` works where `pkill -f pat` does not.
+
+### Contrast, and the variants that were never re-tinted for paper
+
+`--bg-zebra` in dark had drifted to 19% lightness, ABOVE the 18% raised rung,
+so a tinted table row was lighter than a modal. That was the single largest
+contrast failure on the site: `parchment-400` measured **4.44:1** on it across
+269 rendered elements (codex rows, lobby chips, every glossary disclosure). Now
+16%, measuring 4.96.
+
+The worse class of bug was in the light theme. The five
+`html[data-light] .text-parchment-*` rules match only the BARE class, and
+Tailwind compiles `hover:text-parchment-100` and `text-parchment-400/60` to
+their own class names, so **none of the 78 hover call sites or the three alpha
+modifiers was ever re-tinted for paper.** They kept the dark ramp on white.
+Driven with a real mouse over real elements, the header "Sign in" link measured
+**1.03:1 on hover** in light, and a `/tv` icon button 1.71:1. Both are now over
+13:1. The new rules were read out of the compiled bundle rather than guessed at,
+so they cover every spelling Tailwind actually emits.
+
+Also: `html[data-light] ::placeholder` outranks all 13
+`placeholder:text-parchment-*` utilities, so it alone decides placeholder colour
+on paper, and it was hard-coded to a colour measuring 3.14:1. And light `--brag`
+was a 48%-lightness brass used as text, at 2.93:1 on both page and panel.
+
+Sitewide AA failures, same probe over 22 routes: **dark 390 to 130**. Light went
+238 to 210, and the small delta is honest rather than flattering: all 34 brag
+dates went, and the seven apparent new failures are one pre-existing element
+appearing on more routes because the second session was signed out. No element
+class regressed in either theme. The surface ladder is still strictly ordered
+(dark page 0.0075 < panel 0.0178 < zebra 0.0225 < raised 0.0286 < hover 0.0413).
+
+C31 closed as a clean negative with evidence: `--bg-hover` has **zero permanent
+consumers**. All eight uses sit behind a `hover:` variant, `--surface-hover`
+(the token 20 call sites actually spell) resolves to `--bg-raised` instead, and
+the real-pointer table shows every one of them lifting its text on hover rather
+than leaving muted text resting there. The documented 3.94:1 is never a resting
+state.
+
+### The button rule that was replacing heights, not raising floors
+
+The `@media (max-width: 640px)` button min-height flagged during the round is
+now a pointer query, plus an unconditional 36px for the other half of the same
+defect: section 7 asks for 36px on a mouse and those sites measured **29.5px at
+every fine-pointer width**, which the width query had only ever hidden below
+640.
+
+Two things the measurement caught that would otherwise have shipped:
+
+- A plain `.btn-ghost { min-height: 44px }` has the same specificity as
+  Tailwind's `.min-h-[52px]` and comes later in the bundle, so it does not raise
+  a floor, it **replaces a height**. The home and lobby primary CTAs went 52px
+  to 45px. The old width query had been doing exactly that to phones all along.
+- A blanket `:not([class*="min-h-"])` then dropped the home page's two "Play"
+  chips from 44px to 36px on touch, because they pin themselves to
+  `min-h-[36px]`. The exclusion now names only the sizes that already clear the
+  floor.
+
+Matrix over 7 routes x 4 widths x 2 pointer contexts: coarse at 768/1024/1440
+goes from a 29.5px minimum with 11 controls under 44 to **44px and zero**, fine
+goes from 29.5 to 36 with zero under 36. 80 buttons grew and 17 "shrank", every
+one of the 17 confined to fine@360, which is a mouse in a 360px window and
+exactly the case the width query was wrongly treating as a phone. Zero
+horizontal overflow in any of the eight contexts, before or after.
+
+### What was deliberately left, with numbers
+
+The largest remaining contrast block is the tier chips: dark tier-8 at
+**3.26:1** across 32 elements on `/codex`, light tier-9 at **1.42:1** across 18,
+and the `/achievements` rarity chips in light at 1.58 to 3.01. All are 12px, so
+4.5:1 applies. The fix is either a per-theme tier palette or a change to the
+`.tier-bg-*` fill alphas, and both are design-system decisions the doc pins
+("Card tiers everywhere, no exceptions"). Getting one wrong is visible on every
+card in the game, so it wants an owner rather than a unilateral edit.
+
+The 12px absolute floor moved 54 source sites to 34, and the RENDERED count did
+not move at all: 24 per theme before and after. All 24 are the same six
+`ModShell.tsx` rail labels at 11px repeated across four `/mod` routes, and every
+site fixed sits on a state the crawler cannot reach (the error boundary, page
+bodies behind auth, in-game card overlays, and one component with no importer).
+It cannot move until `ModShell.tsx` does.
+
+### The sweep, re-run against a coarse pointer
+
+A full 47-route sweep at six widths and three themes, with the touch-target
+pass rebuilt, and `e2e/sweep-baseline.json` regenerated on it. **26
+touch-target findings across the whole site**, down from a baseline that
+encoded hundreds of fine-pointer measurements. Zero `h1`, overflow, focus,
+contrast-token and system-state findings in the entire run.
+
+Chasing the last of them turned up four more detector gaps and four more
+half-fixes, all the same shape as the rest of the round:
+
+- `RailResizeHandle` measured 3.5px wide while its own comment said it had "an
+  oversized invisible hit area". It does: `<span class="absolute inset-y-0
+  -left-1.5 -right-1.5">`, a CHILD rather than a pseudo-element. The detector
+  now unions in absolutely-positioned children of the control itself, which is
+  the more common spelling of the same pattern. It also exempts
+  `role="separator"`: a drag gutter is not a tap target, and a 44px one would
+  be a 44px stripe of dead space between two panels.
+- The move strip's SAN buttons were 33.9 x **44**: height fixed, width never
+  looked at, on the control you scrub a game with on a phone.
+- `PlayerLink` was 66.1 x 18 everywhere it appears, which is every player name
+  on the site outside running prose.
+- The `/tv` channel switcher (30px), the `/analysis` FEN field (30.5px), the
+  `/achievements` signed-out call to action (41.3 x 19.5), and a FOURTH copy of
+  the 16px range shape, this one the in-game effects slider, where a mis-drag
+  costs a turn.
+
+`/settings`' filter now goes through the shared `SearchInput` rather than being
+a sixth hand-rolled search box. Its 44px floor was already right; four of the
+others were not, and one of each is the point of the primitive. It gains a
+clear button it did not have (verified 44 x 44 at 360 with the filter and the
+empty state both working).
+
+28 findings remain, on three routes, and they are named in the backlog.
+`/tutorial/first-game` is flaky by nature: its findings differ run to run
+because the game state differs, so it needs a seeded position before its count
+means anything.
+
+---
+
+## 2026-09-07 17:30 UTC
+
+The bot's search can see buff-granted moves now. Landing it refuted three
+things this session had written down as established, so those come first.
+
+### The RNG hazard did not exist, and it was the one called disqualifying
+
+Round 6 declined to attempt this fix and gave three reasons. The second was
+that a generator touching `api.rng` "would advance the game's RNG stream once
+per searched node", corrupting live games rather than merely mis-scoring them.
+
+`api.rng` is `fxRng(game, me)` (`game.ts:879`), which builds a **fresh** RNG on
+every call, seeded from the board signature, the ply, the colour and a digest
+of the public card state. There is no persistent stream to advance. The note
+predated that redesign and was never checked against it.
+
+A purity audit of all **283** cards defining `augmentMoves`
+(`npm run audit:augment-purity`, which drives each hook through a
+Proxy-instrumented `BuffApi` against a before/after snapshot in three
+positions) found **zero** RNG draws, **zero** board-mutator calls and **zero**
+unstable outputs.
+
+It found a real hazard nobody had named: **10 cards write `inst.state` from
+inside `augmentMoves`.** `lossyAugment` sets `inst.state.armed` and
+`dryad_grove` sets `inst.state.offered` when the move is merely on offer, so
+per node that would arm a live card off a hypothetical position and burn its
+charge in the real game. The ten are `dryad_grove`, `ghost_legion`,
+`op_colts_gallop`, `op_drawbridge_in`, `op_fire_escape`, `op_freight_elevator`,
+`op_grand_march`, `op_old_post_road`, `op_palace_gate`, `op_viziers_errand`.
+
+### The fix
+
+`buildSearchBuffs` / `applySearchAugments` in `game.ts`, `genMoves` replacing
+`generateMoves` inside `negamax` and `quiesce` in `ai.ts`.
+
+The impurity is handled structurally rather than by an allowlist, because 71 of
+the 283 hooks never produced a move in any probe position and are therefore
+**unproven, not proven pure** -- an allowlist would have been a guess about
+those. Instead the search runs against a private view: cloned instances, cloned
+match state, cloned captured pools and player slots. A generator that reaches
+for a mutator writes into a throwaway. It can mis-score a search; it cannot
+reach the game.
+
+Expiry is modelled rather than ignored, which was the third hazard. The side to
+move at ply p has played `p >> 1` of its own moves, which is exactly what
+`tickTurns` would have decremented, so per-ply instances carry pre-aged
+counters and drop out when they expire. Charge-limited augments (133 of 283)
+carry a bit in a mask threaded down each line, so playing the granted move
+stops it being offered deeper.
+
+Allocation was the second hazard and the answer was two `BuffApi`s per SEARCH
+rather than per node, over mutable view games, retargeting only `.board` per
+node.
+
+### It costs a ply, and that is not buried
+
+| card | level | budget | depth | nodes | ms |
+|---|---|---|---|---|---|
+| none | medium | 60ms | 3 to 3 | **identical (10479)** | -10 |
+| `amazon_army` | medium | 60ms | **3 to 2** | -4% | +27 |
+| none | medium | 700ms | 3 to 3 | **identical** | -15 |
+| `amazon_army` | medium | 700ms | 3 to 3 | +65% | +58 |
+| none | hard | 2000ms | 5 to 5 | **identical (523739)** | -707 |
+| `amazon_army` | hard | 2000ms | **5 to 4** | +31% | +241 |
+
+One ply at the 60ms floor and one at hard's 2000ms, for a holder of a
+move-granting card. Zero cost otherwise, proved by identical node counts. The
+fixed-depth decomposition says where it goes: nodes 1.61 to 1.65x,
+microseconds per node 0.99 to 1.06x. Essentially all of it is the genuinely
+wider tree and none is augment overhead.
+
+### The null, which corrects the round-7 claim
+
+A paired A/B, same seeds, White holding the card in BOTH arms and only its
+searcher differing (`npm run test:search-buff-strength`):
+
+| card | pairs | buff-aware minus blind |
+|---|---|---|
+| `amazon_army` (3 turns) | 120 | **-0.9 +-3.6 pt** (0.2 sigma) |
+| `twin_knights` (permanent) | 80 | -4.4 +-4.8 pt (0.9 sigma) |
+
+The arms diverged in 33% of pairs, so the design had signal capacity. Round 7
+scaled the observational interaction to about **21 points** for `amazon_army`
+(1.26 x 17 granted moves). At +-3.6 this had the power to see 21 points and
+did not.
+
+**The code defect was real and is fixed. The causal story attached to it is not
+confirmed.** The 4.5-sigma interaction is still in the data and still wants an
+explanation, but "the search cannot see the card" is no longer that explanation
+on the strength of a direct experiment. Worth testing before anyone believes
+the interaction again: timed multi-turn cards with large grants may simply be
+designed weaker, and the two harnesses differ (this one grants the card after a
+random 8-ply opening, the win-rate harness grants at ply 0 from the standard
+start), which is a real difference rather than a dismissal.
+
+The project's own harness at its recorded settings moved `amazon_army` **-25.0
+to -20.8**, `onslaught` -4.2 to -4.2, `twin_knights` +25 to +12.5, all inside
+its own +-9.7 error bar, so it cannot resolve this either.
+
+**The section 1c tier quarantine stays.** It says "retire when A13 lands", and
+A13 has landed, but the family has not been re-measured and the honest reading
+is that the bias is smaller than believed rather than absent. Retiring a guard
+on an unmeasured assumption is the thing the guard exists to prevent.
+
+### And the test could never have reported success
+
+`test-search-buff-visibility.ts`'s success branch was unreachable by
+construction: assertion 1 required `generateMoves` NOT to return granted moves,
+while assertion 2's victory branch required exactly that. It could report the
+defect and could never report the fix. Rewritten to drive `buildSearchBuffs` +
+`applySearchAugments`, which is what `negamax` actually calls, with an expiry
+assertion (live at plies 0, 2 and 4; gone at 6) and the depth cost pinned at
+its measured size rather than asserted to be zero.
+
+Guards: `test:desync` (sample hash `5579b1a5`, unchanged), `test:snapshot`,
+`test:spectator-sync`, `test:apex`, `test:lab` (2112/2112), `test:rules`,
+`test:balance-pass`, `test:ai-activation`, `test:search-buffs`.
+
+Still invisible below the root and out of scope: nerf filters, shields, walls
+and zone effects. `analyzeBoard` stays buff-free, since it is deliberately
+plain-chess analysis over a bare board.
+
+### The draft: a third of the session, and two things that were simply broken
+
+Whole-game arc, three runs each, legacy constants restored for the control:
+
+| | per draft | share of session |
+|---|---|---|
+| before | 5.0 / 4.8 / 4.5 -> **4.8s** | 38 / 39 / 39% -> **39%** |
+| after | 3.9 / 3.8 / 3.1 -> **3.8s** | 36 / 31 / 25% -> **31%** |
+
+A single opening draft, hydration to the board being touchable: **4259ms to
+2826ms** in normal motion, 1419ms with animation off. The choreography's own
+share (overlay up to the decision timer arming, which is the draft contract's
+"dealt and clickable") went 3433ms to 2427ms.
+
+Where it came from, and what was deliberately left alone:
+
+- The sealed vault sat doing **nothing** for 1150ms before opening itself, in
+  front of a board nobody is allowed to touch. Now 640ms. The vault's own 920ms
+  opening is untouched: the ceremony is the opening, not the pause in front of
+  it.
+- `DEAL_TOTAL_MS` was a flat 900ms whatever the offer size, so every two-card
+  draft (which is every opening pick) waited 100ms after its last card had
+  finished turning. It is now computed from the real end of the last flip.
+- Cards turn over **as they land** rather than after arriving and pausing 40ms.
+- The pick waited on an invisible card: the pocket flight's opacity hits zero at
+  78% of its length and commit fired at 100%, so the last ~121ms animated
+  nothing while the board stayed blocked.
+- **`data-anim="fast"` never reached the draft at all.** `globals.css` clamps
+  `transition-duration`, which touches nothing in a choreography made of
+  keyframes, framer transitions and timeouts, so a player who asked for fast
+  animations sat through the identical 2.8s opening. Fast now scales the beats
+  this component owns.
+
+**Two things that were not slow, they were broken.**
+
+Every underlined term in a card's rule text is a `span[role="button"]` that
+calls `stopPropagation`, nested inside the card's own `<button>`. So clicking
+the middle of a draft card, which is the rule text you are reading while you
+decide, left `aria-pressed=false` and the commit button disabled. Cards carry
+one to five such terms. This is why the whole-game harness needed four retries
+on the card click, and it was written off there as a deal-animation race. Fixed
+with a capture-phase pick on the card wrapper, select-only and never confirm, so
+reading a definition on your chosen card cannot lock the draft in.
+
+And **Reroll on the opening pick was a lie.** `rerollOffer` refuses
+`offer.index === 0` by design, but the overlay showed a live "Reroll (1)".
+Pressing it played the full 480ms shuffle, faded the cards to nothing, and left
+an empty panel with the clock running until a 4s un-shuffle fuse recovered it.
+Measured: the cards never change and the count never decrements; online, the
+server answers "That draft cannot be rerolled". The control is gone, replaced by
+one line saying where the reroll went.
+
+Also B9, B10 and B13: `aria-pressed` on the draft card at both call sites
+(undefined on non-picker surfaces, so a codex card is never announced as an
+unpressed toggle), `sr-only` separators at the badge level so a card announces
+as `"Spice Run . Item , Free action . Tier I , TRIVIAL . Use once..."` instead
+of `"Bricklayer Item Free action I TRIVIAL Use once..."`, and both dialogs now
+carry a name and a `data-dialog` handle.
+
+Left alone on purpose: the board is still not live behind the offer. Making it
+playable during a forced decision changes the game rather than the animation
+(clocks are paused, and you would be moving before your buff applies); Hide and
+Escape already cover "let me look".
+
+### Tier colour: a per-theme palette, because the alternative is arithmetically dead
+
+The two candidate fixes for the tier chips were a per-theme palette or a change
+to the `.tier-bg-*` wash alphas. The wash was measured first and ruled out:
+`.tier-N` is also bare text on panels and menus, where `#e05252` measures
+**3.50:1 with no wash at all**, so no alpha can reach 4.5 from there. On paper
+it is worse: carrying `#f4c430` at 4.5:1 would need a near-black wash, which is
+not a wash.
+
+A tier's identity is its hue and its chroma (the ladder is a hue sequence with
+chroma climbing by severity, 0.070 at t1 to 0.178 at t8 in OKLCH). Both are
+pinned exactly, gamut permitting; only OKLCH **L** is re-set per scheme. Dark
+takes the smallest lift that clears the floor on its worst ground, so **only
+t4 to t8 move** and t1, t2, t3, t9 and t10 are byte-identical. Light inverts the
+way the surface ladder already does, so the top of the ladder becomes the
+heaviest ink.
+
+That inversion is load-bearing rather than decorative. A flat "everything to the
+AA floor" light palette puts t3 brass at `#826213` and t9 gold at `#7f6200`:
+**0.0101 apart in OKLab, the same olive.** With the ramp they are **0.0961**
+apart.
+
+**0 AA failures out of 60 combinations per theme, 180/180 overall.** On the real
+`/codex` chips: dark t8 **3.26 to 4.91** across 32 elements, light t9 **1.42 to
+7.32** across 18. Chroma is preserved to three decimals on t1 to t8 in both
+schemes; only light t9 and t10 lose it, because sRGB has no chroma to give at
+that lightness (a yellow that dark *is* an olive). The tightest pair in the
+ladder was already 0.0571 (t5/t8) and is now 0.0426, so it is 25% tighter than
+the tightest pair the ladder already shipped, and every chip prints its own
+Roman numeral besides.
+
+`--tier-rgb` and the `.tier-bg-*` fills are deliberately untouched. They are
+washes, auras and particle tints with no contrast obligation, and they are
+mirrored as literal hexes in three files outside the change. Splitting ink from
+tint is what let paper darken its text without dragging the effects layer
+somewhere those mirrors do not follow.
+
+### Sub-12px text sitewide: 24 to zero
+
+The six `ModShell` rail labels really were the whole of it. 31 `text-[11px]`
+sites across `src/components/mod/**` went to 12px, and the sitewide rendered
+count over 46 routes and three themes went **24 per theme to 0 in all three**.
+Two alpha spellings (`text-parchment-400/60`, `text-parchment-300/60`) now name
+their rung and drop the modifier, and have zero non-placeholder call sites left.
+
+### The light accent was stepping the wrong way
+
+`accentHi` is the emphasis step off `accent`, and on paper emphasis is heavier
+ink, so it has to step DOWN in lightness. Light was carrying the DARK theme's
+base blue `#3692e7`, which is lighter than light's own base `#1b78d0`. Now
+`#14589f`, the same OKLCH hue at L 0.46.
+
+Over 21 routes in light: **23 of 23 rendered `--gold-leaf` elements failed AA
+before, 2 of 20 after.** The guest "Sign in" link went 2.75 to 6.04. Dark and
+midnight are untouched and measured unchanged.
+
+Sitewide AA failures, measured before and after **in the same page visit**
+(tokens reverted on the root, measured, restored, measured) so live content
+cannot move the number: **dark 160 to 123, light 237 to 145, midnight 148 to
+110.** No element class regressed.
+
+### Creator-play captions, and a reduced-motion bug found in passing
+
+The five sub-12px caption rules are now 12px, which needed a real layout pass
+because a `.cpl-stage` is one board square: **44.8px at a 360px viewport**, and
+"CHAT DECIDES" is 104px on one line at 12px. Total clipped pixels on a
+phone-sized square: **81.6 to 19.4**, nothing regressed at 87.1px, and the two
+residuals are physical rather than fixable (seven glyphs of 12px bold display
+do not fit in 44.8px).
+
+Found while in there: `html[data-anim="off"]` sets `transform: none` on
+everything inside a `.cpl-stage`, so any caption centred with
+`translateX(-50%)` **was not centred at all** in the reduced-motion still frame
+(the ROOK stamp sat 41px off the right edge of a 44.8px crop). Those captions
+now centre with width plus a negative margin, which survives it.
+
+### The eval bar, and the precision it does not have
+
+`analyzeBoard` takes a bare `BoardState`. It knows nothing about nerfs, buffs,
+pocket drops, or the fact that this game ends when a king is captured rather
+than by checkmate, so its number is the evaluation of a **different game** than
+the one on screen. The bar ships in two modes, chosen by whether any rule is
+live:
+
+- **No rules in play** -- the position genuinely is plain chess, so it shows the
+  signed number (`+1.2`), a smooth fill, the best move and the depth.
+- **Any rule in play** -- it quantises to **seven fixed bands** and the readout
+  is a **word, not a number** ("White is a little better"), prefixed `~`, with a
+  caption naming the specific blind spots: *"Plain-chess estimate. The engine
+  cannot see White's rule 'Rising Water' and Black's rule 'Pacifist', so read it
+  as a band, not a number."*
+
+The dishonesty in `+2.3` beside a nerfed queen is not the sign, it is the
+**precision**. A number to a fifth of a pawn claims the position was resolved; a
+word cannot be over-read that way, and a bar that snaps between seven positions
+instead of sliding is a visual promise that nothing finer is being claimed. The
+bar is deliberately NOT hidden under rules: material and king safety survive
+them, and a coarse true statement beats nothing. What a player must never get is
+a precise false one.
+
+Three things fell out of taking that seriously. `evalLabel` no longer returns
+`#` for a decisive score, because there is no checkmate here: it returns
+`+K`/`-K` and the band reads "White takes the king". Unrevealed nerfs are still
+named ("the handicaps both players are under, still unrevealed"), because going
+quiet before the reveal would make the bar most confident exactly where it knows
+least. And a rung that times out before completing depth 1 returns `scoreCp: 0`
+and the first generated move, which would paint a confident "Level" over an
+unsearched position, so it is dropped and the ladder climbs instead.
+
+`OnlineMatch`'s strip is gated on `game.result`. A live engine readout beside
+your own board in a rated game is engine assistance whatever it is labelled, and
+Lichess disables computer analysis during play for the same reason.
+
+### Every search budget is worth up to twice what its caller asked for
+
+The load-bearing measurement behind the frame work, and it reaches past the eval
+bar. `negamax` aborts at `budget * 2` and the deepening loop only checks the
+clock AFTER a whole depth completes, so `analyzeBoard(board, 300)` on
+`/analysis` was a **601ms** main-thread block after every move, not 300ms.
+
+That is not only an analysis problem. `aiBudgetMs` exists so the bot "can never
+think its whole bank away in fast time controls", and clamps to
+`min(base, remainingClock / 10)`. If the real spend is up to 2x, that guarantee
+is 2x looser than it reads. Filed as A16.
+
+| `/analysis`, 12-move line | long tasks | longest | total blocking | frames >100ms | depth |
+|---|---|---|---|---|---|
+| engine off (page baseline) | 16 | 76ms | 186ms | 0 | -- |
+| before | 28 | **601ms** | **6278ms** | 12 | 6 |
+| after (idle ladder) | 32 | **111ms** | **817ms** | 8 | 5 |
+
+Longest block 5.4x better, total blocking 7.7x better, one ply of depth given
+up. Each rung is one `requestIdleCallback`, cancelled on a position change,
+suspended when the tab is hidden, with the engine `import()`ed lazily so a route
+that never shows the bar never parses it. All of it is a main-thread mitigation
+of something a worker would remove outright (A18).
+
+### Move classification was noise first, and the fix is the finding
+
+The first cut graded whatever depth each position happened to reach and called
+**six** moves of a quiet London System blunders. An **odd**-depth search hands
+the side to move the last word, so comparing a depth-3 reading against a
+depth-4 one swings the white-relative score by tens of win-percent for nothing
+that happened on the board. `classifyLoss` now requires the **same, even** depth
+at both ends of a move or it grades nothing.
+
+Depth is fixed at 2 with quiescence rather than 4, and that is measured: over 40
+real middlegame positions a budget large enough to actually reach depth 4 runs
+200 to 600ms each, while depth 2 completes on every one in 6ms typical and 40ms
+worst, tracking the depth-4 reading within about 90cp. The panel says what that
+buys and what it does not, so `best` means "the move that wins the tactics"
+rather than "no better move exists".
+
+Against known blunders: Scholar's trap `3...Nf6??` found (-50% win chance), a
+hung queen `6...Qd6??` found (-30%) with its punishment graded best, and **zero
+false positives** across two quiet 8- and 20-move Italian lines. A 20-move
+review costs 1122ms wall with zero long tasks.
+
+### C43 closed
+
+`/tournaments/[id]` **12 touch-target findings to 0**, `/clubs/[slug]` **8 to
+0**. The player names there were flagged precisely because they spelled
+`a.hover:text-gold-leaf` themselves, so round 7's `PlayerLink` fix never reached
+them; they go through `PlayerLink` now, and the avatar moves inside the link to
+become part of the target. The breadcrumb goes through `ui/Breadcrumbs` rather
+than becoming a fourth hand-rolled trail, which also lifted it from 12px to the
+13px interactive floor.
+
+**Not verified, and not claimed:** `OnlineMatch`'s strip has never been rendered
+in a browser. Durable Objects do not run under `next dev`, so a live match
+cannot be reached at all, and the strip is gated behind `game.result` on top of
+that. It typechecks and lints. The same component is verified on the other three
+surfaces at five widths in both themes.
+
+---
+
+## 2026-09-07 20:00 UTC
+
+Round 9. Search budgets made honest, three accessibility root causes, the
+parser taught to read delayed removal, and the 13px floor worked by shape.
+
+### Search budgets mean what they say now
+
+`negamax` hard-deadlines at the number the caller asked for. It used to abort at
+`budget * 2`, and the deepening loop only checks the clock after a whole depth
+completes, so every caller paid a hidden 2x that was invisible at the call site.
+
+The decision was an experiment, not a preference. The argument FOR the old
+headroom is that aborting mid-depth throws that depth's work away, so it was
+measured over 27 midgame positions from three openings:
+
+| asked | abort | wall mean | x asked | depth mean |
+|---|---|---|---|---|
+| 60 | 2x | 108.8ms | **2.0x** | 3.1 |
+| 60 | 1x | 60.8ms | 1.1x | 2.9 |
+| **120** | **1x** | 120.6ms | 1.0x | **3.1** |
+| 2000 | 2x | 3845.1ms | **2.0x** | 5.2 |
+| **4000** | **1x** | 4000.6ms | 1.0x | **5.2** |
+
+The bold rows are the fair comparison: at an equal wall ceiling the hard
+deadline reaches exactly the same depth. The headroom bought nothing. And it
+was not headroom occasionally used: **52 of 54 samples ran past the asked
+number and the max landed on the 2x abort exactly.**
+
+`LEVELS.budgetMs` doubled, so the real think times are unchanged and only the
+label moved. Zero searches returned depth 0 in 162 samples, so no "always
+finish depth 1" exemption was needed.
+
+**The house bots needed the same treatment, and this is the part that would
+have gone wrong silently.** `bots.ts` sized all 20 tiers around the hidden
+multiplier and said so: "actual wall time runs 1.5-2.5x the nominal budgetMs".
+With the deadline honest, every tier would have searched half as long as it
+used to, about half a ply off the top, and nothing would have failed. So all 20
+profile budgets doubled, `WEAKEN_CLAMP.budgetMs` went `[10,900]` to
+`[10,1800]`, and `engine-service`'s `REMOTE_SEARCH_CEILING_MS` went 900 to
+1800, without which the doubling would have been clamped straight back. The
+2200 tier is now a **bounded** ~1.8s plus network where it was a measured
+1.8-2.25s, so there is more margin below the worker's 3000ms timeout, not less.
+
+The Workers path is proved unchanged: with the clock frozen the way the
+win-rate harness freezes it, old and new visit **identical** node counts and
+reach identical depths at every budget the DO fallback sees. `test:desync`
+sample hash `5579b1a5`, unchanged.
+
+### `/game/[id]` could strand a viewer forever
+
+`spectate()`'s catch block was an unawaited async function, so anything that
+threw inside it was swallowed and the page never left `{kind: "loading"}`.
+Reproduced before it was fixed: **still connecting after 30000ms** with an
+unhandled `pageerror`; after, out of the skeleton in **1926ms** onto a terminal
+state carrying the thrown message. `isArenaGameLive` is now called as
+`.catch(() => false)`, so its documented fail-soft is enforced at the call site
+rather than assumed of the helper.
+
+### The eval search runs in a worker
+
+Longest task on a quiet page **110ms to 58-90ms**, and the 110ms was the idle
+ladder's deepest rung exactly, so the search *was* the longest task. Two
+caveats kept rather than buried: at about one keypress a second, before and
+after both record **zero** long tasks, so that run says nothing; and at a held
+arrow key the numbers overlap, because the analysis page's own per-ply render
+is 50-120ms under `next dev` and swamps the eval.
+
+Round 8's 32/111/817 figures are **not comparable** to these, and its "engine
+off" baseline row was an artefact: pressing the Engine toggle itself adds 23 to
+39 long tasks.
+
+### Three accessibility root causes, all previously worked around
+
+**The card face is no longer a `<button>`.** The choice was between that and
+making glossary terms non-interactive on picker surfaces, and the AX tree
+settled it: a term inside a card button returns `{role: "button", name:
+"castle", ignored: false, focusable: true}` and its keyboard path works today,
+so the other option would have deleted a working path rather than removing dead
+markup. The control is now a stretched `.card-pick-target` as the face's first
+child at `z-index: 1`, with `aria-labelledby` pointing back at the face so the
+name still computes over the whole subtree and the `SrSep` punctuation survives.
+Nested `button button, button [role=button]`: **3 to 4 per card, now 0.**
+
+`GlossaryTerm` keeps its `stopPropagation`, which was never the bug: reading a
+word must not activate the surface underneath, since a second click on a chosen
+draft card commits the draft and in the dock it spends the card.
+
+**Cards no longer announce in caps.** `.rule-ornament` uppercased the tier
+label, and Chrome applies `text-transform` when computing accessible names, so
+a card announced `"Tier II , EASY"` and now announces `"Tier I , Trivial"`.
+`check-case.ts` deliberately does not track `text-transform`, so no guard could
+have caught it.
+
+**Rarity chips: 9 of 12 theme/rarity combinations carried a contrast failure,
+0 do now**, with the 0.7 locked opacity composited in and the compositing model
+first validated against real screenshot pixels (12/12 within 1/255). Light
+common 1.42 to 4.60, light legendary 1.37 to 4.61, dark epic 2.72 to 4.63.
+Locked stays below unlocked in all 12 rows, so the locked state still reads as
+the dimmer one. Two of the handed-over values were wrong and were re-solved:
+they measure 4.45 and 4.47 on dark, and **dark legendary was at 4.37, a failure
+the handoff did not list at all.**
+
+### The parser reads delayed and conditional removal
+
+Nine of the fourteen unreadable-material cards, coverage in the material
+categories **190/284 to 202/284**, and **16 cards moved of 1665 with 0
+unintended**. They failed for six different reasons rather than one:
+`mass_mind_control` on a QUALIFIER ("of any type below **queen**" left `queen`
+in the mention list, forming a second noun group, which correctly fired the
+two-candidate guard), `lightning_strike` because its later clause does contain
+a noun so the `!hasNoun` test excluded it, `reality_warp` on a missing
+transform bridge and a hard-coded count, the rest on missing verbs, a missing
+modifier and a missing repeat gate.
+
+Three refusals worth as much as the fixes. `detonate` is a one-line change that
+was not made: the sacrifice override reaches past the governing verb, so
+"Sacrifice one pawn **to clear** all pieces on its adjacent squares" scores the
+enemy pieces as the holder's own cost, and fixing it reads +2.9 against a t3
+card, so `--check` exits 1 the moment it lands. `bn4_endless_militia` is
+blocked by two deliberate refusals, one carrying a comment naming that exact
+sentence, and the engine disagrees with the comment; overturning a written
+refusal silently is not a worker's call. And widening the lookahead window was
+**measured**: it still does not reach the target card, moves six unrelated
+ones, and pushes `blood_pact` above its floor.
+
+### The 13px floor, by shape
+
+Thirteen shared components and call sites, every one a text-size change only.
+The rule applied, stated so it can be argued with: **raise** anything
+sentence-shaped, plus the naming or describing line of a control or link;
+**leave at 12px** anything whose whole content is a bare token (a number,
+count, rating, timestamp, state word, or a chip with chip chrome).
+
+Measured across 15 re-swept routes: **1833 findings to 663, 114 unique elements
+to 38.** `/settings` 31 unique to 0, `/settings/appearance` 7 to 0,
+`/tournaments/[id]` 5 to 0, `/inbox` 2 to 0. Projected sitewide (the `Guest`
+element alone is one shared `SiteHeader` instance worth 274 findings across 27
+routes): **219 to about 114 unique, a 48% cut**; strip the 72 tier chips that
+were deliberately kept and the real movement is **147 to 42, a 71% cut**.
+
+Density measured rather than eyeballed, A/B on the same page with a stylesheet
+forcing exactly the raised elements back to 12px: the densest surface
+(`/settings`, 22 hints) grew 0.8% at 1440 and 2.7% at 360, four other surfaces
+grew 0px, and nothing wrapped, truncated or overflowed.
+
+### C49 measured, and left for its own round
+
+Hydration to the draft overlay being in the DOM: **332ms median over five
+runs**, decomposed rather than guessed at.
+
+| segment | median | what it is |
+|---|---|---|
+| board paint to its passive effects flushing | 132ms | commit 2's tail |
+| effects to the overlay's render starting | 46ms | `queueMicrotask(setPhase)` reaching the scheduler |
+| overlay render, commit and paint | 155ms | DraftOverlay's own first mount |
+
+The cause of the first 178ms: `useDraftSequence` starts its machine at
+`ANIMATIONS_PLAYING` and only steps to `CARDS_PREPARING` inside an effect,
+reaching React through `queueMicrotask(setPhase)`. At game start `sigBusy` is
+false from the very first render, so **there is nothing to wait for and the
+overlay is forced into a second commit anyway**. The "Resolving effects" chip
+is painted for exactly that window, every run, while nothing is resolving.
+
+Not fixed this round, deliberately. Deriving `overlayVisible` during the first
+render of a new offer on a quiet board would collapse it to one commit, but the
+machine has two traps: child effects run before parent effects, so an overlay
+mounted in the same commit fires `onCardsReady` before the machine sets its
+key, `reportCardsReady` drops the stale key, and the 12s cap fires instead; and
+`phase === "DRAFT_COMPLETE"` is also the state after a draft resolves, so a
+naive derivation flashes the overlay back on. `e2e/draft-timing.spec.ts` exists
+because this machine has deadlocked before. It gets a round where it is the
+only thing in flight.
+
+Dev-only inflation, recorded so nobody chases a ghost: `reactStrictMode`
+double-renders everything, and four or five Turbopack chunks are fetched inside
+that window on every run. Both vanish in a production build; the structural
+extra commit does not.
+
+## 2026-09-07 13:10 EDT (round 10: the draft opens in one commit, the mod shell reaches 44px, and two sweep detectors stop lying)
+
+Branch `claude/ralph-loop-optimization-nl2902`, OPEN.
+
+**C49, the draft overlay's opening latency, is fixed** and it took one file,
+`src/lib/useDraftSequence.ts` (+197/-23). The mirrored phase now carries the
+offer version it describes, and a pure `deriveDraftPhase` predicts the phase
+during render for a version the machine's effect has not adopted yet. Round 9
+diagnosed the cost as a forced second commit at game start, where `sigBusy` is
+false from the very first render and there is nothing to wait for; that commit
+is now gone. Both traps round 9 named are defended and tested rather than
+assumed: `CardsReadyGate` latches an `onCardsReady` that arrives before its
+arm (child effects run before parent effects), and teardown mirrors
+`DRAFT_COMPLETE` tagged with the version that just finished, so the post-pick
+window cannot flash the overlay back on.
+
+Measured on my own re-run rather than only the agent's: **offer render to
+overlay render 0ms, React commits between the offer and the overlay 1 to 0**,
+the "Resolving effects" chip painted in 0 of 5 runs, hydration to overlay
+259.8ms median. The agent measured 228.0ms on a quieter box and I got 259.8 on
+one running two other agents, so take the 0-commit result as the durable one:
+it does not depend on the clock. Guards: `test:draft-sequence` 20,
+`test:draft-timeout` 16, a new `test:draft-derivation` 15, and
+`e2e/draft-timing.spec.ts` 3, all green.
+
+**C54: every touch-target defect left on the site was on the four `/mod`
+routes, and they are now at zero.** Three edits to two shapes in
+`src/components/mod/ModShell.tsx`. The count was 17 per route rather than the
+15 the baseline recorded (4 for the Jump-to button at each touch width, 13 for
+the rail links at 1024), so 68 findings, plus 144 type-floor-13, to zero.
+Sitewide touch-target is now 0.
+
+**C55: two detectors in `e2e/sweep.spec.ts` were each wrong**, and the agent
+working `/mod` found both by reading markup the sweep called clean.
+
+The first was silent, which was the real defect: the "the row IS the target"
+exemption tested vertical fill only, so a 36px chip inside a 45px
+`overflow-x: auto` rail satisfied it and a whole rail of undersized mobile
+chips vanished from the report with no trace that anything had been forgiven.
+Tightening the threshold is NOT the fix, and I have the measurements: requiring
+horizontal fill too, requiring the parent to hold a single control, and
+requiring the parent not to scroll sideways each re-report the 120 codex list
+rows the exemption exists for, because a codex row carries a trailing tier
+badge and so leaves 25 to 95px of dead width beside its link and holds two
+controls. A rail and a list row are not separable by geometry. So the exemption
+keeps its threshold and now hands back what it swallowed: a
+`touch-target-row-exempt` disclosure per exempted control, with its size, its
+row height, how many controls share the parent, and whether that parent
+actually scrolls. Severity `info` and excluded from the ratchet by name,
+because ratcheting it would gate on correct markup and punish a route for
+adding a properly built 44px row.
+
+The second was a false positive by construction: `interactive` was
+`closest('button, a[href], ...')`, so every bare token inside a control (a
+roman-numeral tier badge, a count, a state pill, a `Ctrl K` keycap) was called
+interactive text on the 13px floor, when the project's own rule puts exactly
+that in the 12px caption allowance. It now turns on a measured fact: the floor
+applies when the element IS the control, or when its text equals the control's
+whole visible name with aria-hidden decoration stripped before comparing (every
+control carrying a keycap would otherwise misjudge). A fragment of a richer
+control is reported as `type-floor-12` with a detail saying so and to judge it
+by eye. Severity only ever drops; nothing stops being reported. On `/codex`
+that is type-floor-13 4 to 0, all four `X`/`IX` tier badges, and 74 row
+exemptions now disclosed, none of them scrolling rails.
+
+Stated plainly because it invalidates a number already written down: the
+round-9 sitewide `type-floor-13` counts (35 distinct, 1914 raw) are inflated by
+that second defect and have to be re-measured before anyone uses them.
+
+## 2026-09-07 13:16 EDT (round 10 continued: the nerf draft's dead words, card body copy at 13px)
+
+**C50. Clicking a glossary word on the nerf draft selected nothing**, and that
+was measured live before it was fixed: `src/app/game/page.tsx` wrapped
+`NerfCard` in its own `<button>`, so the card's rule-text terms
+(`span[role="button"]`) sat inside a button and their handler's
+`stopPropagation` swallowed the click. The buff draft has a capture-phase pick
+that works around this; the nerf draft had nothing. Fixed the C47 way: the card
+grows its own stretched `.card-pick-target` with `aria-labelledby` back at the
+face, and the external button is gone. The target is opt-in through a new
+`onClick` prop, so the codex and `OnlineMatch` are untouched rather than
+double-wrapped.
+
+The port needed one thing BuffCard did not. `.nerf-enter__line` animates a
+transform, which makes a stacking context, so the glossary chips could not
+escape it and the pick target painted over them: `elementFromPoint` over a term
+returned `.card-pick-target`, the definition popover never opened, and **a
+second click on a word started the game**, which is the exact hazard
+`GlossaryTerm`'s handler exists to prevent. That one line is now
+`relative z-[2] pointer-events-none` with `[&_span]:pointer-events-auto`, gated
+on pickable, so the prose is click-through to the target and the chips keep
+their own hit area.
+
+Verified on a re-run rather than from the handoff: nested
+`button button, button [role=button]` **0**, two pick targets at 285x290 and
+285x216, clicking the word "capture" takes `aria-pressed` false to true AND
+opens the definition AND surfaces Confirm, and a second click on that same word
+leaves you on the draft with no board. The same nested shape in
+`src/components/dock/targeting.tsx` went 2 to 0; there a term click opens the
+definition and deliberately does NOT pick, because a pick in that modal spends
+the card on that target immediately.
+
+**C52. Card body copy at 13px**: BuffCard's Tip / Note / Exclusive / flavour,
+NerfCard's Tip, NerfCard's dense codex flavour (12 to 13, to match the in-game
+13), and DraftOverlay's three "Draft pending" lines. The chips, the tier word,
+the owner label and the Progress readout stay at 12px, which is what the rule
+means by labels.
+
+The cost is real and was measured rather than waved past: **228 of 1829 buffs
+with flavour text, 12.5%, gain exactly one line** at a 268px card column, all
+1 to 2, and at 360x780 the draft overlay's scroll distance grows 328 to 353px.
+Nothing clips. A same-render A/B that forced the raised lines back to 12px left
+`scrollHeight - clientHeight` at its constant 10 to 11px watermark overhang in
+every cell, at 360 and 1440, dark and light.
+
+**C53.** The "Resolving effects" chip is now gated on `sigBusy`. Worth saying
+plainly: on today's code this is not a visible change, because C49 landed first
+and the chip already never appears at game start (3 of 3 runs, `?perf=1` shows
+`busy=0` on every opening `render:draft`). It is a correctness guard that makes
+the chip's claim true by construction.
+
+Two follow-ups fall out of this, now C56 and C57 in the backlog.
+`OnlineMatch.tsx` carries both of the defects just fixed (the nested nerf-card
+button at ~2399, the ungated chip at ~3680) and was outside the agent's file
+list; both fixes are mechanical now, but Durable Objects do not run under
+`next dev` so that surface cannot be driven end to end here. And BuffCard's
+COMPACT rule text is still 12px and sentence-shaped: raising it moves the dock,
+`MobileBuffDrawer` and the minimized draft panel at once, and C52's own numbers
+say a narrower column will wrap worse, so it wants its own round.
+
+## 2026-09-07 14:00 EDT (round 11, cut short: game-over choreography, and two engine numbers re-measured)
+
+Branch `claude/ralph-loop-optimization-nl2902`. The owner called time mid-round,
+so this entry says plainly what landed, what was dropped unfinished, and what
+was deliberately NOT shipped.
+
+**Landed: the game-over choreography** (`src/components/GameOver.tsx`,
+`src/app/globals.css`). New `.ending-act` and `.ending-seal` motion, inside the
+design system's vocabulary. Verified in a browser at 1440x900 in dark and
+light: a real timeout game reaches the panel, `.ending-act` is present, and
+there are no page errors in either theme. `test:animations`, `test:anim-props`
+and `test:reduced-motion` all pass.
+
+**A26 answered, and it was a non-issue.** The question was whether round 9's
+hard deadline left `MoveReview`'s 60ms budget able to reach an EVEN depth,
+since `classifyLoss` refuses to grade an odd or shallower-than-2 search. New
+`scripts/bench-move-review.ts` (`npm run test:move-review`) drives
+`analyzeBoard` over 51 middlegame positions: **51 of 51 reach depth 2**, p50
+11.1ms, p95 29.1ms, worst 40.5ms. The budget was never the binding constraint
+and the hard deadline cost the review nothing, because at 300ms the same
+positions still finish in a worst case of 37.6ms. Depth 2 costs what it costs
+and the deepening loop stops on its own. Worth recording separately: the
+same-even-depth guarantee is ENFORCED rather than assumed, so a budget that is
+too small degrades the panel into saying nothing, never into a wrong grade.
+
+**A25 re-measured, and the number in the backlog was wrong by a factor of four
+in the dangerous direction.** New `scripts/bench-node-throughput.ts` drives
+`pickAIMove` over 27 middlegame positions at five budgets and two levels:
+throughput on the current engine is **186 nodes/ms median, p05 103, max 369**,
+not the ~450 the node cap was sized against in July, because round 8 put buff
+augmentation inside `genMoves` and made every node more expensive. So the cap
+of 2000 nodes per ms-of-budget allows **10.75x the budget at the median
+position and 19.34x at the slowest**, not the 4.4x on record. An 80ms ask can
+burn 1.55 seconds on the frozen-clock Durable Object path.
+
+**Deliberately not fixed.** I wrote the fix (a one-shot probe: after 8000 nodes
+the search checks whether `Date.now()` has advanced at all, and if it has not,
+re-sizes the cap to bound CPU instead of merely bounding runaway) and then
+reverted it. It changes abort logic on a path that cannot be tested here, since
+Durable Objects do not run under `next dev`, and shipping unverified abort
+logic is how the July `exceededCpu` incident happened in the first place.
+Lowering `NODES_PER_MS` outright is the wrong fix and the measurement says so:
+a fast desktop searches several times quicker than this loaded box, so a cap
+tight enough to help Workers would start biting before the clock in ordinary
+browsers, costing playing strength on the main path to fix a rare one. The
+probe shape is right and it needs a Workers-side measurement before it ships.
+
+**Dropped unfinished.** Four agents were stopped mid-work. Their partial edits
+were reverted rather than merged: a re-run of the material model, a partial
+sweep-detector edit, and three new e2e feel specs of which one failed on
+timeout and one never ran. A red test suite is worse than no test suite, so
+those went. The balance ladder refit, the premove parity audit and the full
+route re-sweep are still open, and the backlog carries them.
+
+One pre-existing failure, stated so it is not mistaken for a regression:
+`e2e/smoke.spec.ts` "buff-mode bot game" fails on this box with a page-closed
+timeout. It fails identically with every change stashed, so it is
+environmental (a loaded 4-CPU box, 7.5 minutes of file time), not caused by
+anything here.

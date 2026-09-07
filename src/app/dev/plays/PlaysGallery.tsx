@@ -14,10 +14,10 @@ import { ALL_BUFFS } from "@/engine/buffs/library";
 import { TIER_ROMAN } from "@/lib/tiers";
 import {
   SIGNATURES,
-  SignatureOverlay,
   prefetchSignatureVisuals,
   type SigVisual,
 } from "@/components/effects/BoardEffects";
+import { SignatureCut } from "@/components/board/SignatureCut";
 import { PLUGIN_ID_SET, PLUGIN_SIGNATURES } from "@/components/effects/sigPlugins";
 import {
   boardAnchoredGeo,
@@ -162,7 +162,12 @@ function BoardProbe({ row, sq, runKey }: { row: Row; sq: number; runKey: number 
         style={{ left: `${col * 12.5}%`, top: `${r * 12.5}%`, width: "12.5%", height: "12.5%", ...geo } as React.CSSProperties}
       >
         <span className="absolute inset-0 z-30 block" style={shift}>
-          <SignatureOverlay visual={row.visual as SigVisual} role="lead" delayMs={0} />
+          {/* `cut`, not `role`: the effects library's prop means "which cut of
+              the sequence", and spelling it `role` at a call site is one
+              careless `{...props}` away from putting an invalid ARIA role into
+              the DOM. Board.tsx goes through the same wrapper; this was the
+              last call site still spelling it the dangerous way. */}
+          <SignatureCut visual={row.visual as SigVisual} cut="lead" delayMs={0} />
         </span>
       </span>
     </div>
@@ -186,16 +191,16 @@ function Cell({ row, mode }: { row: Row; mode: Mode }) {
             <div key={p.label}>
               <BoardProbe row={row} sq={p.sq} runKey={runKey} />
               {mode === "anchors" && (
-                <div className="text-center text-[9px] text-parchment-400">{p.label}</div>
+                <div className="text-center text-[12px] text-parchment-400">{p.label}</div>
               )}
             </div>
           ))}
         </div>
       </button>
-      <div className="max-w-full truncate text-center text-[11px] text-parchment-200" title={row.name}>
+      <div className="max-w-full truncate text-center text-[12px] text-parchment-200" title={row.name}>
         {row.name}
       </div>
-      <div className="text-[10px] text-parchment-400">
+      <div className="text-[12px] text-parchment-400">
         {TIER_ROMAN[row.tier]} · {row.kind} · {row.category} · anchor {row.anchor}
       </div>
     </div>

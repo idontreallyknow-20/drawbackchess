@@ -23,6 +23,7 @@
 
 import type { ReactNode } from "react";
 import { BoardKeyDetails } from "@/components/board/BoardKey";
+import { TABLET_STACK_HIDE, TABLET_STACK_ONE_COL } from "@/components/matchLayout";
 import { Button } from "@/components/ui/Button";
 
 /** Which game this rail is fronting. `plain` is the bot game's no-cards mode;
@@ -49,6 +50,10 @@ const MODE_INK: Record<RailMode, string> = {
 export function railGridClass(collapsed: boolean): string {
   return (
     "match-grid grid min-h-0 flex-1 gap-y-2 lg:justify-center lg:gap-x-1.5 " +
+    // A portrait tablet is one column, so the three-column desktop template
+    // stands down there even above `lg` (an iPad Pro is 1024 wide in portrait).
+    TABLET_STACK_ONE_COL +
+    " " +
     (collapsed ? "lg:grid-cols-[auto]" : "lg:grid-cols-[var(--match-rail-w,320px)_0.25rem_auto]")
   );
 }
@@ -101,6 +106,10 @@ export function CommandRail({
         "rail-panel hidden min-h-0 gap-2 overflow-y-auto p-2.5 " +
         "lg:min-h-[var(--board-height)] lg:max-h-full " +
         "lg:grid-rows-[auto_auto_minmax(8rem,1fr)_auto] lg:self-start " +
+        // Portrait tablets are one column and carry this rail's contents in
+        // the stack under the board instead, so it stays down past `lg` there.
+        TABLET_STACK_HIDE +
+        " " +
         (lux ? "rail-lux " : "") +
         (collapsed ? "" : "lg:grid")
       }

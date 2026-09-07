@@ -14,14 +14,14 @@ export function KeyTerms({ slugs, title = "key terms" }: { slugs: string[]; titl
   if (entries.length === 0) return null;
   return (
     <div>
-      <div className="text-[11px] text-parchment-400">{title}</div>
+      <div className="text-[12px] text-parchment-400">{title}</div>
       <div className="mt-2 flex flex-wrap gap-2">
         {entries.map((e) => (
           <Link
             key={e.slug}
             href={glossaryHref(e)}
             title={e.def}
-            className="rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-3 py-1 font-display text-sm text-parchment-200 hover:border-coral/60 hover:text-coral motion-safe:transition-colors"
+            className="inline-flex min-h-[44px] items-center rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-3 py-1 font-display text-sm text-parchment-200 hover:border-coral/60 hover:text-coral motion-safe:transition-colors"
           >
             {e.term}
           </Link>

@@ -127,7 +127,7 @@ export function DraftNotice({
               {n.text}
             </div>
             {n.detail && (
-              <p className="mt-0.5 text-[11px] font-normal leading-snug text-parchment-300"><GlossaryText text={n.detail} /></p>
+              <p className="mt-0.5 text-[12px] font-normal leading-snug text-parchment-300"><GlossaryText text={n.detail} /></p>
             )}
           </div>
         );

@@ -207,6 +207,9 @@ function PersonaRow({
           disabled={!canEdit || saving}
           onClick={() => setPicking((v) => !v)}
           title={canEdit ? "Change avatar" : undefined}
+          // The only child is the avatar, and a preset avatar is aria-hidden,
+          // so without this the control announces as an unnamed button.
+          aria-label={`Change ${persona.effective.username}'s avatar`}
           className={"shrink-0 " + (canEdit ? "press" : "cursor-default")}
         >
           <PlayerAvatar name={persona.effective.username} avatar={persona.effective.avatar} size={36} />
@@ -227,7 +230,7 @@ function PersonaRow({
         )}
         {edited && (
           <span
-            className="text-[11px] px-2 py-0.5 rounded-none border border-[color:var(--edge-strong)] text-parchment-50"
+            className="text-[12px] px-2 py-0.5 rounded-none border border-[color:var(--edge-strong)] text-parchment-50"
             title={`Default: ${persona.defaults.username}`}
           >
             edited
@@ -289,7 +292,7 @@ function PersonaRow({
               className="px-3 py-1 text-parchment-50">
               Upload image…
             </Button>
-            <span className="text-[11px] text-parchment-500">PNG, JPEG, or WebP. Max 1 MB, 1024px.</span>
+            <span className="text-[12px] text-parchment-500">PNG, JPEG, or WebP. Max 1 MB, 1024px.</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
           {avatars.map((id) => (
@@ -299,6 +302,7 @@ function PersonaRow({
               disabled={saving}
               onClick={() => post({ avatar: id })}
               title={id}
+              aria-label={`Use avatar ${id}`}
               className={
                 "rounded-none border p-0.5 transition " +
                 (id === persona.effective.avatar

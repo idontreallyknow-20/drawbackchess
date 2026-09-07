@@ -11,6 +11,7 @@ import { stashGamblingOutcome } from "@/components/effects/gamblingOutcome";
 import { useSignatureQueue } from "@/components/effects/useSignatureQueue";
 import { BoardPlayerRow } from "@/components/BoardPlayerRow";
 import { ClockPill } from "@/components/ClockPill";
+import { BoardEvalStrip, matchRulePhrases } from "@/components/EvalBar";
 import { ModeBadge } from "@/components/ModeBadge";
 import { ProvisionalMark } from "@/components/ratings/ProvisionalMark";
 import { ConnectionBanner } from "@/components/ConnectionBanner";
@@ -198,17 +199,45 @@ export default function OnlineGamePage() {
     };
     const offWatch = session.on(onWatchEvent);
 
+    // Watch the game, and land on a TERMINAL mode whatever happens.
+    //
+    // This used to be one try/catch whose catch block did more async work than
+    // the try did: isArenaGameLive, a second MPSession, showReplay, and a
+    // recursive call to itself. Every caller invokes it without awaiting, so
+    // anything that threw in there rejected a promise nobody was holding. The
+    // rejection went to `unhandledrejection` and the page stayed on
+    // {kind:"loading"} — "Connecting…", forever, with no error and no way out
+    // but the reload button the 10s slow-connect banner offers. Reproduced with
+    // scripts/repro-a17-connecting.mjs, which makes isArenaGameLive throw.
+    //
+    // So the recovery now runs in its own try, and the outer catch is a
+    // backstop whose only job is that the page always ends up somewhere the
+    // viewer can act on. Losing the archive is a bad outcome; a permanent
+    // skeleton is not an outcome at all.
     const spectate = async (pendingReplay?: Promise<ReplayGame | null>, s: MPSession = session) => {
+      let failure: unknown;
       try {
         await withResponseTimeout(s.watch(gameId), "watch_timeout", 15000);
+        return; // watch-start already moved us to {kind:"spectator"}
       } catch (e) {
-        if (e instanceof Error && e.message === "not_found") {
+        failure = e;
+      }
+
+      try {
+        if (failure instanceof Error && failure.message === "not_found") {
           // Tier 3: a live arena-hosted (OCI bot-vs-bot) game is unknown to the
           // game-server DO. Before treating not_found as "finished, show the
           // archive", ask the arena — a direct link to a live filler game then
           // watches it instead of flashing "not found". Fail-soft: an
           // unreachable arena answers false and the archive path runs as ever.
-          if (!s.serverUrl && arenaSocketUrl() && (await isArenaGameLive(gameId))) {
+          // That fail-soft is now enforced here rather than assumed of the
+          // helper: whatever it does with a broken arena, this decision only
+          // ever gets a boolean.
+          const arenaLive =
+            !s.serverUrl &&
+            !!arenaSocketUrl() &&
+            (await isArenaGameLive(gameId).catch(() => false));
+          if (arenaLive) {
             s.destroy();
             if (cancelled) return;
             const arenaSession = new MPSession();
@@ -222,11 +251,24 @@ export default function OnlineGamePage() {
           }
           s.destroy();
           await showReplay(pendingReplay);
-        } else if (e instanceof Error && e.message === "watch_timeout") {
+        } else if (failure instanceof Error && failure.message === "watch_timeout") {
           await showReplay(pendingReplay);
         } else if (!cancelled) {
-          setMode({ kind: "error", message: e instanceof Error ? e.message : String(e) });
+          setMode({
+            kind: "error",
+            message: failure instanceof Error ? failure.message : String(failure),
+          });
         }
+      } catch (recoveryFailure) {
+        // The recovery path itself broke. There is nothing left to try, so say
+        // so rather than leaving the skeleton up: `error` renders a heading, the
+        // message, and the way back to the lobby.
+        if (cancelled) return;
+        setMode({
+          kind: "error",
+          message:
+            recoveryFailure instanceof Error ? recoveryFailure.message : String(recoveryFailure),
+        });
       }
     };
 
@@ -273,7 +315,10 @@ export default function OnlineGamePage() {
               // Seat expired (game archived or gone) — fall back to watching.
               off();
               clearOnlineSeat(gameId);
-              spectate();
+              // Deliberately not awaited (nothing here can wait on it), which
+              // is only safe because spectate always resolves to a terminal
+              // mode rather than rejecting. Same at the two sites below.
+              void spectate();
               return;
             }
             if (attempt < MAX_RESUME_ATTEMPTS) {
@@ -284,7 +329,7 @@ export default function OnlineGamePage() {
               }, delay);
             } else {
               off();
-              spectate();
+              void spectate();
             }
           });
       };
@@ -305,7 +350,7 @@ export default function OnlineGamePage() {
       if (arenaSocketUrl() && (taggedArena || isArenaGameId(gameId))) {
         session.serverUrl = arenaSocketUrl();
       }
-      spectate(fetchReplay());
+      void spectate(fetchReplay());
     }
 
     return () => {
@@ -400,6 +445,14 @@ export default function OnlineGamePage() {
     return (
       <main className="min-h-screen">
         <SiteNav />
+        {/* Every terminal branch below has an h1; this one did not, so a game
+            that is slow to resolve (or an id with no game behind it, which
+            sits here until the socket gives up) served a page with no
+            accessible name and no document outline. Same shape as C34 on
+            /u/[username]. sr-only because the visible chrome here is a
+            skeleton and a real heading would be a jump when the board fills
+            in. */}
+        <h1 className="sr-only">Game</h1>
         <div className="mx-auto w-full max-w-[1200px] px-3 pb-10 sm:px-6">
           <div className="mb-2 flex items-center justify-between gap-3">
             <div className="text-[12px] text-parchment-400">
@@ -427,7 +480,7 @@ export default function OnlineGamePage() {
                 </Button>
                 <Link
                   href="/lobby"
-                  className="min-h-[36px] inline-flex items-center rounded-sm border border-parchment-700 px-3 py-1.5 font-display text-xs text-parchment-200 hover:text-parchment-50"
+                  className="min-h-[36px] inline-flex items-center rounded-sm border border-parchment-700 px-3 py-1.5 font-display text-[13px] text-parchment-200 hover:text-parchment-50"
                 >
                   Back to lobby
                 </Link>
@@ -1043,7 +1096,7 @@ function SpectatorBuffsPanel({ game, players }: { game: NerfGame; players: MPPla
                       className={
                         "min-w-0 flex-1 truncate font-display text-[13px] font-semibold " +
                         (dead
-                          ? "text-parchment-200 line-through decoration-1 decoration-parchment-400/70"
+                          ? "text-parchment-200 line-through decoration-1 decoration-parchment-500"
                           : `tier-${inst.tier}`)
                       }
                     >
@@ -1242,7 +1295,7 @@ function SpectatorChat({
           maxLength={200}
           placeholder="Message…"
           aria-label="Spectator chat message"
-          className="min-w-0 flex-1 rounded-sm border border-[color:var(--edge)] bg-ink-900/60 px-2 py-1.5 text-base text-parchment placeholder:text-parchment-400/60 focus-visible:border-gold/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent-rgb))] sm:text-[13px]"
+          className="min-w-0 flex-1 rounded-sm border border-[color:var(--edge)] bg-ink-900/60 px-2 py-1.5 text-base text-parchment placeholder:text-parchment-500 focus-visible:border-gold/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent-rgb))] sm:text-[13px]"
         />
         <Button tone="ghost"
           type="submit"
@@ -1514,6 +1567,23 @@ function GameShell({
   reviewingHistory?: boolean;
   rail?: React.ReactNode;
 }) {
+  // Nerf ids arrive only once the rules are public (game over, or a voluntary
+  // reveal). Before that the handicaps still exist, so the caption says they
+  // exist rather than going quiet, which would be a confident bar over the
+  // least-known position.
+  const whiteNerfName = nerfs?.w ? IMPLEMENTED_BY_ID[nerfs.w]?.name : null;
+  const blackNerfName = nerfs?.b ? IMPLEMENTED_BY_ID[nerfs.b]?.name : null;
+  const evalRules = useMemo(
+    () =>
+      matchRulePhrases({
+        mode,
+        whiteNerf: whiteNerfName,
+        blackNerf: blackNerfName,
+        hidden: mode === "nerf" && !nerfs,
+        hasDrops: history.some((m) => m.drop),
+      }),
+    [mode, whiteNerfName, blackNerfName, nerfs, history],
+  );
   const stateBadge =
     headerState === "live" ? (
       <span className="inline-flex items-center gap-1.5 rounded-[1px] border border-[rgb(var(--pos-rgb)/0.4)] bg-[rgb(var(--pos-rgb)/0.12)] px-2 py-0.5 text-[12px] font-semibold text-[rgb(var(--pos-rgb))]">
@@ -1521,7 +1591,7 @@ function GameShell({
         Live
       </span>
     ) : headerState === "final" ? (
-      <span className="inline-flex items-center rounded-[1px] border border-[color:var(--edge-strong)] bg-white/[0.04] px-2 py-0.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-parchment-300">
+      <span className="inline-flex items-center rounded-[1px] border border-[color:var(--edge-strong)] bg-white/[0.04] px-2 py-0.5 text-[12px] font-semibold text-parchment-300">
         Final
       </span>
     ) : (
@@ -1604,6 +1674,11 @@ function GameShell({
               />
               {clockEnabled && <ClockPill ms={whiteMs} active={activeColor === "w"} compact />}
             </div>
+            {/* Plain-chess eval, on a board that is very often not plain chess.
+                The strip carries its own caption naming what it cannot see, so
+                the qualification travels with the number rather than living in
+                a legend somewhere else on the page. */}
+            <BoardEvalStrip board={board} rules={evalRules} className="w-full max-w-[720px]" />
             {/* Rules show only once known (end of game or a voluntary
                 reveal); until then no placeholder plates take up space.
                 Buff mode games carry the "none" rule, which never shows. */}

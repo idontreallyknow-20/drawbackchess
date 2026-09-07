@@ -445,7 +445,7 @@ function TimeCell({
       }
     >
       <span className="font-mono text-lg leading-none tabular-nums">{option.label}</span>
-      <span className={"text-[11px] " + (selected ? "opacity-90" : "text-parchment-400")}>
+      <span className={"text-[13px] " + (selected ? "opacity-90" : "text-parchment-400")}>
         {category.label}
       </span>
     </Button>

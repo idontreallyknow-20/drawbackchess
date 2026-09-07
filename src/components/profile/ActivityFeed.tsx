@@ -139,17 +139,17 @@ export function ActivityFeed({ username, active }: { username: string; active: b
                   <span className="flex shrink-0 items-center gap-2 text-[12px] text-parchment-300">
                     {r.wins > 0 && (
                       <span>
-                        <b className="bg-verdigris px-1.5 py-px text-[11px] text-white">{r.wins}</b> {r.wins === 1 ? "win" : "wins"}
+                        <b className="bg-verdigris px-1.5 py-px text-[12px] text-white">{r.wins}</b> {r.wins === 1 ? "win" : "wins"}
                       </span>
                     )}
                     {r.draws > 0 && (
                       <span>
-                        <b className="bg-[color:var(--bg-raised)] px-1.5 py-px text-[11px] text-parchment-100">{r.draws}</b> {r.draws === 1 ? "draw" : "draws"}
+                        <b className="bg-[color:var(--bg-raised)] px-1.5 py-px text-[12px] text-parchment-100">{r.draws}</b> {r.draws === 1 ? "draw" : "draws"}
                       </span>
                     )}
                     {r.losses > 0 && (
                       <span>
-                        <b className="bg-oxblood px-1.5 py-px text-[11px] text-white">{r.losses}</b> {r.losses === 1 ? "loss" : "losses"}
+                        <b className="bg-oxblood px-1.5 py-px text-[12px] text-white">{r.losses}</b> {r.losses === 1 ? "loss" : "losses"}
                       </span>
                     )}
                   </span>

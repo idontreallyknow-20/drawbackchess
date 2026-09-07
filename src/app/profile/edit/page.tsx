@@ -289,7 +289,7 @@ export default function EditProfilePage() {
           {account && (
             <LinkButton tone="ghost"
               href={`/u/${encodeURIComponent(account.username)}`}
-              className="h-11 w-11 shrink-0 rounded-none text-parchment-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]" aria-label="Back to your profile">
+              className="h-[44px] w-[44px] shrink-0 rounded-none text-parchment-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]" aria-label="Back to your profile">
               <ArrowLeft className="h-5 w-5" strokeWidth={2} />
             </LinkButton>
           )}
@@ -369,7 +369,7 @@ export default function EditProfilePage() {
                     );
                   })}
                 </div>
-                <p className="mt-3 text-xs text-parchment-400">
+                <p className="mt-3 text-sm text-parchment-400">
                   Shown in the lobby, on leaderboards, and at the board. Use the + tile to upload
                   your own picture (PNG, JPG, WebP, or GIF, under 8 MB, cropped square and scaled
                   down automatically).
@@ -392,7 +392,8 @@ export default function EditProfilePage() {
                     aria-label="No flair"
                     aria-pressed={!account.flair}
                     className={
-                      "grid h-[46px] w-[46px] place-items-center rounded-none text-xs text-parchment-300 transition " +
+                      // "none" is this button's label, so it is interactive text at 13px.
+                      "grid h-[46px] w-[46px] place-items-center rounded-none text-[13px] text-parchment-300 transition " +
                       (!account.flair ? "ring-2 ring-[color:var(--accent)]" : "ring-1 ring-white/10 hover:ring-white/40")
                     }
                   >
@@ -436,7 +437,13 @@ export default function EditProfilePage() {
                   >
                     {LAUREL_FLAIR}
                   </button>
-                  <p className="text-xs text-parchment-400">
+                  {/* This help line carries an inline link, and a link is
+                      interactive text whatever it is sitting in: at 12px the
+                      link was under the floor, and sizing just the link would
+                      put a step in the middle of a sentence. The paragraph
+                      goes to 13px so the link clears it. Sibling help lines
+                      with no control in them stay 12px captions. */}
+                  <p className="text-[13px] text-parchment-400">
                     <span className="font-display text-gold-leaf">Laurelled</span>, reserved for
                     players currently in the top 10 of a{" "}
                     <Link href="/leaderboard" className="text-gold-leaf hover:underline">
@@ -445,7 +452,7 @@ export default function EditProfilePage() {
                     . Claim it while your rank holds.
                   </p>
                 </div>
-                <p className="mt-3 text-xs text-parchment-400">
+                <p className="mt-3 text-sm text-parchment-400">
                   An emoji shown next to your name on your profile and on your avatar around the
                   site. Pick one from the set above.
                   {flairError && <span className="ml-2 text-oxblood-glow">{flairError}</span>}
@@ -550,7 +557,7 @@ function PrivacyToggle({
             <span className="text-xs text-oxblood-glow">{error}</span>
           )}
         </div>
-        <p className="mt-1 text-xs text-parchment-400">{description}</p>
+        <p className="mt-1 text-sm text-parchment-400">{description}</p>
       </div>
       <button
         type="button"

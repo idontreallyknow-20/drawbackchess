@@ -6,7 +6,10 @@ export function ProvisionalMark({ className = "" }: { className?: string }) {
   return (
     <span
       className={
-        "inline-flex h-[13px] w-[13px] shrink-0 items-center justify-center border border-parchment-400/40 bg-[color:var(--bg-zebra)] align-middle text-[11px] font-bold leading-none text-parchment-400 " +
+        // 15px box: the mark carries 12px type now (the 11px it used to carry
+        // was under the design system's caption floor), and a 13px box clipped
+        // the glyph against its own border.
+        "inline-flex h-[15px] w-[15px] shrink-0 items-center justify-center border border-parchment-400/40 bg-[color:var(--bg-zebra)] align-middle text-[12px] font-bold leading-none text-parchment-400 " +
         className
       }
       title="Provisional rating: still settling after a few more rated games"

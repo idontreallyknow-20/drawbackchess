@@ -153,7 +153,7 @@ export function MoveList({
         </p>
       )}
       {rows.length === 0 && (
-        <div className="min-h-0 text-parchment-300/60 text-sm">No moves yet.</div>
+        <div className="min-h-0 text-parchment-400 text-sm">No moves yet.</div>
       )}
       <div
         className={
@@ -169,7 +169,7 @@ export function MoveList({
               (compact ? "grid-cols-[1.6rem_minmax(0,1fr)_minmax(0,1fr)]" : "grid-cols-[2.2rem_1fr_1fr]")
             }
           >
-            <span className="text-parchment-400/70">{row.num}.</span>
+            <span className="text-parchment-400">{row.num}.</span>
             {row.w ? (
               <MoveCell
                 ply={row.w.ply}
@@ -180,7 +180,7 @@ export function MoveList({
                 {row.w.san}
               </MoveCell>
             ) : (
-              <span className="px-1 py-0.5 text-parchment-400/50 select-none">...</span>
+              <span className="px-1 py-0.5 text-parchment-500 select-none">...</span>
             )}
             {row.b ? (
               <MoveCell
@@ -220,7 +220,10 @@ function HistoryButton({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className="h-11 sm:h-7 inline-flex items-center justify-center border border-parchment-300/10 bg-white/[0.03] text-parchment-200 hover:border-gold/50 hover:text-gold-leaf disabled:opacity-35 disabled:cursor-not-allowed transition"
+      // 28px nav buttons are a mouse affordance, not a width one: on a
+      // 1024x768 tablet the `sm:h-7` shrink measured 25px against the 44px hit
+      // floor. Tighten on a fine pointer instead, so touch keeps its target.
+      className="h-[44px] [@media(pointer:fine)]:h-7 inline-flex items-center justify-center border border-parchment-300/10 bg-white/[0.03] text-parchment-200 hover:border-gold/50 hover:text-gold-leaf disabled:opacity-35 disabled:cursor-not-allowed transition"
     >
       {children}
     </button>

@@ -48,10 +48,14 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
         >
           <div
             style={{
-              fontSize: "10px",
-              letterSpacing: "0.22em",
+              // 12px is the design system's caption floor, and #8c8c8c clears
+              // 4.60:1 on this panel where #7f7d77 measured 3.76:1. The colours
+              // are literals on purpose: this boundary paints when the app
+              // stylesheet may not have loaded, so it cannot use tokens.
+              fontSize: "12px",
+              letterSpacing: "0.08em",
               textTransform: "uppercase",
-              color: "#7f7d77",
+              color: "#8c8c8c",
             }}
           >
             Well, that broke

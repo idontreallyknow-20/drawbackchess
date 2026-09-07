@@ -1,13 +1,12 @@
 // Branded route skeleton for /game and /game/[id]: a board-shaped shimmer
 // with player rows and a side panel, shown while the game page chunk loads.
+
+import { SkeletonHeader } from "@/components/ui/Skeleton";
+
 export default function Loading() {
   return (
     <main className="min-h-screen pb-16">
-      <div className="flex items-center justify-between border-b border-white/5 px-5 py-3 sm:px-6">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.svg" alt="Loading" width={26} height={26} className="animate-pulse" />
-        <div className="skeleton h-8 w-28 rounded-[1px]" style={{ borderRadius: 1 }} />
-      </div>
+      <SkeletonHeader />
       <section className="mx-auto max-w-6xl px-5 py-6 sm:px-6">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div className="mx-auto w-full max-w-2xl">

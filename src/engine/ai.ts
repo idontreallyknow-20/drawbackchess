@@ -1,5 +1,12 @@
 import { findKing, generateMoves, makeMove } from "./board";
-import { NerfGame, legalMoves } from "./game";
+import {
+  NerfGame,
+  SearchBuffs,
+  applySearchAugments,
+  buildSearchBuffs,
+  legalMoves,
+  markAugmentSpent,
+} from "./game";
 import { triggersOwnNerfLoss } from "./moveSafety";
 import { BoardState, Color, Move, PieceType } from "./types";
 
@@ -137,25 +144,61 @@ type SearchState = {
   // first and playing strength is unchanged.
   nodes: number;
   nodeCap: number;
+  // Move-granting buffs held at the root, prepared per ply so interior nodes
+  // see the same augmented move set legalMoves produces (backlog A13). Null
+  // whenever nobody holds such a card, which is the common case and keeps the
+  // pre-existing search path byte-for-byte unchanged.
+  buffs: SearchBuffs | null;
 };
 
 // Rough search throughput used to convert a time budget into a node cap.
 // Measured 2026-07-10 on hard-level midgame searches: ~450 nodes/ms median
 // (317-727 across 30 samples), so 1000 deliberately overshoots ~2x — on any
-// runtime with a working clock the budget*2 clock net below fires first and
+// runtime with a working clock the clock net in negamax fires first and
 // playing strength is unchanged; the node cap only bites where the clock is
-// frozen, containing a runaway search to roughly 2x the nominal budget's
-// worth of real CPU. Precision does not matter, only the order of magnitude.
+// frozen. Precision does not matter, only the order of magnitude.
+//
+// The cap is deliberately UNCHANGED by the 2026-09 hard-deadline fix: for any
+// given budget it allows exactly the node count it always did, so the frozen-
+// clock (Durable Object) path behaves identically and nothing about the
+// backstop is loosened. What changed is its margin over the clock. Before, the
+// clock aborted at 2x budget and the cap at 2000 nodes per ms-of-budget, so the
+// cap bit first only above ~1000 nodes/ms; now the clock aborts at 1x budget,
+// so it bites first below ~2000 nodes/ms — an even wider margin, in the safe
+// direction. On a frozen clock the cap still contains a runaway search to
+// 2000 nodes per ms-of-budget, i.e. ~4.4x the budget's worth of real CPU at the
+// measured 450 nodes/ms. Tightening THAT is a separate, strength-affecting
+// change to the house tiers' local fallback and does not belong in a fix whose
+// whole point is that the numbers should stop moving on their own.
 const NODES_PER_MS = 1000;
 
-function newSearchState(extended: boolean, budgetMs = 0): SearchState {
+function newSearchState(extended: boolean, budgetMs = 0, buffs: SearchBuffs | null = null): SearchState {
   return {
     killers: [],
     history: new Int32Array(64 * 64),
     extended,
     nodes: 0,
     nodeCap: budgetMs > 0 ? budgetMs * 2 * NODES_PER_MS : 0,
+    buffs,
   };
+}
+
+// Quiescence depth, and therefore how far past `maxDepth` a granted move can
+// still turn up. The per-ply augment table has to cover both.
+const QUIESCE_DEPTH = 6;
+
+// Interior move generation. Identical to `generateMoves` unless the side to
+// move holds a move-granting card, in which case it also runs that card's
+// `augmentMoves` hook, which is the whole point of A13.
+function genMoves(board: BoardState, state: SearchState, ply: number, spentMask: number): Move[] {
+  const moves = generateMoves(board);
+  if (state.buffs) applySearchAugments(state.buffs, board, ply, spentMask, moves);
+  return moves;
+}
+
+// A granted move consumes its card's charge for the rest of THIS line only.
+function childMask(state: SearchState, ply: number, m: Move, spentMask: number): number {
+  return state.buffs ? markAugmentSpent(state.buffs, ply, m, spentMask) : spentMask;
 }
 
 // MVV-LVA for captures (most valuable victim taken by least valuable attacker
@@ -215,10 +258,17 @@ type LevelProfile = {
   extendedEval: boolean;
 };
 
+// `budgetMs` here is WALL TIME the search may spend, and since 2026-09 that is
+// the truth rather than half of it: negamax used to abort at `budget * 2`, so
+// medium's old 700 really cost 1400ms and hard's old 2000 really cost 4000ms.
+// These numbers are doubled from those old nominals for exactly that reason —
+// the practice bot thinks for the same length of time it always did, the label
+// on the tin now matches the tin. Do not read the doubling as a strength buff;
+// reverting it would be a strength CUT.
 const LEVELS: Record<AILevel, LevelProfile> = {
   easy: { maxDepth: 1, budgetMs: 0, rootNoise: 120, blunderChance: 0.22, extendedEval: false },
-  medium: { maxDepth: 3, budgetMs: 700, rootNoise: 0, blunderChance: 0, extendedEval: false },
-  hard: { maxDepth: 12, budgetMs: 2000, rootNoise: 0, blunderChance: 0, extendedEval: true },
+  medium: { maxDepth: 3, budgetMs: 1400, rootNoise: 0, blunderChance: 0, extendedEval: false },
+  hard: { maxDepth: 12, budgetMs: 4000, rootNoise: 0, blunderChance: 0, extendedEval: true },
 };
 
 // The search shape a level runs at by default (depth + whether leaf eval uses
@@ -232,9 +282,18 @@ export function defaultSearchShape(level: AILevel): { maxDepth: number; extended
 // Search budget for a level, capped to a slice of the bot's remaining clock
 // so the bot spends time like a human player and can never think its whole
 // bank away in fast time controls.
+//
+// That sentence is now true as written. It was not before: the returned number
+// was a budget the search was allowed to double, so a bot at the 60ms floor in
+// a 1+0 game spent 120ms of a clock it did not have, and every clamp here was
+// half as tight as it read. `budgetMs` is a hard wall-clock deadline in the
+// search (see negamax), so a tenth of the remaining clock is a tenth of the
+// remaining clock.
 export function aiBudgetMs(level: AILevel, remainingClockMs?: number): number {
   const base = LEVELS[level].budgetMs;
   if (remainingClockMs == null) return base;
+  // `base || 300` covers easy, whose profile budget is 0 because it never
+  // searches; the value only reaches a caller's bookkeeping, not a search.
   return Math.max(60, Math.min(base || 300, remainingClockMs / 10));
 }
 
@@ -280,18 +339,51 @@ type RankedRootMove = { move: Move; scoreCp: number };
 // game server's house players so a bot-vs-bot move never blocks the (single
 // threaded) Durable Object long enough to stall live sockets or the lobby,
 // and by the client so the bot's thinking never exceeds its remaining clock.
+// It is a HARD wall-clock deadline: the search returns within it (give or take
+// the cost of one node), not within twice it. On a runtime whose clock is
+// frozen mid-compute — Cloudflare Workers, i.e. the DO's local fallback — the
+// node cap is what bounds the search instead; see NODES_PER_MS.
 // `weaken` (house bots only) degrades move CHOICE for a realistic handicap;
 // see WeakenParams.
+/**
+ * Diagnostics an interested caller can ask for. Optional and write-only, so
+ * nothing about the search changes when it is absent.
+ *
+ * `depth` exists because "the bot played worse while holding this card" and
+ * "the card is bad" look identical from a win rate, and the difference is
+ * whether the search got shallower. A card that widens the legal move set
+ * buys fewer plies out of a fixed time budget, and the win-rate harness runs
+ * at a 60ms budget, so that is not a hypothetical.
+ */
+export interface SearchStats {
+  /** The deepest ply the search actually completed, not the depth it aimed at. */
+  depth: number;
+  /** Root moves considered, which is the branching factor being paid for. */
+  rootMoves: number;
+  /**
+   * Nodes visited across every deepening iteration. Depth alone cannot tell a
+   * search that got cheaper from one that got shallower at the same budget,
+   * which is the question A13's per-node augment step has to answer.
+   */
+  nodes?: number;
+}
+
 export function pickAIMove(
   game: NerfGame,
   level: AILevel,
   overrideBudgetMs?: number,
   weaken?: WeakenOptions,
+  stats?: SearchStats,
 ): Move | null {
   const all = legalMoves(game);
   if (!all.length) return null;
   const safe = all.filter((m) => !isSelfLosing(game, m));
   const moves = safe.length ? safe : all;
+  if (stats) {
+    stats.rootMoves = moves.length;
+    stats.depth = 0;
+    stats.nodes = 0;
+  }
 
   const me = game.board.turn;
   const cfg = LEVELS[level];
@@ -327,13 +419,17 @@ export function pickAIMove(
   const p = weaken?.params;
   const sampling = !!p && (p.topK > 1 || p.temperatureCp > 0 || p.evalNoiseCp > 0);
 
+  // The root already sees granted moves (legalMoves ran the augments above);
+  // this is what lets every node BELOW the root see them too.
+  const searchBuffs = buildSearchBuffs(game, maxDepth + QUIESCE_DEPTH + 1);
+
   if (sampling && weaken) {
-    const ranked = rankedRoot(game, moves, opp, maxDepth, budget, extended);
+    const ranked = rankedRoot(game, moves, opp, maxDepth, budget, extended, searchBuffs);
     return sampleWeakened(ranked, weaken.params, weaken.random);
   }
 
   const start = Date.now();
-  const state = newSearchState(extended, budget);
+  const state = newSearchState(extended, budget, searchBuffs);
 
   let bestMove: Move | null = null;
 
@@ -349,7 +445,10 @@ export function pickAIMove(
 
     for (const m of orderMoves(moves, bestMove, state, 0)) {
       const nb = makeMove(game.board, m);
-      const score = -negamax(nb, d - 1, -beta, -alpha, opp, start, budget, state, 1);
+      const score = -negamax(
+        nb, d - 1, -beta, -alpha, opp, start, budget, state, 1,
+        childMask(state, 0, m, 0),
+      );
       if (Number.isNaN(score)) {
         timedOut = true;
         break;
@@ -361,7 +460,10 @@ export function pickAIMove(
       if (score > alpha) alpha = score;
     }
 
-    if (!timedOut && depthBest) bestMove = depthBest;
+    if (!timedOut && depthBest) {
+      bestMove = depthBest;
+      if (stats) stats.depth = d;
+    }
 
     // A timed-out depth means the budget (clock or node cap) is spent; going
     // deeper would only burn more nodes to time out again immediately.
@@ -370,6 +472,7 @@ export function pickAIMove(
     if (d >= 1 && Date.now() - start > budget) break;
   }
 
+  if (stats) stats.nodes = state.nodes;
   return bestMove ?? moves[0];
 }
 
@@ -388,9 +491,10 @@ function rankedRoot(
   maxDepth: number,
   budget: number,
   extended: boolean,
+  searchBuffs: SearchBuffs | null = null,
 ): RankedRootMove[] {
   const start = Date.now();
-  const state = newSearchState(extended, budget);
+  const state = newSearchState(extended, budget, searchBuffs);
   let ranked: RankedRootMove[] = moves.map((move) => ({ move, scoreCp: 0 }));
   let priority: Move | null = null;
 
@@ -401,7 +505,10 @@ function rankedRoot(
       const nb = makeMove(game.board, m);
       // Full window (-Inf, +Inf): no root-level alpha narrowing, so each move
       // gets an exact score rather than a bound.
-      const score = -negamax(nb, d - 1, -Infinity, Infinity, opp, start, budget, state, 1);
+      const score = -negamax(
+        nb, d - 1, -Infinity, Infinity, opp, start, budget, state, 1,
+        childMask(state, 0, m, 0),
+      );
       if (Number.isNaN(score)) {
         timedOut = true;
         break;
@@ -473,6 +580,11 @@ export interface BoardAnalysis {
 // Plain-chess analysis for the analysis board: same iterative-deepening
 // negamax as the hard bot, but over a bare BoardState (no nerfs) and
 // returning the score alongside the move so callers can drive an eval bar.
+//
+// `budgetMs` is a hard wall-clock deadline (see negamax). It used to be a
+// number the search doubled, which is why `analyzeBoard(board, 300)` on
+// /analysis was a measured 601ms main-thread block; a caller that wants 600ms
+// of search now writes 600.
 export function analyzeBoard(board: BoardState, budgetMs = 300, maxDepth = 10): BoardAnalysis {
   const moves = generateMoves(board);
   const me = board.turn;
@@ -529,11 +641,36 @@ function negamax(
   budget: number,
   state: SearchState,
   ply: number,
+  spentMask = 0,
 ): number {
   // Node cap first: on Workers the clock check below never fires (Date.now()
   // is frozen during synchronous compute), so this is the only abort there.
-  if (state.nodeCap > 0 && ++state.nodes > state.nodeCap) return TIMEOUT_SENTINEL;
-  if (budget > 0 && Date.now() - start > budget * 2) return TIMEOUT_SENTINEL;
+  // Counted unconditionally (the cap test is unchanged) so `SearchStats.nodes`
+  // is meaningful even for an uncapped search.
+  state.nodes++;
+  if (state.nodeCap > 0 && state.nodes > state.nodeCap) return TIMEOUT_SENTINEL;
+  // `budget` is a HARD deadline: the search may not spend more wall-clock time
+  // than the caller asked for. It used to abort at `budget * 2`, which — since
+  // the deepening loops only check the clock BETWEEN depths — let a depth that
+  // started a millisecond under the budget run to twice it. Measured, that was
+  // not an edge case: at every budget the median search landed near the 2x
+  // abort and `analyzeBoard(board, 300)` cost 601ms.
+  //
+  // The 2x also silently falsified every promise built on this number, and
+  // there are several: aiBudgetMs's "can never think its whole bank away"
+  // clamp, the house tiers' margin under the engine service's 3000ms timeout,
+  // and the DO-safe search ceiling. One tight deadline makes all of them true
+  // at once.
+  //
+  // The argument for the old headroom was that aborting mid-depth throws the
+  // whole depth away. Measured over 27 midgame positions (scripts/
+  // bench-search-deadline.ts), it buys nothing: at an equal WALL CEILING the
+  // hard deadline reaches exactly the same depth (asked 700/abort 1400 ->
+  // depth 4.8 avg, max 6; asked 1400/abort 1400 -> depth 4.8 avg, max 6), it
+  // just reaches it with a wall time the caller can predict. Callers who want
+  // the deeper search now ask for the bigger number, and get charged for it
+  // honestly.
+  if (budget > 0 && Date.now() - start > budget) return TIMEOUT_SENTINEL;
 
   // Terminal king captures score from the side to move's perspective (like
   // quiesce below). Scoring them relative to the search root inverted the
@@ -542,14 +679,17 @@ function negamax(
   const bk = findKing(board, "b");
   if (wk == null) return side === "w" ? -100000 : 100000;
   if (bk == null) return side === "b" ? -100000 : 100000;
-  if (depth === 0) return quiesce(board, alpha, beta, side, 6, state);
+  if (depth === 0) return quiesce(board, alpha, beta, side, QUIESCE_DEPTH, state, ply, spentMask);
 
-  const moves = orderMoves(generateMoves(board), null, state, ply);
+  const moves = orderMoves(genMoves(board, state, ply, spentMask), null, state, ply);
   const opp: Color = side === "w" ? "b" : "w";
   let best = -Infinity;
   for (const m of moves) {
     const nb = makeMove(board, m);
-    const v = -negamax(nb, depth - 1, -beta, -alpha, opp, start, budget, state, ply + 1);
+    const v = -negamax(
+      nb, depth - 1, -beta, -alpha, opp, start, budget, state, ply + 1,
+      childMask(state, ply, m, spentMask),
+    );
     if (Number.isNaN(v)) return TIMEOUT_SENTINEL;
     if (v > best) best = v;
     if (best > alpha) alpha = best;
@@ -573,8 +713,11 @@ function quiesce(
   side: Color,
   depth: number,
   state: SearchState,
+  ply: number,
+  spentMask: number,
 ): number {
-  if (state.nodeCap > 0 && ++state.nodes > state.nodeCap) return TIMEOUT_SENTINEL;
+  state.nodes++;
+  if (state.nodeCap > 0 && state.nodes > state.nodeCap) return TIMEOUT_SENTINEL;
   const wk = findKing(board, "w");
   const bk = findKing(board, "b");
   if (wk == null) return side === "w" ? -100000 : 100000;
@@ -585,11 +728,17 @@ function quiesce(
   if (alpha < standPat) alpha = standPat;
   if (depth === 0) return alpha;
 
-  const captures = orderMoves(generateMoves(board).filter((m) => m.captured));
+  // A buff-granted move can be a capture, so the augment step belongs here too
+  // or the quiescence search still resolves the position as if the card were
+  // not held.
+  const captures = orderMoves(genMoves(board, state, ply, spentMask).filter((m) => m.captured));
   const opp: Color = side === "w" ? "b" : "w";
   for (const m of captures) {
     const nb = makeMove(board, m);
-    const score = -quiesce(nb, -beta, -alpha, opp, depth - 1, state);
+    const score = -quiesce(
+      nb, -beta, -alpha, opp, depth - 1, state, ply + 1,
+      childMask(state, ply, m, spentMask),
+    );
     if (Number.isNaN(score)) return TIMEOUT_SENTINEL;
     if (score >= beta) return beta;
     if (score > alpha) alpha = score;

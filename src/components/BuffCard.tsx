@@ -1,6 +1,6 @@
 "use client";
 
-import { createElement } from "react";
+import { createElement, useId } from "react";
 import { Buff, turnCost } from "@/engine/buff";
 import { COMBO_TAGS, COMBO_TAG_LABELS } from "@/engine/comboTags";
 import { Tier } from "@/engine/nerf";
@@ -8,6 +8,7 @@ import { cardFaceIcon } from "@/lib/cardIcon";
 import { TIER_LABEL, TIER_ROMAN } from "@/lib/tiers";
 import { DraftPreview } from "@/components/DraftPreview";
 import { GlossaryText } from "@/components/GlossaryText";
+import { SrSep } from "@/components/SrSep";
 import { TurnCostBadge } from "@/components/TurnCostBadge";
 import {
   Castle,
@@ -63,6 +64,12 @@ interface Props {
   compact?: boolean;
   /** Soft accent glow: this buff can be used right now. */
   glow?: boolean;
+  /** Picker surfaces only (the draft): this card is the current selection.
+   * Emitted as `aria-pressed` on the card button, so the choice is announced
+   * as a toggle state instead of being inferable only from the commit button
+   * renaming itself. Leave undefined on cards that are not a choice (codex,
+   * dock, the opponent's viewer): they are plain buttons, not toggles. */
+  selected?: boolean;
   /** Draft picker only: stagger this card's entrance by the given delay (ms).
    * Omit to skip the entrance animation (dock / modal contexts). */
   enterDelayMs?: number;
@@ -73,7 +80,7 @@ interface Props {
   preview?: boolean;
 }
 
-export function BuffCard({ buff, tier, status, spent, nullified, onClick, compact, glow, enterDelayMs, preview }: Props) {
+export function BuffCard({ buff, tier, status, spent, nullified, onClick, compact, glow, selected, enterDelayMs, preview }: Props) {
   const t = tier ?? buff.tier;
   const dead = spent || nullified;
   // Per-card icon: every buff in the library gets a GLOBALLY UNIQUE lucide
@@ -83,8 +90,13 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
   // Selected (not defined) at render time, so render via createElement rather
   // than binding a capitalized local and using it as a JSX component.
   const catIcon = cardFaceIcon(buff.id, buff.category, buff.icon) ?? CATEGORY_ICON[buff.category];
+  // A pickable card carries its own control (see the stretched target at the
+  // bottom of the face). `faceId` labels that control with the whole card.
+  const pickable = !!onClick && !dead;
+  const faceId = useId();
   const body = (
     <div
+      id={pickable ? faceId : undefined}
       style={enterDelayMs != null ? { animationDelay: `${enterDelayMs}ms` } : undefined}
       className={
         // group/card (a NAMED group, so ancestor `group` wrappers in docks /
@@ -95,6 +107,8 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
         // one draft offer lands the same height (description stretches, tier
         // rows and bottoms align). Compact rows keep their natural height.
         (compact ? "p-3 " : "flex h-full flex-col p-4 ") +
+        // Was on the old wrapping <button>; the face is the target now.
+        (pickable ? "touch-manipulation " : "") +
         (dead ? "opacity-45 " : "") +
         (glow && !dead ? "ring-1 ring-gold/40 " : "") +
         (onClick && !dead
@@ -106,6 +120,50 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           : "")
       }
     >
+      {/* THE PICK TARGET.
+          This used to be a <button> WRAPPING the whole card face, and the rule
+          text inside it is rendered by GlossaryText, which turns one to five
+          words per card into `span[role="button"] tabIndex=0` chips. A control
+          inside a control is invalid HTML and invalid ARIA (the children of a
+          button are presentational), and it had a measured cost: the term's
+          click handler stops propagation so a tap meaning "explain this" does
+          not also press the card, which meant a click on the middle of a draft
+          card -- the rule text, the part you read while deciding -- reached
+          NOTHING. The card stayed unselected and the commit button stayed
+          disabled. DraftOverlay works around that with a capture-phase pick.
+
+          The card face is now a plain container and the control is this
+          stretched target: a real <button>, absolutely filling the face, so
+          the whole card is still one 44px+ hit area and still keyboard
+          operable with Enter / Space. It takes its accessible name from the
+          face via aria-labelledby, so the announcement is unchanged, SrSep
+          punctuation and all (measured: identical string before and after).
+
+          It is FIRST in the face on purpose, so the tab order is the one the
+          wrapping button had: this card, then the glossary chips in its rule
+          text, then the next card. Being first is only safe because the target
+          carries a z-index: several blocks below are `relative` (the header
+          row, the flavour line) and would otherwise paint over it and eat the
+          click. The chips carry the same rung and come later in the DOM, so
+          they stay above it and keep their own hover, long press, click and
+          tab stop -- and now that they are no longer inside a button, their
+          role is finally legitimate. The watermark and the preview medallion
+          are both `pointer-events: none`, so neither can swallow a pick.
+
+          aria-pressed stays here: the selection state was otherwise invisible
+          to assistive tech (the only signal was the commit button renaming
+          itself somewhere else on the screen). Undefined, not false, on cards
+          that are not a choice, so a plain card button is never announced as
+          an unpressed toggle. */}
+      {pickable && (
+        <button
+          type="button"
+          onClick={onClick}
+          aria-pressed={selected}
+          aria-labelledby={faceId}
+          className="card-pick-target"
+        />
+      )}
       {/* Face watermark: a large glyph anchored bottom-right, behind the
           text. Faint by default; hovering the card brightens it in the tier
           (severity) color and nudges the scale. Transitions only (no
@@ -139,8 +197,12 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           <div className={`font-display leading-tight tier-${t} ${compact ? "text-sm" : "text-lg"}`}>
             {buff.name}
           </div>
+          {/* Name, then the meta row, then the tier badge: three adjacent runs
+              of text that a screen reader would otherwise read as one word.
+              See SrSep. */}
+          <SrSep text=". " />
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 text-[10px] text-parchment-400">
+            <span className="inline-flex items-center gap-1 text-[12px] text-parchment-400">
               {/* Chip icon: parchment tone at rest; card hover tints it in the
                   tier color via --tier-rgb (set by the root's tier-bg class). */}
               {createElement(catIcon, {
@@ -151,22 +213,32 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
               })}
               {CATEGORY_LABEL[buff.category]}
             </span>
+            <SrSep />
             <TurnCostBadge cost={turnCost(buff)} />
           </div>
         </div>
+        <SrSep text=". " />
         <span
-          className={`shrink-0 font-display font-bold px-2 py-0.5 rounded-[1px] tier-bg-${t} tier-${t} ${compact ? "border text-[10px]" : "border-[1.5px] text-[13px]"}`}
+          className={`shrink-0 font-display font-bold px-2 py-0.5 rounded-[1px] tier-bg-${t} tier-${t} ${compact ? "border text-[12px]" : "border-[1.5px] text-[13px]"}`}
           title={`Buff power tier ${TIER_ROMAN[t]} (${t} of 8): ${TIER_LABEL[t]}`}
         >
+          {/* "I" on its own is a letter, not a rank. The numeral stays the
+              visual, the word rides along for the announcement. */}
+          <span className="sr-only">Tier </span>
           {TIER_ROMAN[t]}
         </span>
       </div>
+      {/* Compact rows drop the tier-label ornament below, so they need the
+          separator here or the rule text runs straight into the numeral. */}
+      {compact && <SrSep text=". " />}
       {/* Difficulty ornament: the tier label between hairline rules, the same
           severity treatment nerf cards wear, so both libraries read alike.
           Dropped in the compact draft/dock cards where space is tight. */}
       {!compact && (
-        <div className="rule-ornament my-2.5 text-[10px]">
+        <div className="rule-ornament my-2.5 text-[12px]">
+          <SrSep />
           <span className="font-display">{TIER_LABEL[t]}</span>
+          <SrSep text=". " />
         </div>
       )}
       {/* flex-1 on full cards: the description absorbs the height difference,
@@ -180,8 +252,13 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           below the rule text in the same quiet register as the footnotes. Full
           cards only: a dock row or a compact pick shows the rule and nothing
           else. */}
+      {/* 13px, not 12: this is real sentences, and the project rule is that a
+          12px face is for bare tokens (the Movement / Item chips, the tier
+          word in the ornament), never for body copy someone has to read while
+          deciding. Same size as the rule text above it; the colour, not the
+          size, is what keeps advice quieter than rules. */}
       {!compact && buff.tip && (
-        <p className="mt-2 text-[10.5px] leading-snug text-parchment-400">
+        <p className="mt-2 text-[13px] leading-snug text-parchment-400">
           <span className="text-parchment-300">Tip</span>{" "}
           <GlossaryText text={buff.tip} />
         </p>
@@ -193,7 +270,7 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           not from a rejected move. Keyed off the description so future shield
           cards inherit the note with zero per-card work. */}
       {!compact && /uncapturable|cannot be captured|can't be captured|shield|sanctuary|warded/i.test(buff.description) && (
-        <p className="mt-2 text-[10.5px] leading-snug text-parchment-400">
+        <p className="mt-2 text-[13px] leading-snug text-parchment-400">
           Note: a piece that cannot be captured may not capture the king while its
           protection lasts. You must expose a piece to win.
         </p>
@@ -202,34 +279,32 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           card from these families while you hold another unspent one, and the
           rule must be readable on the card face, never silent. */}
       {!compact && (COMBO_TAGS[buff.id]?.length ?? 0) > 0 && (
-        <p className="mt-2 text-[10.5px] leading-snug text-parchment-400">
+        <p className="mt-2 text-[13px] leading-snug text-parchment-400">
           Exclusive: {COMBO_TAGS[buff.id]!.map((t) => COMBO_TAG_LABELS[t] ?? t).join(", ")}. While
           you hold this unspent, no other card of the same family is offered to you.
         </p>
       )}
       {/* Flavor line: the card's voice, quoted and dim, TCG-style. Full cards
           only; dock rows and compact picks stay all-business. */}
+      {/* The card's voice: a whole sentence, so it rides at 13px with the rest
+          of the prose on the face. Italic and dim is what marks it as flavour;
+          shrinking it below body size only made it hard to read. */}
       {!compact && buff.flavor && (
-        <p className="relative mt-2 text-[11px] italic leading-snug text-parchment-400">
+        <p className="relative mt-2 text-[13px] italic leading-snug text-parchment-400">
           &ldquo;{buff.flavor}&rdquo;
         </p>
       )}
       {status && !dead && (
-        <div className="mt-1.5 text-[10px] text-gold/80">{status}</div>
+        <div className="mt-1.5 text-[12px] text-gold">{status}</div>
       )}
       {nullified && (
-        <div className="mt-1.5 text-[10px] text-oxblood-glow">Nullified</div>
+        <div className="mt-1.5 text-[12px] text-oxblood-glow">Nullified</div>
       )}
       {spent && !nullified && (
-        <div className="mt-1.5 text-[10px] text-parchment-400">Used</div>
+        <div className="mt-1.5 text-[12px] text-parchment-400">Used</div>
       )}
     </div>
   );
 
-  if (!onClick || dead) return body;
-  return (
-    <button type="button" onClick={onClick} className="block h-full w-full touch-manipulation text-left">
-      {body}
-    </button>
-  );
+  return body;
 }

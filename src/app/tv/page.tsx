@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight, Eye, Maximize2, Radio, X } from "lucide-reac
 // stack and card database (~26k lines + framer-motion + the VFX engine) out of
 // the /tv route bundle, the dominant cause of slow TV load (~1.6MB to a fraction).
 import { ClockPill } from "@/components/ClockPill";
+import { useZenHotkey } from "@/lib/useZenMode";
 import { HeroBoard } from "@/components/HeroBoard";
 import { ModeBadge } from "@/components/ModeBadge";
 import { Piece } from "@/components/Pieces";
@@ -74,7 +75,7 @@ function PlayerIdentity({
   return (
     <Link
       href={`/u/${encodeURIComponent(name)}`}
-      className="group flex min-h-[44px] min-w-0 items-center gap-2 sm:min-h-0"
+      className="group flex min-h-[44px] min-w-0 items-center gap-2 [@media(pointer:fine)]:min-h-0"
       title={`View ${name}'s profile`}
     >
       <PlayerAvatar name={name} avatar={avatar} size={size} />
@@ -131,6 +132,11 @@ export default function TvPage() {
 }
 
 function TvView() {
+  // Watching is the surface zen suits best: there is nothing to click, so the
+  // chrome is pure overhead. The site header and footer stand down globally
+  // under html[data-zen], and the exit control is rendered by the header, so
+  // this is only the key binding.
+  useZenHotkey();
   const searchParams = useSearchParams();
   const rawMode = searchParams.get("mode");
   const modeFilter: DraftMode | null =
@@ -369,7 +375,7 @@ function TvView() {
           <button
             type="button"
             onClick={reloadLobby}
-            className="mt-5 inline-flex min-h-[44px] items-center rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-4 py-2 font-display text-[13px] font-medium text-parchment-200 transition-colors hover:bg-[color:var(--bg-raised)] hover:text-parchment-100 sm:min-h-[36px]"
+            className="mt-5 inline-flex min-h-[44px] items-center rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-4 py-2 font-display text-[13px] font-medium text-parchment-200 transition-colors hover:bg-[color:var(--bg-raised)] hover:text-parchment-100 [@media(pointer:fine)]:min-h-[36px]"
           >
             Retry
           </button>
@@ -392,12 +398,12 @@ function TvView() {
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
             <LinkButton tone="leaf"
               href="/lobby"
-              className="px-4 py-2 text-[13px] font-semibold sm:min-h-[36px]">
+              className="px-4 py-2 text-[13px] font-semibold [@media(pointer:fine)]:min-h-[36px]">
               Find a match
             </LinkButton>
             <LinkButton tone="ghost"
               href="/play"
-              className="px-4 py-2 text-[13px] sm:min-h-[36px]">
+              className="px-4 py-2 text-[13px] [@media(pointer:fine)]:min-h-[36px]">
               Play a bot
             </LinkButton>
           </div>
@@ -502,7 +508,10 @@ function TvView() {
                   href={channel.href}
                   aria-current={channel.active ? "page" : undefined}
                   className={
-                    "flex-1 rounded-none px-3 py-1.5 text-center font-display text-[13px] font-semibold transition-colors " +
+                    // 30px tall at every width: py-1.5 is 0.375rem, and at a 14px root that is
+                    // 5.25px a side. These are the channel switcher, the main control
+                    // on the page.
+                    "flex min-h-[44px] flex-1 items-center justify-center rounded-none px-3 py-1.5 text-center font-display text-[13px] font-semibold transition-colors [@media(pointer:fine)]:min-h-0 " +
                     (channel.active
                       ? "bg-[rgb(var(--accent-rgb)/0.16)] text-gold-leaf"
                       : "text-parchment-400 hover:bg-[color:var(--bg-raised)] hover:text-parchment-100")
@@ -534,7 +543,7 @@ function TvView() {
                     <button
                       type="button"
                       onClick={reloadLobby}
-                      className="rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-3 py-1.5 text-[12px] font-medium text-parchment-200 transition-colors hover:bg-[color:var(--bg-raised)] hover:text-parchment-100"
+                      className="inline-flex min-h-[44px] items-center rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-3 py-1.5 text-[13px] font-medium text-parchment-200 transition-colors hover:bg-[color:var(--bg-raised)] hover:text-parchment-100 [@media(pointer:fine)]:min-h-[32px]"
                     >
                       Retry
                     </button>
@@ -635,7 +644,7 @@ function TvView() {
             type="button"
             onClick={() => setFullscreen(false)}
             aria-label="Exit fullscreen"
-            className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-none border border-[color:var(--edge-strong)] bg-[color:var(--bg-base)] text-parchment-100 transition-colors hover:border-[color:var(--edge-strong)] hover:text-gold-leaf"
+            className="absolute right-4 top-4 grid h-[44px] w-[44px] place-items-center rounded-none border border-[color:var(--edge-strong)] bg-[color:var(--bg-base)] text-parchment-100 transition-colors hover:border-[color:var(--edge-strong)] hover:text-gold-leaf"
           >
             <X size={20} aria-hidden />
           </button>

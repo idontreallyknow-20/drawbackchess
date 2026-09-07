@@ -26,9 +26,37 @@ body {
   --site-hue: 37deg;
   --bg-base: hsl(var(--site-hue) 10% 8%);     /* page   (Lichess --c-bg-page) */
   --bg-panel: hsl(var(--site-hue) 7% 14%);    /* box    (--c-bg) */
-  --bg-raised: hsl(var(--site-hue) 7% 22%);   /* low    (--c-bg-low) */
-  --bg-hover: hsl(var(--site-hue) 7% 27%);    /* a menu row under the pointer: one rung above raised */
-  --bg-zebra: hsl(var(--site-hue) 5% 19%);    /* zebra  (--c-bg-zebra) */
+  /* Raised was 22% lightness, which is NOT what design-system.md section 1
+     documents (#302e2c). Base and panel matched their documented values
+     exactly; only this rung had drifted, and it drifted in the direction that
+     costs contrast. Muted body text on a raised surface measured 3.94:1
+     against #3c3934 and measures 4.63:1 against the documented value, so the
+     drift alone was the difference between passing and failing AA on every
+     menu, modal, popover and hovered row in the app. The doc says a page that
+     deviates is wrong and either the page or the doc must change; the doc was
+     right, so the code moves. */
+  --bg-raised: hsl(var(--site-hue) 7% 18%);   /* low    (--c-bg-low), #302e2c */
+  /* Hover follows it down by the same amount, keeping the one-rung step that
+     makes a hovered row readable AS hovered. It is deliberately still short of
+     AA for muted text (3.94:1): a hover fill is transient and the text sitting
+     on it is body weight, not muted. Muted text on a permanently hovered
+     surface would be the bug, and the token cannot prevent that on its own. */
+  --bg-hover: hsl(var(--site-hue) 7% 22%);    /* a menu row under the pointer: one rung above raised */
+  /* Zebra is the alternating row/tile tint, and it had the same drift the
+     raised rung had, in the same costly direction: it shipped at 19% lightness,
+     ABOVE the 18% raised rung it is supposed to sit under, so a tinted tile was
+     lighter than the menus and modals of the app. Measured on the running site,
+     that one percent was the largest single contrast failure left: muted body
+     text (`parchment-400`, the floor named in section 10 of the design system)
+     measured 4.44:1 on it across 269 rendered elements — the codex rows, the
+     lobby chips, every glossary <details> — a hair under AA, everywhere at
+     once. Dropped one rung to sit BETWEEN the panel and the raised step, which
+     is where a zebra tint belongs (page 8 < panel 14 < zebra 16 < raised 18 <
+     hover 22). The same text now measures 4.95:1 on it, and no rung moved past
+     another. Every zebra surface in the codebase carries its own
+     `border-[color:var(--edge)]` hairline, so the box is separated by its edge
+     rather than by lightness alone and nothing reads flatter for the move. */
+  --bg-zebra: hsl(var(--site-hue) 5% 16%);    /* zebra  (--c-bg-zebra) */
   --border-subtle: hsl(0 0% 25%);             /* --c-border */
   --border-light: hsl(0 0% 40%);              /* --c-border-light */
   /* Geometry. Lichess ships a roundness option; we run it square (boxes 0,
@@ -49,7 +77,11 @@ body {
   --text-primary: #c6c6c6;
   --text-heading: #dedede;
   --text-secondary: #979797;
-  --text-muted: #7a7a7a;
+  /* The muted rung sits ON the AA floor, not under it: #7a7a7a measured 3.61:1
+     on the panel, so muted text failed WCAG AA everywhere it was used. #8c8c8c
+     is Lichess's own secondary grey (already in the palette as ink-400) and
+     measures 4.60:1 on the panel, 5.43:1 on the page. */
+  --text-muted: #8c8c8c;
   --text-primary-rgb: 198 198 198;
   --text-secondary-rgb: 151 151 151;
 
@@ -252,15 +284,19 @@ html[data-theme="midnight"] {
   --site-hue: 218deg;
   --bg-base: hsl(218 30% 8%);
   --bg-panel: hsl(218 24% 14%);
-  --bg-raised: hsl(218 20% 22%);
-  --bg-hover: hsl(218 20% 27%);
+  /* Same correction as the warm dark ladder above: midnight is that ladder on
+     a navy hue, so it drifted by exactly the same amount. */
+  --bg-raised: hsl(218 20% 18%);
+  --bg-hover: hsl(218 20% 22%);
   --bg-zebra: hsl(218 20% 18%);
   --border-subtle: hsl(218 16% 26%);
   --border-light: hsl(218 14% 40%);
   --text-primary: #cad2dd;
   --text-heading: #e3e9f2;
   --text-secondary: #9aa6b8;
-  --text-muted: #7c889a;
+  /* Same AA lift as the warm dark palette: #7c889a measured 4.49:1 on the navy
+     panel, a hair under AA. #8b96a6 measures 5.39:1. */
+  --text-muted: #8b96a6;
   --text-primary-rgb: 202 210 221;
   --text-secondary-rgb: 154 166 184;
   --accent-gold: #4c9ff0;
@@ -284,23 +320,41 @@ html[data-theme="midnight"] {
 html[data-theme="light"] {
   --bg-base: hsl(var(--site-hue) 10% 92%);
   --bg-panel: hsl(0 0% 100%);
-  --bg-raised: hsl(0 0% 89%);
-  --bg-hover: hsl(0 0% 94%);
+  /* Light had drifted further than the dark ladder, and in a way that broke
+     the ordering rather than just the value. design-system.md documents
+     #f7f6f5 for raised; the code shipped 89%, which is DARKER than the 92%
+     page, so a raised surface sat below the ground it was supposed to rise
+     from, while hover at 94% sat above it. The rungs were out of order.
+     Light is the dark ladder in reverse, so raised and hover both step AWAY
+     from the white panel rather than toward it, one rung each. */
+  --bg-raised: hsl(var(--site-hue) 10% 97%);  /* #f7f6f5 */
+  --bg-hover: hsl(var(--site-hue) 10% 94%);
   --bg-zebra: hsl(var(--site-hue) 12% 96.5%);
   --border-subtle: hsl(0 0% 85%);
   --border-light: hsl(0 0% 80%);
   --text-primary: #3d3d3d;
   --text-heading: #232323;
   --text-secondary: #666666;
-  --text-muted: #8a8a8a;
+  /* Paper is the hardest ground: #8a8a8a measured 3.45:1 on white and 2.90:1 on
+     the page. #696969 measures 5.49:1 / 4.62:1. The muted and secondary rungs
+     end up close in light because the page ground leaves no room between
+     "quieter than body" and the AA floor; weight and size carry the rest of the
+     hierarchy there, per design-system section 3. */
+  --text-muted: #696969;
   --text-primary-rgb: 61 61 61;
   --text-secondary-rgb: 102 102 102;
   --board-highlight-a: 0.5;
-  /* A step deeper than the dark accent so links clear WCAG AA on white. */
+  /* A step deeper than the dark accent so links clear WCAG AA on white. The
+     `-hi` rung is the EMPHASIS step off the accent, and on paper emphasis is
+     heavier ink, so it steps DOWN in lightness. It used to step UP: light
+     carried the dark theme's base blue (#3692e7) as its hi, lighter than
+     light's own base, and every rendered --gold-leaf element failed AA (the
+     header's guest "Sign in" at 2.75:1). Mirrors BLUE_ACCENT_LIGHT in
+     src/lib/settings.ts, which is what actually reaches <html>. */
   --accent-gold: #1b78d0;
-  --accent-gold-hi: #3692e7;
+  --accent-gold-hi: #14589f;
   --accent-gold-rgb: 27 120 208;
-  --accent-gold-hi-rgb: 54 146 231;
+  --accent-gold-hi-rgb: 20 88 159;
   --accent-gold-dim-rgb: 20 92 160;
   /* The semantic three, darkened so they still clear AA as text on paper.
      Same meanings, same hues. */
@@ -320,9 +374,19 @@ html[data-theme="light"] {
   --c-metal-bottom-hover: hsl(0 0% 95%);
   --c-body-gradient: hsl(var(--site-hue) 12% 84%);
   --c-metal-text-shadow: none;
-  --brag: hsl(var(--site-hue) 74% 48%);
+  /* Brass is a TEXT colour here (dates, ranks, medals, the `text-brag` label on
+     every /updates entry), and brass on paper has to go dark for the same
+     reason the semantic three above do. At 48% lightness it measured 2.93:1 on
+     both the white panel and the page across 34 rendered elements — 12px
+     uppercase labels, so the 4.5:1 body threshold applies, not the 3:1 large
+     one. 31% measures 5.77:1 on the panel and 4.65:1 on the page. The hue and
+     the saturation are untouched: this is the same brass, set for ink on
+     paper. --brag-hi stays the LIGHTER of the pair here because on paper the
+     hover of a dark label lifts toward the ground, and it is decorative fill
+     rather than text. */
+  --brag: hsl(var(--site-hue) 74% 31%);
   --brag-hi: hsl(var(--site-hue) 74% 40%);
-  --brag-rgb: 204 137 31;
+  --brag-rgb: 138 93 21;
 }
 
 /* Paper-scheme treatments (plate fills, the ink text ramp, border alphas) hang
@@ -341,6 +405,50 @@ html[data-light] .text-parchment-200 { color: var(--text-primary); }
 html[data-light] .text-parchment-300 { color: color-mix(in srgb, var(--text-primary) 55%, var(--text-secondary)); }
 html[data-light] .text-parchment-400 { color: color-mix(in srgb, var(--text-secondary) 55%, var(--text-muted)); }
 html[data-light] .text-parchment-500 { color: var(--text-muted); }
+/* The five rules above match the BARE utility class and nothing else. Tailwind
+   compiles every other spelling of the same colour to its own class name, so
+   none of these was ever retinted for paper and all of them kept the DARK ramp
+   on a white ground:
+
+     hover:text-parchment-100   ->  .hover\:text-parchment-100:hover
+     group-hover:text-parchment-200 -> .group:hover .group-hover\:text-parchment-200
+     text-parchment-400/60      ->  .text-parchment-400\/60
+
+   Measured on the running site with a real pointer, not by reading hex out of
+   the CSS: the header's "Sign in" went from 2.75:1 at rest to 1.03:1 the moment
+   it was hovered, and /tv's icon button from 10.86:1 to 1.71:1 — the label
+   disappeared into the page under the pointer. Across the bundle that is 77
+   hover call sites and 10 alpha ones.
+
+   The selector list below is the set the compiled stylesheet actually emits,
+   read out of the built CSS rather than guessed, so a spelling that exists is
+   covered and one that does not costs nothing. */
+html[data-light] .hover\:text-parchment:hover,
+html[data-light] .hover\:text-parchment-50:hover,
+html[data-light] .hover\:text-parchment-100:hover,
+html[data-light] .hover\:text-parchment-200:hover,
+html[data-light] .disabled\:hover\:text-parchment-200:hover:disabled,
+html[data-light] .group:hover .group-hover\:text-parchment-200 {
+  /* Hover lifts on paper the way it lifts on ink: one rung PAST the resting
+     body colour. On paper that direction is darker, not lighter. */
+  color: var(--text-heading);
+}
+html[data-light] .hover\:text-parchment-300:hover { color: var(--text-primary); }
+/* Alpha modifiers compound the same miss twice over: 60% of the dark #979797
+   over white measures 1.75:1, and even re-tinted to the paper rung a 60% wash
+   only reaches 2.6:1. So they resolve to a SOLID lower rung instead, which is
+   what the ramp is for — a dimmer tone names a lower rung, it does not dilute a
+   higher one. Applied in both schemes, because the dark side fails too:
+   text-parchment-400/60 measures 2.7:1 on the dark panel and
+   text-parchment-300/60 3.36:1. The remaining call sites (Board.tsx and the mod
+   sections) should drop the modifier and name the rung; until they do, this
+   keeps them legible. */
+.text-parchment-100\/90 { color: var(--text-primary); }
+.text-parchment-300\/60 { color: var(--text-secondary); }
+.text-parchment-400\/60 { color: var(--text-muted); }
+html[data-light] .text-parchment-100\/90 { color: var(--text-primary); }
+html[data-light] .text-parchment-300\/60 { color: color-mix(in srgb, var(--text-primary) 55%, var(--text-secondary)); }
+html[data-light] .text-parchment-400\/60 { color: var(--text-muted); }
 
 /* The canvas fill, flat like Lichess: no gradient wash, no atmosphere layer.
    Propagated to the viewport, so the page is never white before paint. */
@@ -392,10 +500,11 @@ body {
 .font-body    { font-family: var(--font-body), system-ui, sans-serif; }
 .font-mono    { font-family: var(--font-mono), ui-monospace, monospace; }
 
-.allcaps {
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
+/* .allcaps is gone. It was the retired letterspaced-smallcaps device kept
+   alive as a utility with zero call sites, which is exactly how a retired
+   pattern comes back: the next person reaches for the class that already
+   exists. Section 3 retired .smallcaps, .eyebrow and .kicker for the same
+   reason; this one was missed. */
 
 /* Page title, Lichess's size: 1.6rem, regular weight, heading colour. Every
    route's h1 wears this; there is no display slam anywhere on the site. */
@@ -473,15 +582,31 @@ body {
   to { opacity: 1; }
 }
 
-/* --- Ornament rules → hairline dividers --- */
+/* --- Ornament rules → hairline dividers ---
+   The label between the hairlines is a SECTION LABEL, and section 3 of
+   design-system.md retires the tracked-out allcaps device for exactly this
+   job: "A section label is a plain bold heading at the body size, not an
+   uppercase tracked-out device", and hierarchy is "weight + size + color, in
+   that order. Never letter-spacing alone."
+
+   The transform was not only a design-system violation. Chrome applies
+   `text-transform` when it computes an ACCESSIBLE NAME, and the biggest
+   consumer of this class is the tier label on a buff / nerf card, which sits
+   inside the card's own control. So every draft card announced its severity in
+   caps -- measured on a live draft, the card button's accessible name read
+   "... Tier II , EASY . Starting after your opponent's next turn ..." -- and
+   allcaps is exactly what section 11 bans ("sentence case everywhere ...
+   allcaps survive only in the LIVE badge"). scripts/check-case.ts does scan
+   CSS, but globals.css was already on its baseline, so nothing failed.
+
+   The label carries its emphasis with weight now (600 against the 500 of the
+   rules it sits between), which is the ordering section 3 asks for. */
 .rule-ornament {
   display: flex;
   align-items: center;
   gap: 1.1rem;
   color: var(--paper-dim);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   font-family: var(--font-body), system-ui, sans-serif;
 }
@@ -495,8 +620,7 @@ body {
 }
 .rule-ornament .font-display {
   font-family: var(--font-body), system-ui, sans-serif;
-  letter-spacing: 0.22em;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* --- Card / plate --- The ONE box style: a flat panel fill, a 1px hairline
@@ -516,6 +640,36 @@ body {
 :where(.plate) {
   position: relative;
   z-index: 2;
+}
+
+/* The stretched pick target on a card face (see BuffCard). The face is a plain
+   container and THIS is the control, filling it, so a card is one big hit area
+   without being a <button> wrapped around the glossary chips in its own rule
+   text. Everything on the face paints under it except those chips, which lift
+   themselves with a z-index (see GlossaryTerm) to keep their own hit area.
+
+   `inherit` on the radius and a NEGATIVE outline offset are both load-bearing:
+   the face is `overflow: hidden`, so the default outward 2px focus ring would
+   be clipped away on all four sides and a keyboard user would see nothing. */
+.card-pick-target {
+  position: absolute;
+  inset: 0;
+  /* One rung, so the `relative` blocks that follow it on the face (the header
+     row, the flavour line) cannot paint over it and swallow the pick. The
+     glossary chips sit on the same rung and come later in the DOM, so they
+     still win; the watermark and the preview medallion never contend because
+     both are pointer-events: none. */
+  z-index: 1;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.card-pick-target:focus-visible {
+  outline-offset: -3px;
 }
 
 /* The in-game command rail: the same box as everything else. */
@@ -563,21 +717,122 @@ html[data-light] select option {
   }
 }
 
-/* --- Tier palette: muted editorial, brass→brick gradient by severity --- */
-.tier-1 { color: #7eb59a; }   /* sage */
-.tier-2 { color: #8ba9c4; }   /* slate */
-.tier-3 { color: #d8b56e; }   /* brass */
-.tier-4 { color: #c79468; }   /* clay */
-.tier-5 { color: #c66860; }   /* brick */
-.tier-6 { color: #c65f8f; }   /* rose */
-.tier-7 { color: #a877d8; }   /* violet */
-.tier-8 { color: #e05252; }   /* blood */
-.tier-9 { color: #f4c430; }   /* apex gold: a single solid accent, no gradient or glow */
-.tier-10 { color: #22d3ee; }  /* mythic cyan: a distinct solid accent, no gradient or glow */
+/* --- Tier palette: muted editorial, brass→brick gradient by severity -------
+   A tier's IDENTITY is its hue and its chroma: the ladder runs sage, slate,
+   brass, clay, brick, rose, violet, blood, gold, cyan, and severity is carried
+   by chroma climbing with the tier (0.07 at t1 to 0.18 at t8 in OKLCH). Neither
+   of those may move per theme; design-system.md pins tier colour ("Card tiers
+   everywhere, no exceptions") and a t8 has to read as a t8 on any ground.
+
+   LIGHTNESS is the theme's business, and it was the whole of the bug: one set
+   of hexes, authored for the dark ladder, was being painted on paper as well.
+   The tier ink now hangs off a token per tier, with hue and chroma pinned to
+   the values above (gamut permitting) and only OKLCH L re-set per scheme.
+   Measured on the rendered chips: dark t8 was 3.02:1 on a raised surface and
+   light t9 was 1.31:1 on the white panel, against a 4.5 floor (every tier chip
+   is 12px, so the large-text exemption never applies).
+
+   The alternative (leaving the ink and re-tinting the .tier-bg-* washes) was
+   measured and cannot work. The wash is what a chip sits on, but the ink also
+   appears as bare text on panels and menus: #e05252 measures 3.50:1 on
+   --bg-raised with NO wash at all, so no alpha reaches 4.5 from there.
+
+   Dark takes the smallest lift that clears the floor on its worst ground (a
+   chip on --bg-raised), so the default palette moves as little as it can:
+   only t4 to t8 move at all, and t1, t2, t3, t9 and t10 are untouched.
+   Midnight inherits it (its grounds are a shade kinder, and it measures
+   higher on every tier).
+
+   Light inverts, the same way the surface ladder does: on paper the top of the
+   ladder is the HEAVIEST ink rather than the brightest, so t5 to t9 step past
+   the AA floor by a widening margin. Without that step t3 brass and t9 gold
+   both land on the floor at L 0.51 and become the same olive; with it they are
+   0.10 OKLCH-L apart. */
+:root {
+  --tier-ink-1: #7eb59a;   /* sage */
+  --tier-ink-2: #8ba9c4;   /* slate */
+  --tier-ink-3: #d8b56e;   /* brass */
+  --tier-ink-4: #cd9a6d;   /* clay */
+  --tier-ink-5: #e9877e;   /* brick */
+  --tier-ink-6: #ea80b0;   /* rose */
+  --tier-ink-7: #c08ef2;   /* violet */
+  --tier-ink-8: #ff7a75;   /* blood */
+  --tier-ink-9: #f4c430;   /* apex gold: a single solid accent, no gradient or glow */
+  --tier-ink-10: #22d3ee;  /* mythic cyan: a distinct solid accent, no gradient or glow */
+}
+html[data-light] {
+  --tier-ink-1: #3b7058;   /* sage */
+  --tier-ink-2: #4c6881;   /* slate */
+  --tier-ink-3: #826214;   /* brass */
+  --tier-ink-4: #825428;   /* clay */
+  --tier-ink-5: #953c36;   /* brick */
+  --tier-ink-6: #912e60;   /* rose */
+  --tier-ink-7: #6b3995;   /* violet */
+  --tier-ink-8: #9d001b;   /* blood */
+  /* t9 and t10 are the only two that lose chroma, and only because sRGB has
+     none to give: a yellow this dark IS an olive and a cyan this dark IS a
+     teal. Hue is exact; every other tier keeps its chroma to three decimals. */
+  --tier-ink-9: #5f4900;   /* apex gold */
+  --tier-ink-10: #006e7e;  /* mythic cyan */
+}
+.tier-1 { color: var(--tier-ink-1); }
+.tier-2 { color: var(--tier-ink-2); }
+.tier-3 { color: var(--tier-ink-3); }
+.tier-4 { color: var(--tier-ink-4); }
+.tier-5 { color: var(--tier-ink-5); }
+.tier-6 { color: var(--tier-ink-6); }
+.tier-7 { color: var(--tier-ink-7); }
+.tier-8 { color: var(--tier-ink-8); }
+.tier-9 { color: var(--tier-ink-9); }
+.tier-10 { color: var(--tier-ink-10); }
+
+/* --- Achievement rarity ink: the same ink/tint split, for the same reason ---
+   The four rarity colours are consumed as REACT INLINE STYLES (see
+   src/lib/achievementTheme.ts), so until they hung off a token no stylesheet
+   could reach them and paper was being painted with the dark theme's hexes.
+   Measured on the real `/achievements` chips, with the locked chip's own
+   `opacity: 0.7` composited in and at 12px (so the 4.5:1 body floor applies):
+
+     light   common 1.43  rare 1.64  epic 2.07  legendary 1.38   (25/28/29/20 elements)
+     dark    common 4.50  rare 3.68  epic 2.72  legendary 4.38
+     midnight common 4.65 rare 3.82  epic 2.80  legendary 4.50
+
+   A rarity's identity is its hue and its chroma (parchment, verdigris, violet,
+   gold); only OKLCH L is re-set per scheme, exactly as the tier ladder above
+   does it. Dark takes the smallest lift that clears the floor and midnight
+   inherits it (its grounds are kinder on all four). Light inverts: on paper
+   the ink gets heavier, and rare and legendary give up chroma because sRGB has
+   none to give at that lightness -- a teal that dark is a bottle green, a gold
+   that dark is an olive.
+
+   The 0.7 opacity on a LOCKED chip multiplies every failure and these values
+   are solved with it composited in, so the unlocked chips clear the floor by a
+   wider margin still. Replacing that opacity with a dimmer ink would be the
+   better fix, but the opacity is an inline style in
+   src/app/achievements/page.tsx and no stylesheet can reach it either. */
+:root {
+  --rarity-ink-common: #cbc6b9;    /* parchment / silver */
+  --rarity-ink-rare: #72d9c5;      /* verdigris */
+  --rarity-ink-epic: #d9b5ff;      /* violet */
+  --rarity-ink-legendary: #f4c864; /* gold */
+}
+html[data-light] {
+  --rarity-ink-common: #3b372c;
+  --rarity-ink-rare: #014037;
+  --rarity-ink-epic: #511d78;
+  --rarity-ink-legendary: #483400;
+}
 
 /* Each tier carries its color as an rgb triple too, so glass/glow layers on a
    card face can tint themselves by severity (a tier-8 reads hotter than a
-   tier-1) using a single shared class. */
+   tier-1) using a single shared class.
+   --tier-rgb and these fills stay on the FULL-CHROMA identity hue in every
+   theme, and are deliberately not re-pointed at --tier-ink-*. They are light,
+   not text: washes, auras, particle tints and the EmpowerAura, none of which
+   carry a contrast obligation, and several of which are mirrored as literal
+   hexes elsewhere (BoardEffects.tsx, NerfCard.tsx, passive/spec.ts). Splitting
+   the ink from the tint is what lets paper darken its text without dragging
+   the whole effects layer somewhere those mirrors do not follow. */
 .tier-bg-1 { background: rgba(126,181,154,0.10); border-color: rgba(126,181,154,0.35); --tier-rgb: 126 181 154; }
 .tier-bg-2 { background: rgba(139,169,196,0.10); border-color: rgba(139,169,196,0.35); --tier-rgb: 139 169 196; }
 .tier-bg-3 { background: rgba(216,181,110,0.10); border-color: rgba(216,181,110,0.45); --tier-rgb: 216 181 110; }
@@ -785,7 +1040,7 @@ html[data-anim="off"] .rune-loader { animation: none; }
   border: 1px solid rgb(var(--badge-rgb, var(--energy-ember-rgb)) / 0.5);
   background: rgb(var(--badge-rgb, var(--energy-ember-rgb)) / 0.1);
   color: rgb(var(--badge-rgb, var(--energy-ember-rgb)));
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -832,7 +1087,11 @@ html[data-anim="off"] .rune-loader { animation: none; }
 /* Victory burst: the Level-3 celebration behind the game-over panel. One
    energy ring blooms outward while a handful of sparks in the four energy
    hues climb and die. One shot, pointer-events-none, transform/opacity only,
-   never rendered under reduced motion (the caller gates it). */
+   never rendered under reduced motion (the caller gates it).
+
+   Every duration and delay is scaled by --beat, the ending's tempo (see THE
+   ENDING, AS THREE ACTS below): the burst is part of the ending, so "fast"
+   has to reach it too. --beat defaults to 1 wherever it is not set. */
 .victory-burst {
   position: absolute;
   inset: 0;
@@ -849,13 +1108,14 @@ html[data-anim="off"] .rune-loader { animation: none; }
   border-radius: 999px;
   border: 2px solid rgb(var(--energy-gold-rgb) / 0.8);
   opacity: 0;
-  animation: victory-ring 1.1s cubic-bezier(0.15, 0.7, 0.2, 1) 0.15s both;
+  animation: victory-ring calc(1.1s * var(--beat, 1)) cubic-bezier(0.15, 0.7, 0.2, 1)
+    calc(0.15s * var(--beat, 1)) both;
 }
 .victory-burst__ring--echo {
   border-width: 1px;
   border-color: rgb(var(--energy-void-rgb) / 0.6);
-  animation-delay: 0.3s;
-  animation-duration: 1.3s;
+  animation-delay: calc(0.3s * var(--beat, 1));
+  animation-duration: calc(1.3s * var(--beat, 1));
 }
 @keyframes victory-ring {
   0% { opacity: 0; transform: scale(0.3); }
@@ -872,7 +1132,8 @@ html[data-anim="off"] .rune-loader { animation: none; }
   background: rgb(var(--spark-rgb, var(--energy-gold-rgb)));
   box-shadow: 0 0 8px 1px rgb(var(--spark-rgb, var(--energy-gold-rgb)) / 0.7);
   opacity: 0;
-  animation: victory-spark 1.4s ease-out var(--vdelay, 0ms) both;
+  animation: victory-spark calc(1.4s * var(--beat, 1)) ease-out
+    calc(var(--vdelay, 0ms) * var(--beat, 1)) both;
 }
 @keyframes victory-spark {
   0% { opacity: 0; transform: translateY(0) scale(0.6); }
@@ -1789,8 +2050,48 @@ html[data-anim="off"] .walnut-root { animation: none !important; transform: none
 html[data-anim="off"] .sq-walnut::after { animation: none !important; opacity: 0 !important; }
 html[data-anim="off"] * { transition: none !important; }
 
-@media (max-width: 640px) {
-  .btn-leaf, .btn-ghost, .btn-glass, .btn-cta { min-height: 44px; }
+/* A 44px touch target is a question about the POINTER, and this rule used to
+   ask about the width. A 1024px tablet has a coarse pointer and no keyboard,
+   and it was getting the desktop 31.5px ghost button; a narrow desktop window
+   was getting the phone one. `Button.tsx` already sizes correctly
+   (`min-h-[44px]` with `[@media(pointer:fine)]:min-h-[36px]`), so for anything
+   routed through the primitive this rule is redundant either way. It is kept
+   rather than deleted because ~18 call sites still spell `btn-ghost` /
+   `btn-leaf` / `btn-glass` straight onto an element and have no other floor;
+   asked about the pointer, it covers them on every touch device instead of only
+   on the narrow ones.
+
+   The unconditional 36px underneath it is the other half of the same defect.
+   Section 7 asks for 44x44 on touch AND 36px on a mouse, and those bespoke call
+   sites measured 29.5px on a fine pointer at EVERY width (31.5px for
+   /analysis's board tools) — the width query had only ever hidden that below
+   640.
+
+   `:not([class*="min-h-"])` is load-bearing and was added after measuring, not
+   before. A bare `.btn-ghost { min-height: 44px }` has the same specificity as
+   Tailwind's `.min-h-\[52px\]` and comes later in the bundle, so it does not
+   raise a floor, it REPLACES a height: with the plain selector the home and
+   lobby primary CTAs measured 52px -> 45px, i.e. this rule shrank the biggest
+   buttons on the site. (The old width query did the same thing below 640, so
+   phones have been getting clamped `lg` CTAs all along.) Excluding anything
+   that spells its own `min-h-` utility means the floor can only ever fill a gap
+   and can never contradict a size the call site or the Button primitive chose. */
+.btn-leaf:not([class*="min-h-"]),
+.btn-ghost:not([class*="min-h-"]),
+.btn-glass:not([class*="min-h-"]),
+.btn-cta:not([class*="min-h-"]) { min-height: 36px; }
+/* The touch floor excludes only the sizes that already CLEAR it (Button.tsx's
+   44 / 48 / 52), so it still lifts a call site that pinned itself to the 36px
+   desktop size and then shipped to a phone — the home page's two "Play" chips
+   were exactly that, and a blanket `:not([class*="min-h-"])` dropped them from
+   44px to 36px on touch, which the measurement caught. */
+@media (pointer: coarse) {
+  .btn-leaf:not([class*="min-h-[44px]"]):not([class*="min-h-[48px]"]):not([class*="min-h-[52px]"]),
+  .btn-ghost:not([class*="min-h-[44px]"]):not([class*="min-h-[48px]"]):not([class*="min-h-[52px]"]),
+  .btn-glass:not([class*="min-h-[44px]"]):not([class*="min-h-[48px]"]):not([class*="min-h-[52px]"]),
+  .btn-cta:not([class*="min-h-[44px]"]):not([class*="min-h-[48px]"]):not([class*="min-h-[52px]"]) {
+    min-height: 44px;
+  }
 }
 
 ::selection { background: rgb(var(--accent-gold-rgb) / 0.4); color: var(--text-on-accent); }
@@ -1898,8 +2199,16 @@ html[data-light] textarea,
 html[data-light] select {
   color: #2b2822;
 }
+/* This catch-all outranks every `placeholder:text-parchment-*` utility (13 call
+   sites), so it is the ONLY thing that decides what a placeholder looks like on
+   paper — and #86816f measured 3.90:1 on a white field and 3.14:1 on a field
+   sitting on the page. Placeholder text is text: it carries the only
+   description some fields have, so it takes the 4.5:1 body threshold. The muted
+   rung is the dimmest tone in the ramp that clears it (5.49:1 / 4.62:1), and
+   using the token rather than a fourth hand-picked grey keeps the field in step
+   with the rest of the paper ramp. */
 html[data-light] ::placeholder {
-  color: #86816f;
+  color: var(--text-muted);
 }
 
 /* White hairlines and dividers are invisible on paper; restate them in ink at
@@ -2126,6 +2435,198 @@ html[data-anim="off"] .nerf-reveal-stamp,
 html[data-anim="off"] .nerf-reveal-cell {
   animation: none !important;
   opacity: 0 !important;
+}
+
+/* --- BREAKING THE SEAL (the game-over reveal) -------------------------------
+   The payoff of an entire game of Nerf. For thirty or sixty moves you did not
+   know what your opponent was playing under; this is the click where you find
+   out, and the roadmap calls it the game's most shareable moment.
+
+   It used to be a React conditional. The sealed "?" button was replaced by the
+   rule card between one frame and the next, with no transition of any kind —
+   the single flattest moment in the product sat on top of its best material.
+
+   So it now speaks the same language as the in-game nerf reveal directly above
+   (a band descends, then the rule's name stamps), compressed from that
+   effect's two seconds to 480ms because this one lands inside a panel rather
+   than over the board. A choreographed game effect with its own declared
+   budget, which design-system.md §6 allows past --dur-3; three beats, all of
+   them transform and opacity:
+
+     0-320ms    the card arrives: rises 8px and fades up      (--dur-3, --ease-out)
+     0-260ms    the seal breaks: one tier-tinted band sweeps
+                DOWN the card and is gone                     (--ease-io)
+     160-480ms  the rule's NAME lands last, dropping in and
+                settling — the word you waited a game for     (--ease-spring)
+
+   Reduced motion and animations-off never reach here: GameOver only sets the
+   class when motion is on, and the rule card itself — permanent, legible, and
+   announced through role="status" — is the feedback in every mode. */
+@keyframes nerf-unseal-in {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.nerf-unseal {
+  /* Deliberately NOT overflow:hidden. The rule text carries GlossaryText
+     popovers that open past the card's edge; the sweep is clipped by its own
+     wrapper instead. */
+  animation: nerf-unseal-in calc(var(--dur-3, 320ms) * var(--beat, 1))
+    var(--ease-out, ease-out) calc(var(--unseal-delay, 0ms) * var(--beat, 1)) both;
+}
+.nerf-unseal__seal {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.nerf-unseal__seal > i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 42%;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgb(var(--tier-rgb, 181 70 65) / 0.28) 55%,
+    rgba(255, 244, 214, 0.14) 80%,
+    transparent
+  );
+  opacity: 0;
+  animation: nerf-unseal-seal calc(260ms * var(--beat, 1)) var(--ease-io, ease-in-out)
+    calc(var(--unseal-delay, 0ms) * var(--beat, 1)) both;
+}
+@keyframes nerf-unseal-seal {
+  0% { opacity: 0; transform: translateY(-110%); }
+  15% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(260%); }
+}
+/* The name lands last and lands hardest: it is the answer to the question the
+   whole game asked. --ease-spring is sanctioned here — this is the reveal. */
+.nerf-unseal .nerf-unseal__name {
+  animation: nerf-unseal-name calc(320ms * var(--beat, 1)) var(--ease-spring, ease-out)
+    calc((160ms + var(--unseal-delay, 0ms)) * var(--beat, 1)) both;
+}
+@keyframes nerf-unseal-name {
+  0% { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+html[data-anim="off"] .nerf-unseal,
+html[data-anim="off"] .nerf-unseal .nerf-unseal__name {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+html[data-anim="off"] .nerf-unseal__seal > i { animation: none; opacity: 0; }
+
+/* --- THE ENDING, AS THREE ACTS ----------------------------------------------
+   The seal beat above is the payoff; these are the beats around it, so that the
+   payoff has somewhere to land instead of arriving in the same frame as
+   everything else. GameOver.tsx owns the timings and passes them in; this file
+   owns the shapes.
+
+     act I    the verdict            no class, no delay, never withheld
+     act II   .ending-act (200ms)    the two rules, the opponent's under a lid
+       ...    .ending-seal (780ms)   the lid lifts off the opponent's rule
+       ...    .nerf-unseal (840ms)   the rule arrives under it and its name lands
+     act III  .ending-act (1080ms)   the record: cards drafted, match timeline
+
+   EVERY duration and delay here is multiplied by --beat, the tempo GameOver
+   sets from useMotionTempo (1 normal, 0.6 fast). That indirection is the whole
+   point: globals.css clamps `transition-duration` for data-anim="fast" and
+   touches no @keyframes, so before this the player who asked for fast
+   animations sat through the identical ending as everyone else. Same reason
+   the victory burst below reads --beat.
+
+   Act I carries the outcome, the reason and the rating, and is deliberately
+   NOT in an act: the thing the player came for is legible in the first frame,
+   and the primary actions below the acts are clickable in the first frame too.
+   A choreography may not gate either (design-system.md §6). */
+@keyframes ending-act-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.ending-act {
+  animation: ending-act-in calc(var(--dur-3, 320ms) * var(--beat, 1))
+    var(--ease-out, ease-out) calc(var(--act-delay, 0ms) * var(--beat, 1)) both;
+}
+
+/* The lid over the opponent's rule. It is an OVERLAY on the finished card, not
+   a placeholder swapped out for it: the card sits underneath at its true size
+   from the first frame, so the panel never resizes and the buttons under it
+   never move while the ending plays. Inert and invisible to assistive tech —
+   the rule beneath is already in the accessibility tree, because information
+   is never what an animation withholds. */
+.ending-seal {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--edge-strong);
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  pointer-events: none;
+  transform-origin: 50% 0;
+  animation: ending-seal-lift calc(var(--seal-dur, 380ms) * var(--beat, 1))
+    var(--ease-io, ease-in-out) calc(var(--seal-delay, 780ms) * var(--beat, 1)) both;
+}
+/* Lifted like a lid, not faded like a dialog: it hinges from its top edge, so
+   the card is uncovered from the bottom up and the rule's name is the last
+   thing to come clear. */
+@keyframes ending-seal-lift {
+  0% { opacity: 1; transform: translateY(0) scaleY(1); }
+  45% { opacity: 0.96; transform: translateY(-1%) scaleY(0.98); }
+  100% { opacity: 0; transform: translateY(-14%) scaleY(0.84); }
+}
+.ending-seal__mark {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid rgb(var(--accent-gold-rgb) / 0.4);
+  background: rgb(var(--accent-gold-rgb) / 0.1);
+  color: var(--accent-gold);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+/* No colour of its own: the lid sets one, and on the press-to-reveal button
+   the same face has to take the button's hover colour with it. */
+.ending-seal__label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.2;
+  text-align: center;
+}
+/* Animations off, or an operating system asking for reduced motion: the acts
+   simply are not a sequence. Everything is printed at once and the lid is not
+   rendered at all, so nothing can be left covering the rule if an animation
+   never runs. GameOver drops the classes in JS as well; these are the backstop
+   that keeps a delayed beat from ever hiding content. */
+html[data-anim="off"] .ending-act {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+html[data-anim="off"] .ending-seal { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ending-act,
+  .nerf-unseal,
+  .nerf-unseal .nerf-unseal__name {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .ending-seal { display: none; }
+  .nerf-unseal__seal > i { animation: none; opacity: 0; }
 }
 
 /* Subtle running-clock pulse (under 30s). Clock urgency is one of the few
@@ -2576,16 +3077,17 @@ html[data-anim="off"] .btn-leaf:hover:not(:disabled) { transform: none; }
   justify-content: center;
   gap: 1px;
   height: 24%;
-  min-width: 24%;
+  min-height: 17px;
+  min-width: max(24%, 17px);
   padding: 0 4%;
   color: #14120f;
   background: var(--st);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-  font: 800 10px/1 var(--font-mono), ui-monospace, monospace;
+  font: 800 12px/1 var(--font-mono), ui-monospace, monospace;
   animation: sq-status-chip-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .sq-status-chip svg { width: auto; height: 62%; flex: none; }
-.sq-status-chip__n { font-size: 9px; line-height: 1; }
+.sq-status-chip__n { font-size: 12px; line-height: 1; }
 .sq-status-chip--tl { left: 2%; top: 2%; }
 .sq-status-chip--tr { right: 2%; top: 2%; }
 .sq-status-chip--bl { left: 2%; bottom: 2%; }
@@ -2692,3 +3194,33 @@ html[data-anim="off"] .nerf-enter__line,
 html[data-anim="off"] .nerf-enter__seal,
 html[data-anim="off"] .nerf-enter__seal-half { animation: none; }
 html[data-anim="off"] .nerf-enter__seal { opacity: 0; }
+
+/* ---------------------------------------------------------------------------
+   Running-clock separator.
+
+   The colon fades while a clock is actually charging. It is the only always-on
+   signal that a clock is running: between digit changes a paused clock and a
+   running one are otherwise identical for a whole second, and this clock
+   really does pause (an unresolved draft charges it, the first-move grace
+   shields it), so "is my time going" is a question a player here genuinely
+   asks. Lichess blinks the same separator; there it is decoration, here it
+   carries information.
+
+   Opacity only, and the digits are untouched so nothing about the layout or
+   the tabular figures moves. Section 6 of the design system bans forever-loops
+   apart from the three ambients and clock urgency: this is the latter.
+--------------------------------------------------------------------------- */
+.clock-sep {
+  animation: clock-sep-pulse 1s steps(1, end) infinite;
+}
+@keyframes clock-sep-pulse {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0.28; }
+}
+/* Never fully transparent even at rest, so a reader who freezes motion still
+   sees a well-formed time rather than "2 05". */
+html[data-anim="off"] .clock-sep,
+html[data-anim="fast"] .clock-sep { animation: none; opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .clock-sep { animation: none; opacity: 1; }
+}

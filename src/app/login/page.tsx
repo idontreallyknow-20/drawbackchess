@@ -139,8 +139,13 @@ function LoginPage() {
                 setTab(t);
                 setError(null);
               }}
+              // These are tabs, not a bespoke control, and they measured 32px
+              // tall: the smallest targets on the one page every new player
+              // has to get through. A min-height rather than more padding, so
+              // the pair keeps its current density on a mouse.
+              aria-pressed={tab === t}
               className={
-                "py-2 text-sm font-display font-semibold tracking-wide transition " +
+                "flex min-h-[44px] items-center justify-center py-2 text-sm font-display font-semibold tracking-wide transition " +
                 (tab === t ? "bg-[color:var(--bg-raised)] text-gold-leaf" : "text-parchment-300 hover:bg-[color:var(--bg-raised)]")
               }
             >
@@ -165,7 +170,7 @@ function LoginPage() {
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
               maxLength={tab === "login" ? 254 : 20}
-              className="w-full bg-[color:var(--bg-base)] border border-[color:var(--edge)] px-4 py-3 focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-400/40"
+              className="w-full bg-[color:var(--bg-base)] border border-[color:var(--edge)] px-4 py-3 focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-500"
               placeholder="knight_rider"
             />
             {tab === "register" && (
@@ -177,7 +182,7 @@ function LoginPage() {
           {tab === "register" && (
             <div>
               <label className="text-[12px] font-medium text-parchment-300 block mb-1.5" htmlFor="email">
-                Email <span className="normal-case text-parchment-400/60">(optional)</span>
+                Email <span className="normal-case text-parchment-500">(optional)</span>
               </label>
               <input
                 id="email"
@@ -186,7 +191,7 @@ function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 maxLength={254}
-                className="w-full bg-[color:var(--bg-base)] border border-[color:var(--edge)] px-4 py-3 focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-400/40"
+                className="w-full bg-[color:var(--bg-base)] border border-[color:var(--edge)] px-4 py-3 focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-500"
                 placeholder="you@example.com"
               />
               <p className="mt-1 text-[12px] text-parchment-400">

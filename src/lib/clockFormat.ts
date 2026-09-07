@@ -29,3 +29,34 @@ export function formatClock(ms: number, tenths: "never" | "low" | "always" = "lo
   const s = totalSec % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
+
+/**
+ * When a clock becomes urgent, as a fraction of what it started with.
+ *
+ * A fixed threshold cannot work across the time controls this site offers.
+ * The pill used to turn gold under 30 seconds and red under 10, which is
+ * right for 10+0 and nonsense for 1+0: in a bullet game 30 seconds is HALF
+ * the clock, so the warning colour was on for most of the game and therefore
+ * told the player nothing. In a 15+10 game that same 30 seconds is 3 percent
+ * of the clock and arrives far too late to change how anyone plays.
+ *
+ * Lichess scales the threshold to the time control instead (see
+ * `ui/lib/src/game/clock/clockCtrl.ts`, which sets its emergency point to one
+ * eighth of the initial time, clamped between 10 and 60 seconds), and the
+ * same shape is right here. 1+0 resolves to 10 seconds, 3+2 to 22.5, 10+0 to
+ * 60, and everything between lands somewhere sensible.
+ *
+ * The clamp matters at both ends. Without the floor, a 30 second game would
+ * only warn with 3.75 seconds left, well past the point of being actionable.
+ * Without the ceiling, a very long clock would sit in its warning state for
+ * minutes, which is the same "always on, therefore meaningless" failure in
+ * the other direction.
+ */
+export const EMERG_FRACTION = 1 / 8;
+export const EMERG_MIN_MS = 10_000;
+export const EMERG_MAX_MS = 60_000;
+
+export function emergencyMs(initialMs: number): number {
+  if (!Number.isFinite(initialMs) || initialMs <= 0) return EMERG_MIN_MS;
+  return Math.min(EMERG_MAX_MS, Math.max(EMERG_MIN_MS, initialMs * EMERG_FRACTION));
+}

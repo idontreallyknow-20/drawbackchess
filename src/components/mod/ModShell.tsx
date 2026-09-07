@@ -63,21 +63,29 @@ export function ModShell({
         <aside className="lg:sticky lg:top-4 lg:self-start">
           <div className="flex items-center justify-between lg:block">
             <h1 className="page-title">Moderation</h1>
+            {/* 44px on a finger, today's 30px box back on a mouse. The step-down
+                is `pointer:fine` and NOT `lg:`, because a 1024px tablet is a
+                coarse pointer: the sweep measured this button at 30.5px on all
+                four touch widths, 1024 included. */}
             <button
               type="button"
               onClick={() => setPaletteOpen(true)}
-              className="mt-0 flex items-center gap-2 border border-[color:var(--edge)] bg-[color:var(--bg-panel)] px-2.5 py-1.5 text-[12px] text-parchment-400 transition-colors hover:text-parchment-100 lg:mt-3 lg:w-full"
+              className="mt-0 flex min-h-[44px] items-center gap-2 border border-[color:var(--edge)] bg-[color:var(--bg-panel)] px-2.5 py-1.5 text-[13px] text-parchment-400 transition-colors hover:text-parchment-100 [@media(pointer:fine)]:min-h-0 lg:mt-3 lg:w-full"
               title="Jump to a section or a player (Ctrl+K)"
             >
               <Search size={14} strokeWidth={1.6} aria-hidden />
               <span>Jump to…</span>
-              <kbd className="ml-auto font-mono text-[11px] text-parchment-500">Ctrl K</kbd>
+              {/* The shortcut is a bare token, so it stays on the 12px label
+                  allowance rather than the 13px floor. It is also decoration:
+                  the same key combination is already in the button's title, and
+                  without aria-hidden the accessible name reads "Jump to…Ctrl K". */}
+              <kbd aria-hidden className="ml-auto font-mono text-[12px] text-parchment-500">Ctrl K</kbd>
             </button>
           </div>
           <nav aria-label="Moderation sections" className="mt-3 hidden lg:block">
             {groups.map((group) => (
               <div key={group.title} className="mb-4">
-                <div className="px-2 text-[11px] uppercase tracking-[0.06em] text-parchment-500">{group.title}</div>
+                <div className="px-2 text-[12px] uppercase tracking-[0.06em] text-parchment-500">{group.title}</div>
                 <ul className="mt-1">
                   {group.items.map((item) => (
                     <li key={item.kind === "section" ? item.id : item.href}>
@@ -141,9 +149,15 @@ function NavEntry({
   onGo?: (id: SectionId) => void;
   compact?: boolean;
 }) {
+  // Both shapes are 44px on a coarse pointer and step back down to their old
+  // density on a mouse. `pointer:fine`, never a width breakpoint: the rail rows
+  // below were 30px tall and the sweep caught all thirteen of them at 1024,
+  // which is a `lg:` viewport AND a touch screen. Width is not a pointer.
   const cls =
     "flex items-center gap-2 whitespace-nowrap text-[13px] no-underline transition-colors " +
-    (compact ? "min-h-[36px] px-2.5" : "w-full px-2 py-1.5") +
+    (compact
+      ? "min-h-[44px] px-2.5 [@media(pointer:fine)]:min-h-[36px]"
+      : "w-full min-h-[44px] px-2 py-1.5 [@media(pointer:fine)]:min-h-0") +
     " " +
     (active
       ? "bg-[color:var(--bg-panel)] text-parchment-50"
@@ -153,7 +167,7 @@ function NavEntry({
       <span>{item.label}</span>
       {item.kind === "section" && !compact && <CountBadge n={badge} />}
       {item.kind === "section" && compact && badge > 0 && (
-        <span className="bg-oxblood px-1 font-mono text-[11px] text-white">{badge}</span>
+        <span className="bg-oxblood px-1 font-mono text-[12px] text-white">{badge}</span>
       )}
     </>
   );
@@ -265,7 +279,7 @@ function Palette({
             placeholder="Section or player name"
             className="min-h-[44px] w-full bg-transparent text-[14px] text-parchment-50 placeholder:text-parchment-500 focus:outline-none"
           />
-          <kbd className="font-mono text-[11px] text-parchment-500">Esc</kbd>
+          <kbd className="font-mono text-[12px] text-parchment-500">Esc</kbd>
         </div>
         <ul className="max-h-[50vh] overflow-y-auto py-1">
           {rows.length === 0 && <li className="px-3 py-3 text-[13px] text-parchment-400">Nothing matches.</li>}
@@ -276,12 +290,15 @@ function Palette({
                 onMouseEnter={() => setCursor(i)}
                 onClick={r.run}
                 className={
-                  "flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[13px] " +
+                  // Same rule as the rail: a 31px row is a 31px row whether or
+                  // not a sweep can see it. The palette only exists once it is
+                  // opened, so nothing measures these rows automatically.
+                  "flex min-h-[44px] w-full items-center justify-between gap-3 px-3 py-2 text-left text-[13px] [@media(pointer:fine)]:min-h-0 " +
                   (i === safeCursor ? "bg-[color:var(--bg-panel)] text-parchment-50" : "text-parchment-200")
                 }
               >
                 <span>{r.label}</span>
-                <span className="text-[11px] uppercase tracking-[0.05em] text-parchment-500">{r.hint}</span>
+                <span className="text-[12px] uppercase tracking-[0.05em] text-parchment-500">{r.hint}</span>
               </button>
             </li>
           ))}

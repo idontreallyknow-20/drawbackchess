@@ -157,7 +157,11 @@ function PlayInner() {
                   // Storage unavailable: it just hides for this visit.
                 }
               }}
-              className="ml-auto grid h-7 w-7 shrink-0 place-items-center text-parchment-400 transition hover:bg-white/10 hover:text-parchment-100"
+              // 24.5x24.5 before this: h-7 is 1.75rem, and the root font size
+              // here is 14px, so every rem-based size renders at 87.5% of its
+              // nominal px value. The glyph stays 24.5px; only the hit area
+              // grows, and it relaxes back on a pointer that can hit 24px.
+              className="ml-auto grid h-[44px] w-[44px] shrink-0 place-items-center text-parchment-400 transition hover:bg-white/10 hover:text-parchment-100 [@media(pointer:fine)]:h-7 [@media(pointer:fine)]:w-7"
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -176,7 +180,7 @@ function PlayInner() {
         >
           <span
             aria-hidden
-            className="grid h-11 w-11 shrink-0 place-items-center border border-mode-buff/50 bg-mode-buff/10 text-mode-buffGlow"
+            className="grid h-[44px] w-[44px] shrink-0 place-items-center border border-mode-buff/50 bg-mode-buff/10 text-mode-buffGlow"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <circle cx="12" cy="12" r="10" />
@@ -205,7 +209,7 @@ function PlayInner() {
               <Pill selected={botMode === "nerf"} onClick={() => selectMode("nerf")}>Nerf</Pill>
               <Pill selected={botMode === "plain"} onClick={() => setPlainBot(true)}>Plain chess</Pill>
             </Group>
-            <p className="mt-2 text-[11px] text-parchment-400">
+            <p className="mt-2 text-[13px] text-parchment-400">
               {botMode === "plain"
                 ? "Ordinary chess. No cards."
                 : botMode === "buff"
@@ -218,7 +222,7 @@ function PlayInner() {
             {(["easy", "medium", "hard"] as const).map((d) => (
               <Pill key={d} selected={difficulty === d} onClick={() => setDifficulty(d)}>
                 {d[0].toUpperCase() + d.slice(1)}
-                <span className="ml-1.5 font-mono text-[11px] opacity-70">~{BOT_ELO[d]}</span>
+                <span className="ml-1.5 font-mono text-[12px] opacity-70">~{BOT_ELO[d]}</span>
               </Pill>
             ))}
           </Group>
@@ -313,7 +317,7 @@ function TimeSlider({
   return (
     <div className={disabled ? "opacity-50" : ""}>
       <div className="flex items-center justify-between mb-2">
-        <div className="text-[11px] text-parchment-400">{label}</div>
+        <div className="text-[12px] text-parchment-400">{label}</div>
         <div className="font-mono text-sm text-gold-leaf tabular-nums">{display}</div>
       </div>
       <input
@@ -324,9 +328,16 @@ function TimeSlider({
         value={index}
         disabled={disabled}
         onChange={(e) => onChange(values[Number(e.target.value)])}
-        className="w-full accent-gold-leaf disabled:cursor-not-allowed"
+        // A native range renders a 16px-tall box, which is a hard thing to
+        // grab with a thumb and the one control on this page a player has to
+        // drag rather than tap. The track paints centred in whatever height
+        // the element has, so raising min-height grows the hit area without
+        // moving the slider. Relaxed on a fine pointer, where 16px is a
+        // perfectly good mouse target and the extra height would just push
+        // the two time-control rows apart.
+        className="min-h-[44px] w-full accent-gold-leaf disabled:cursor-not-allowed [@media(pointer:fine)]:min-h-0"
       />
-      <div className="mt-1 flex justify-between font-mono text-[11px] text-parchment-400">
+      <div className="mt-1 flex justify-between font-mono text-[12px] text-parchment-400">
         <span>{formatEdgeLabel(values[0])}</span>
         <span>{formatEdgeLabel(values[values.length - 1])}</span>
       </div>

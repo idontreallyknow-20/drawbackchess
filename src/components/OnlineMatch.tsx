@@ -37,10 +37,22 @@ const GameOver = dynamic(() => import("@/components/GameOver").then((m) => m.Gam
 import { MobileNavMenu } from "@/components/MobileNavMenu";
 import { MobileBuffDrawer } from "@/components/MobileBuffDrawer";
 import { cardFaceIcon } from "@/lib/cardIcon";
+import {
+  TABLET_STACK_BOARD,
+  TABLET_STACK_CENTER,
+  TABLET_STACK_COL,
+  TABLET_STACK_FAB,
+  TABLET_STACK_HIDE,
+  TABLET_STACK_SCROLL,
+  TABLET_STACK_SHOW,
+  TABLET_STACK_UNCLIP,
+} from "@/components/matchLayout";
 import { bottomChromePadClass } from "@/components/mobileChrome";
 import { MobileMatchStack } from "@/components/MobileMatchStack";
+import { BoardTools, FlipBoardButton } from "@/components/board/BoardTools";
 import { FxToggleButton } from "@/components/FxToggleButton";
 import { MoveList } from "@/components/MoveList";
+import { BoardEvalStrip, matchRulePhrases } from "@/components/EvalBar";
 import { NerfCard } from "@/components/NerfCard";
 import { Pocket } from "@/components/Pocket";
 import { PlayerNerfCard } from "@/components/PlayerNerfCard";
@@ -53,7 +65,7 @@ import { cloneBoard, findKing, isInCheck, makeMove, moveFromUCI, moveToUCI, posi
 import { activeRuleIds, fnv1a } from "@/engine/desync";
 import { draftCardNoun, turnCost } from "@/engine/buff";
 import { useDeferredMoveRisks } from "@/lib/useDeferredMoveRisks";
-import { loadSettings } from "@/lib/settings";
+import { SETTINGS_CHANGED_EVENT, loadSettings } from "@/lib/settings";
 import type { GameContext, Nerf } from "@/engine/nerf";
 import { IMPLEMENTED_BY_ID, openingNerfPool } from "@/engine/nerfs/library";
 import {
@@ -96,7 +108,7 @@ import {
   saveOnlineSeat,
 } from "@/lib/multiplayer";
 import { premoveOptionsFor, premoveSelfChecks, previewMovesFor } from "@/lib/premoves";
-import { isMuted, playCapture, playChallenge, playCheck, playError, playGameStart, playMove as playMoveSfx, playNerf, setMuted } from "@/lib/sounds";
+import { isMuted, playChallenge, playCheck, playDrawOffer, playError, playGameStart, playMove as playMoveSfx, playMoveCue, playNerf, setMuted } from "@/lib/sounds";
 import { Button } from "@/components/ui/Button";
 
 // Mirrors the server's start-of-game grace: each side's first move gets this
@@ -345,6 +357,16 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
   // scripted-video aid). Purely visual and owner-only, like recording mode.
   const [recCleanFrame, setRecCleanFrame] = useState(false);
   const [uiSettings, setUiSettings] = useState(() => loadSettings());
+  // Follow settings written from anywhere, not only from this page's own
+  // settings panel closing. The board flip control and its `f` key write
+  // `flipBoard` through the normal settings path, and without this listener the
+  // board would not turn until the panel was next opened and shut. Mirrors
+  // /game's own sync (src/app/game/page.tsx).
+  useEffect(() => {
+    const sync = () => setUiSettings(loadSettings());
+    window.addEventListener(SETTINGS_CHANGED_EVENT, sync);
+    return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, sync);
+  }, []);
   const [confirmingResign, setConfirmingResign] = useState(false);
   const [confirmingDraw, setConfirmingDraw] = useState(false);
   // A move held for confirmation (Settings > Gameplay > Move confirmation).
@@ -924,15 +946,16 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
   // Immediate audio feedback for a move we just sent: the board already shows
   // it optimistically, so the sound must not wait for the server ack either.
   const playMoveSound = (move: Move, base: BoardState) => {
-    if (move.captured) playCapture();
-    else playMoveSfx();
+    playMoveCue(move);
     const after = makeMove(cloneBoard(base), move);
     // Run the buff-aware test against a view of the live game holding the
     // optimistic board, so a check delivered only through buff-granted
     // movement still sounds; without game context fall back to the plain test.
     const g = gameRef.current;
     const inCheck = g ? gameInCheck({ ...g, board: after }, after.turn) : isInCheck(after, after.turn);
-    if (inCheck) later(playCheck, 80);
+    // This path only ever voices a move WE just sent, so a check here is one we
+    // just gave, never one we are in.
+    if (inCheck) later(() => playCheck({ onMe: false }), 80);
   };
 
   // Fire the queued premove the instant it becomes our turn. No artificial
@@ -1199,9 +1222,8 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           }
         }
         if (!alreadySounded) {
-          if (lm.captured) playCapture();
-          else playMoveSfx();
-          if (gameInCheck(next, next.board.turn)) later(playCheck, 80);
+          playMoveCue(lm, { opponent: lm.color !== myColor, premove: wasAwaitingPremove && lm.color === myColor });
+          if (gameInCheck(next, next.board.turn)) later(() => playCheck({ onMe: next.board.turn === myColor }), 80);
         }
         // Our turn again (opponent moved, or our premove landed and the next
         // queued one already applies): fire the queued premove immediately.
@@ -1234,6 +1256,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       } else if (e.type === "draw-offer") {
         setError(null);
         setDrawOfferBy(e.color);
+        if (e.color !== myColor) playDrawOffer();
         setDrawOfferStatus(e.color === myColor ? "offering" : "idle");
       } else if (e.type === "abort-warning") {
         setAbortNotice({
@@ -2617,13 +2640,18 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
   // chrome on short landscape viewports, and the old 7rem reserve let the
   // board push the bottom clock off-screen / under the drawer there.
   // Literal class strings only, so Tailwind's JIT emits them.
-  const boardFitClass = hint
-    ? railCollapsed
-      ? "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw-380px))] max-w-full"
-      : "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full"
-    : railCollapsed
-    ? "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw-380px))] max-w-full"
-    : "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full";
+  // A portrait tablet drops both rails and takes the column (matchLayout.ts),
+  // so it gets one more term appended to every branch.
+  const boardFitClass =
+    (hint
+      ? railCollapsed
+        ? "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw-380px))] max-w-full"
+        : "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full"
+      : railCollapsed
+      ? "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw-380px))] max-w-full"
+      : "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full") +
+    " " +
+    TABLET_STACK_BOARD;
   // Takebacks are casual-only (and off in Draft games, whose rolled offers
   // and applied buffs cannot rewind) and need a move of mine on the board.
   const takebackAvailable =
@@ -2673,7 +2701,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={confirmHeldMove}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Confirm
         </button>
@@ -2690,7 +2718,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onOfferDraw}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Offer draw
         </button>
@@ -2729,13 +2757,13 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onClaimWin}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Claim win
         </button>
         <Button tone="ghost"
           onClick={onClaimDraw}
-          className="min-w-0 px-3 py-2 text-xs font-semibold tracking-wide">
+          className="min-w-0 px-3 py-2 text-[13px] font-semibold tracking-wide">
           Claim draw
         </Button>
       </div>
@@ -2757,13 +2785,13 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onAcceptTakeback}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Allow
         </button>
         <Button tone="ghost"
           onClick={onDeclineTakeback}
-          className="min-w-0 px-3 py-2 text-xs font-semibold tracking-wide">
+          className="min-w-0 px-3 py-2 text-[13px] font-semibold tracking-wide">
           Decline
         </Button>
       </div>
@@ -2775,19 +2803,19 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onAcceptDraw}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Accept
         </button>
         <Button tone="ghost"
           onClick={onDeclineDraw}
-          className="min-w-0 px-3 py-2 text-xs font-semibold tracking-wide">
+          className="min-w-0 px-3 py-2 text-[13px] font-semibold tracking-wide">
           Decline
         </Button>
       </div>
       <Button tone="danger"
         onClick={requestResign}
-        className="w-full min-w-0 px-3 py-2 text-xs font-semibold tracking-wide">
+        className="w-full min-w-0 px-3 py-2 text-[13px] font-semibold tracking-wide">
         Resign
       </Button>
     </div>
@@ -2805,7 +2833,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           <button
             onClick={onAbort}
             title="End the game without a result. Nobody wins and no rating changes."
-            className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+            className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
           >
             Abort
           </button>
@@ -2813,7 +2841,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           <button
             onClick={onOfferDraw}
             disabled={drawOfferStatus === "offering"}
-            className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+            className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {drawOfferStatus === "offering" ? "Offered" : "Draw"}
           </button>
@@ -2823,14 +2851,14 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
             onClick={onOfferTakeback}
             disabled={takebackStatus === "offering"}
             title="Ask your opponent to let you take your last move back"
-            className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-bruise-glow/40 bg-bruise/10 text-bruise-glow hover:bg-bruise/20 hover:border-bruise-glow/70 transition text-xs font-display font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+            className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-bruise-glow/40 bg-bruise/10 text-bruise-glow hover:bg-bruise/20 hover:border-bruise-glow/70 transition text-[13px] font-display font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {takebackStatus === "offering" ? "Asked" : "Takeback"}
           </button>
         )}
         <Button tone="danger"
           onClick={requestResign}
-          className="min-w-0 px-3 py-2 text-xs font-semibold tracking-wide">
+          className="min-w-0 px-3 py-2 text-[13px] font-semibold tracking-wide">
           Resign
         </Button>
       </div>
@@ -2840,7 +2868,8 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
   return (
     <main
       className={
-        "flex min-h-dvh flex-col sm:h-dvh sm:min-h-0 sm:overflow-hidden" +
+        "flex min-h-dvh flex-col sm:h-dvh [@media(pointer:fine)]:min-h-0 sm:overflow-hidden " +
+        TABLET_STACK_SCROLL +
         (recordingLayout ? " recording-mode" : "")
       }
     >
@@ -2853,7 +2882,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           // two can never render on top of each other.
           className="fixed right-3 top-16 z-40 w-[min(80vw,20rem)] border border-gold/40 bg-ink-700/95 p-3 shadow-plate"
         >
-          <div className="text-[10px] text-parchment-400">
+          <div className="text-[12px] text-parchment-400">
             {abortNotice.level === "timeout" ? "New games paused" : "Abort warning"}
           </div>
           <p className="mt-1 text-xs leading-snug text-parchment-300">
@@ -2863,7 +2892,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           </p>
           <Button tone="ghost"
             onClick={() => setAbortNotice(null)}
-            className="mt-2 px-2 py-1 text-[11px] tracking-wide">
+            className="mt-2 px-2 py-1 text-[13px] tracking-wide">
             Dismiss
           </Button>
         </div>
@@ -2901,7 +2930,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
             onClick={toggleMute}
             aria-label={muted ? "Unmute" : "Mute"}
             title={muted ? "Sound off" : "Sound on"}
-            className="h-11 w-11 sm:h-9 sm:w-9 rounded-full">
+            className="h-[44px] w-[44px] [@media(pointer:fine)]:h-[36px] [@media(pointer:fine)]:w-[36px] rounded-full">
             {muted ? (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -2920,7 +2949,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
             onClick={() => setSettingsOpen(true)}
             aria-label="Settings"
             title="Settings"
-            className="h-11 w-11 sm:h-9 sm:w-9 rounded-full">
+            className="h-[44px] w-[44px] [@media(pointer:fine)]:h-[36px] [@media(pointer:fine)]:w-[36px] rounded-full">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -2932,6 +2961,8 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       <div
         className={
           "match-content mx-auto flex w-full max-w-[1360px] flex-1 min-h-0 flex-col gap-2 px-0 sm:overflow-hidden sm:px-6 xl:max-w-[1680px] " +
+          TABLET_STACK_UNCLIP +
+          " " +
           bottomChromePadClass(!!(isDraft && game.buffs))
         }
       >
@@ -3048,8 +3079,14 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           {!railCollapsed && !recordingLayout && (
             <RailResizeHandle railWidth={railWidth} resizeRail={resizeRail} />
           )}
-          <div className="match-board-col flex min-h-0 flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-start">
-            <div ref={boardShellRef} className="match-board-shell min-h-0 min-w-0 sm:flex-none">
+          <div className={"match-board-col flex min-h-0 flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-start " + TABLET_STACK_COL}>
+            {/* In the band the whole column — player strips, board, stack —
+                shares the board's width and centres as one, so the strips line
+                up with the board's edges instead of spanning the viewport. */}
+            <div
+              ref={boardShellRef}
+              className={`match-board-shell min-h-0 min-w-0 sm:flex-none ${TABLET_STACK_BOARD} ${TABLET_STACK_CENTER}`}
+            >
               {/* Player bars at every breakpoint (2026-07 layout pass): the
                   opponent's identity + clock ride directly above the board and
                   the viewer's directly below it, so nothing forces a scan
@@ -3096,7 +3133,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
               <div
                 data-board-measure
                 className={
-                  `relative mx-auto sm:mx-0 transition-opacity duration-200 ${boardFitClass}` +
+                  `relative mx-auto sm:mx-0 ${TABLET_STACK_CENTER} transition-opacity duration-200 ${boardFitClass}` +
                   // Reconnecting: dim the board 20% (it stays visible, never
                   // unmounted) while input is disabled below.
                   (connectionLost ? " opacity-80" : "")
@@ -3262,7 +3299,37 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
                     compact
                   />
                 )}
+                {/* Flip, on the surface that cannot press `f`. Exactly
+                    complementary to the side rail below (`hidden sm:grid` plus
+                    TABLET_STACK_HIDE), which carries the same button and the
+                    keymap: wherever the rail stands down, this stands up, so
+                    the control is never absent and never doubled. */}
+                <FlipBoardButton
+                  className={"zen-hide shrink-0 sm:hidden " + TABLET_STACK_SHOW}
+                />
               </div>
+              {/* Eval bar, AFTER the result and not one move before it.
+                  A live engine readout beside your own board in a rated game is
+                  engine assistance, whatever it is labelled: lichess disables
+                  computer analysis during play for exactly this reason, and
+                  there is no setting on this site to turn one off. Gating it on
+                  game.result also means the search costs a player nothing while
+                  their clock is running, because it never runs. Spectators and
+                  replays get the bar throughout; they are not the ones moving.
+                  See docs handoff: a live bar needs a settings flag and a rated
+                  policy before it can ship. */}
+              {game.result && (
+                <BoardEvalStrip
+                  board={boardForDisplay}
+                  rules={matchRulePhrases({
+                    mode: isDraft ? (isBuffMode ? "buff" : "nerf") : "nerf",
+                    whiteNerf: game.white.nerf.name,
+                    blackNerf: game.black.nerf.name,
+                    hasDrops: game.board.history.some((m) => m.drop),
+                  })}
+                  className={`zen-hide mx-auto sm:mx-0 ${boardFitClass}`}
+                />
+              )}
               <MobileMatchStack
                 actions={historyActions}
                 moves={game.board.history}
@@ -3365,6 +3432,11 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
             <div
               className={
                 "match-side-rail hidden min-h-0 overflow-hidden gap-3 sm:grid sm:h-[var(--board-height)] sm:w-72 sm:shrink-0 " +
+                // The move rail is what squeezed the board on a portrait
+                // tablet; there the move list is the horizontal strip in the
+                // stack under the board instead.
+                TABLET_STACK_HIDE +
+                " " +
                 (clockEnabled && !start.rated
                   ? "sm:grid-rows-[auto_minmax(0,1fr)_auto]"
                   : "sm:grid-rows-[minmax(0,1fr)_auto]")
@@ -3409,7 +3481,24 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
               />
               {/* The effects control keeps clear inset from the rail edge so
                   its slider and labels are never clipped at any width. */}
-              <div className="flex justify-end px-1 pt-1">
+              <div className="flex items-center justify-end gap-2 px-1 pt-1">
+                {/* Flip and the shortcut sheet, plus the keymap binding for
+                    this surface (f, ?, k/j, 0/$, Home/End, c). The ply jump
+                    reuses the same state the wheel-over-board scrub reads. */}
+                <BoardTools
+                  onPlyNav={(to) => {
+                    const st = wheelNavRef.current;
+                    if (st.blocked || st.max === 0) return;
+                    const cur = st.ply ?? st.max;
+                    const next =
+                      to === "first"
+                        ? st.min
+                        : to === "last"
+                        ? st.max
+                        : cur + (to === "prev" ? -1 : 1);
+                    st.nav(Math.max(st.min, Math.min(next, st.max)));
+                  }}
+                />
                 <FxToggleButton />
               </div>
             </div>
@@ -3713,7 +3802,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           <Button tone="leaf"
            
             onClick={handleRematch}
-            className="shrink-0 px-3 py-1.5 text-xs font-semibold">
+            className="shrink-0 px-3 py-1.5 text-[13px] font-semibold">
             Accept
           </Button>
         </motion.div>
@@ -3722,7 +3811,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
         <Button tone="leaf"
          
           onClick={() => setShowResult(true)}
-          className="fixed bottom-4 right-3 z-40 px-4 py-2 text-sm font-semibold shadow-xl sm:bottom-16 lg:bottom-4">
+          className={"fixed bottom-4 right-3 z-40 px-4 py-2 text-sm font-semibold shadow-xl sm:bottom-16 lg:bottom-4 " + TABLET_STACK_FAB}>
           Show result
         </Button>
       )}

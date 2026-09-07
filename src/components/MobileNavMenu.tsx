@@ -179,7 +179,7 @@ export function MobileNavMenu({
         aria-expanded={open}
         aria-label={open ? "Close menu" : "Open menu"}
         onClick={() => setOpen((v) => !v)}
-        className="h-11 w-11">
+        className="h-[44px] w-[44px]">
         {open ? <X size={18} /> : <Menu size={18} />}
       </Button>
       {open && panelPos &&
@@ -230,7 +230,7 @@ export function MobileNavMenu({
             {groups.map((group) => (
               <div key={group.header}>
                 <div className="mx-3 mb-1 mt-2 h-px bg-[color:var(--bg-raised)]" />
-                <div className="px-4 pb-1 pt-0.5 text-[11px] text-parchment-400">{group.header}</div>
+                <div className="px-4 pb-1 pt-0.5 text-[12px] text-parchment-400">{group.header}</div>
                 {group.items.map((item, ii) => {
                   const activeItem = itemActive(item.href, pathname);
                   return (

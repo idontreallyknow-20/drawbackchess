@@ -78,7 +78,7 @@ function MiniCard({ id, tier }: { id: string; tier: number }) {
         </span>
         <span
           className={
-            "shrink-0 rounded-[1px] border px-1 py-px font-display text-[10px] font-bold leading-none tier-bg-" +
+            "shrink-0 rounded-[1px] border px-1 py-px font-display text-[12px] font-bold leading-none tier-bg-" +
             tier +
             " tier-" +
             tier
@@ -87,10 +87,10 @@ function MiniCard({ id, tier }: { id: string; tier: number }) {
           {roman}
         </span>
       </span>
-      {cat ? <span className="text-[10px] leading-none text-parchment-400">{cat}</span> : null}
+      {cat ? <span className="text-[12px] leading-none text-parchment-400">{cat}</span> : null}
       <span
         className={
-          "text-[11px] leading-snug text-parchment-300 " + (open ? "" : "line-clamp-2")
+          "text-[12px] leading-snug text-parchment-300 " + (open ? "" : "line-clamp-2")
         }
       >
         <GlossaryText text={def.description} />
@@ -109,7 +109,7 @@ function HiddenCard({ tier }: { tier?: number }) {
       className="relative flex h-9 w-7 shrink-0 items-center justify-center rounded-[2px] border border-gold/30 bg-ink-950"
     >
       <span aria-hidden className="absolute inset-[2px] rounded-[1px] border border-gold/15" />
-      {roman ? <span className={"font-display text-[11px] font-bold tier-" + tier}>{roman}</span> : (
+      {roman ? <span className={"font-display text-[12px] font-bold tier-" + tier}>{roman}</span> : (
         <span className="text-[13px] text-parchment-500">?</span>
       )}
     </span>
@@ -123,7 +123,7 @@ function Frame({ label, children }: { label: string; children: React.ReactNode }
           distinct from your own cards above. */}
       <div className="mb-1.5 flex items-center gap-1.5">
         <span aria-hidden className="h-2.5 w-0.5 rounded-full bg-oxblood-glow/70" />
-        <span className="text-[11px] tracking-wide text-parchment-400">{label}</span>
+        <span className="text-[12px] tracking-wide text-parchment-400">{label}</span>
       </div>
       <div className="flex flex-wrap items-start justify-center gap-1.5">{children}</div>
     </div>

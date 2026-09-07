@@ -148,7 +148,7 @@ export function BuffDock({ game, myColor, canAct, onStartUse, hideOpponentCards,
     const newestIndex = owner === "mine" ? mine.length - 1 : -1;
     if (liveRows.length + deadRows.length === 0) {
       return (
-        <p className="text-[12px] text-parchment-400">
+        <p className="text-[13px] text-parchment-400">
           {owner === "mine" ? "None yet." : `No ${nounPlural} revealed yet.`}
         </p>
       );
@@ -217,7 +217,8 @@ export function BuffDock({ game, myColor, canAct, onStartUse, hideOpponentCards,
               aria-selected={view === t.id}
               onClick={() => setView(t.id)}
               className={
-                "flex flex-1 items-center justify-center gap-1.5 border-b-2 px-2 py-1.5 font-display text-[12px] transition " +
+                // Tab labels ("You" / "Them") are interactive text: 13px.
+                "flex min-h-[44px] flex-1 items-center justify-center gap-1.5 border-b-2 px-2 py-1.5 font-display text-[13px] transition [@media(pointer:fine)]:min-h-0 " +
                 (view === t.id
                   ? "border-[color:var(--accent)] text-parchment-50"
                   : "border-transparent text-parchment-300 hover:text-parchment-100")
@@ -228,14 +229,14 @@ export function BuffDock({ game, myColor, canAct, onStartUse, hideOpponentCards,
               {/* Hotkey hint, pointer devices only: a phone has no key. */}
               <kbd
                 aria-hidden
-                className="hidden rounded-[1px] border border-[color:var(--edge)] px-1 font-mono text-[11px] leading-4 text-parchment-400 [@media(hover:hover)]:inline"
+                className="hidden rounded-[1px] border border-[color:var(--edge)] px-1 font-mono text-[12px] leading-4 text-parchment-400 [@media(hover:hover)]:inline"
               >
                 {t.key}
               </kbd>
               {t.badge > 0 && (
                 <span
                   title={`${t.badge} card${t.badge === 1 ? "" : "s"} you could use now`}
-                  className="grid h-4 min-w-[1rem] place-items-center rounded-[1px] bg-gold px-1 font-mono text-[11px] font-bold text-ink-950"
+                  className="grid h-[17px] min-w-[17px] place-items-center rounded-[1px] bg-gold px-1 font-mono text-[12px] font-bold leading-none text-ink-950"
                 >
                   {t.badge}
                 </span>

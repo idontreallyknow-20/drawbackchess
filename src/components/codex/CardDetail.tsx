@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { GlossaryText } from "@/components/GlossaryText";
 import { InfoPageLayout, InfoSection } from "@/components/InfoPageLayout";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import type { Buff } from "@/engine/buff";
 import type { Nerf } from "@/engine/nerf";
 import { ALL_BUFFS } from "@/engine/buffs/library";
@@ -65,29 +66,18 @@ const SECTION_TAB: Record<string, string> = {
 function CardBreadcrumb({ section, name }: { section: string; name: string }) {
   const tab = SECTION_TAB[section] ?? "buffs";
   const familyHref = tab === "buffs" ? "/codex" : `/codex?tab=${tab}`;
-  const sep = (
-    <span aria-hidden className="text-parchment-500">
-      /
-    </span>
-  );
+  // The trail's markup, separators and hit areas live in one place now
+  // (components/ui/Breadcrumbs). This was the only visible breadcrumb on the
+  // site and its links measured 19.5px tall against the 44px floor.
   return (
-    <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-[13px]">
-      <Link href="/" className="text-parchment-400 transition-colors hover:text-parchment-100">
-        Home
-      </Link>
-      {sep}
-      <Link href="/codex" className="text-parchment-400 transition-colors hover:text-parchment-100">
-        Codex
-      </Link>
-      {sep}
-      <Link href={familyHref} className="text-parchment-400 transition-colors hover:text-parchment-100">
-        {section}
-      </Link>
-      {sep}
-      <span aria-current="page" className="text-parchment-200">
-        {name}
-      </span>
-    </nav>
+    <Breadcrumbs
+      items={[
+        { label: "Home", href: "/" },
+        { label: "Codex", href: "/codex" },
+        { label: section, href: familyHref },
+        { label: name },
+      ]}
+    />
   );
 }
 
@@ -146,7 +136,7 @@ function PrevNextNav({
         <Link href={prev.path} className={cell}>
           <ChevronLeft size={16} aria-hidden className="shrink-0 text-parchment-400" />
           <span className="min-w-0">
-            <span className="block text-[11px] text-parchment-400">Previous {noun}</span>
+            <span className="block text-[13px] text-parchment-400">Previous {noun}</span>
             <span className="block truncate font-display text-[14px] text-parchment-100">{prev.name}</span>
           </span>
         </Link>
@@ -156,7 +146,7 @@ function PrevNextNav({
       {next ? (
         <Link href={next.path} className={cell + " justify-end text-right sm:col-start-2"}>
           <span className="min-w-0">
-            <span className="block text-[11px] text-parchment-400">Next {noun}</span>
+            <span className="block text-[13px] text-parchment-400">Next {noun}</span>
             <span className="block truncate font-display text-[14px] text-parchment-100">{next.name}</span>
           </span>
           <ChevronRight size={16} aria-hidden className="shrink-0 text-parchment-400" />
@@ -168,7 +158,7 @@ function PrevNextNav({
 
 function TypeBadge({ type }: { type: CardType }) {
   return (
-    <span className="inline-flex items-center rounded-none border border-[color:var(--edge)] px-2 py-0.5 text-[11px] text-parchment-300">
+    <span className="inline-flex items-center rounded-none border border-[color:var(--edge)] px-2 py-0.5 text-[12px] text-parchment-300">
       {type}
     </span>
   );
@@ -178,7 +168,7 @@ function TypeBadge({ type }: { type: CardType }) {
 function GlanceRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
-      <dt className="text-[11px] text-parchment-400 sm:w-32 sm:shrink-0 sm:pt-0.5">{label}</dt>
+      <dt className="text-[12px] text-parchment-400 sm:w-32 sm:shrink-0 sm:pt-0.5">{label}</dt>
       <dd className="text-[15px] text-parchment-100">{children}</dd>
     </div>
   );
@@ -255,7 +245,7 @@ function DisclosureSection({ title, children }: { title: string; children: React
           </span>
         </span>
       </summary>
-      <div className="space-y-3 px-6 pb-6 text-[15px] leading-relaxed text-parchment-200/90 sm:px-7 sm:pb-7">
+      <div className="space-y-3 px-6 pb-6 text-[15px] leading-relaxed text-parchment-200 sm:px-7 sm:pb-7">
         {children}
       </div>
     </details>
@@ -272,7 +262,7 @@ function HistoryTimeline({ kind, card }: { kind: "buff" | "nerf"; card: Buff | N
       <ol className="space-y-3">
         {events.map((e, i) => (
           <li key={i} className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
-            <span className="text-[11px] text-parchment-400 sm:w-32 sm:shrink-0 sm:pt-0.5">
+            <span className="text-[12px] text-parchment-400 sm:w-32 sm:shrink-0 sm:pt-0.5">
               {formatHistoryDate(e.date)}
             </span>
             <span className="text-[15px] text-parchment-100">
@@ -295,7 +285,12 @@ function RelatedGrid({ title, cards }: { title: string; cards: RelatedCard[] }) 
           <Link
             key={c.id}
             href={c.path}
-            className="flex items-center justify-between gap-3 rounded-none border border-[color:var(--edge)] px-3 py-2 transition hover:border-[color:var(--edge-strong)] hover:bg-[color:var(--bg-raised)]"
+            // The related-card rows measured 40.4px tall, four short of the
+            // floor, and there are twelve of them on every card page. A
+            // min-height rather than more padding, and no `sm:` step-down: a
+            // tablet is a coarse pointer, and the desktop row is only 3.6px
+            // tighter anyway, so it keeps the 44px on a mouse too.
+            className="flex min-h-[44px] items-center justify-between gap-3 rounded-none border border-[color:var(--edge)] px-3 py-2 transition hover:border-[color:var(--edge-strong)] hover:bg-[color:var(--bg-raised)]"
           >
             <span className="font-display text-parchment-100">{c.name}</span>
             {/* 12px tier chip carrying the tier's own color (tier-bg + tier),
