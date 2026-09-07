@@ -2097,6 +2097,136 @@ function aiSquareScore(game: NerfGame, me: Color, sq: Square): number {
   return p.color === me ? 100 + base + centrality : 1000 + base + centrality;
 }
 
+/**
+ * Material on the board from `me`'s side, minus what `me` is about to lose.
+ *
+ * The second half is the part that matters. A card that MOVES one of your
+ * pieces (a line sweep relocates the sweeper, a teleport lands it somewhere
+ * new) can win material on the way and still be a blunder, because the piece
+ * ends the turn standing where the opponent can take it. Counting only the
+ * pieces on the board cannot see that, so a hanging piece is charged here at
+ * its full value, less whatever it is standing on if a recapture is available.
+ */
+function aiPositionScore(game: NerfGame, me: Color): number {
+  const opp: Color = me === "w" ? "b" : "w";
+  let mine = 0;
+  let theirs = 0;
+  for (let sq = 0; sq < 64; sq++) {
+    const p = game.board.pieces[sq];
+    if (!p || p.type === "k") continue;
+    if (p.color === me) mine += AI_PIECE_VALUE[p.type];
+    else theirs += AI_PIECE_VALUE[p.type];
+  }
+  const theirAttacks = attackedBy(game.board, opp);
+  const myAttacks = attackedBy(game.board, me);
+  let hanging = 0;
+  for (let sq = 0; sq < 64; sq++) {
+    const p = game.board.pieces[sq];
+    if (!p || p.color !== me || p.type === "k") continue;
+    if (!theirAttacks.has(sq)) continue;
+    // Defended pieces are not free, so only the excess is at risk. This is a
+    // deliberately crude static exchange: it does not resolve a full capture
+    // sequence, only "can they take it and do we get something back".
+    hanging += myAttacks.has(sq) ? Math.max(0, AI_PIECE_VALUE[p.type] - 3) : AI_PIECE_VALUE[p.type];
+  }
+  return mine - theirs - hanging;
+}
+
+/**
+ * Rank a fully-formed pick sequence by what the board actually looks like
+ * afterwards, by applying it to a detached copy of the game.
+ *
+ * WHY THIS EXISTS
+ *
+ * `aiSquareScore` ranks a square by the single piece standing on it
+ * (`1000 + value * 20` for an enemy). That is a reasonable first guess and it
+ * is wrong in two ways that a sweep exposes at once. It cannot see what a card
+ * catches along the way, so a line that eats three pawns scores below one that
+ * ends on a knight; and it cannot see where the card leaves the piece it
+ * moved, so the bot walks its queen onto a defended square to reach the
+ * biggest target and hands over nine points for three.
+ *
+ * `queens_rampage` measured -13.6 win-rate points for its holder because of
+ * this, at tier 7. The card is fine. The policy that fires it was not, and a
+ * policy that plays a card badly does not just lose that game: it corrupts
+ * every measurement the balance harness takes of every activated card.
+ *
+ * Simulation rather than more heuristics, because the geometry lives inside
+ * each card's own mechanic and the picker cannot see it. The copy goes through
+ * serialize/deserialize, so it shares no structure with the live game and, in
+ * particular, carries its own RNG state: a card that rolls dice during this
+ * trial does not advance the real stream and replays stay deterministic.
+ */
+function aiScoreSequence(game: NerfGame, color: Color, buffIndex: number, picks: BuffPick[]): number | null {
+  const snap = serializeGame(game);
+  const trial = deserializeGame(snap);
+  if (!trial) return null;
+  if (!activateBuff(trial, color, buffIndex, picks)) return null;
+  return aiPositionScore(trial, color);
+}
+
+/**
+ * How many alternatives the refinement pass will simulate. Each costs one
+ * serialize/deserialize round trip plus one `activateBuff`, and an activation
+ * happens at most once per turn, so this is cheap in a real game. It is
+ * bounded anyway because the win-rate harness plays tens of thousands of them.
+ */
+const AI_REFINE_CANDIDATES = 10;
+
+/**
+ * Re-pick the last square by what the board looks like afterwards, not by what
+ * is standing on the square now.
+ *
+ * The greedy sequence is kept as the incumbent and only replaced when a
+ * simulated alternative is strictly better, so this can correct a blunder but
+ * never invents a worse one. If the simulation cannot run at all (a card the
+ * trial refuses to activate) the greedy answer stands unchanged.
+ */
+function refineLastSquarePick(
+  game: NerfGame,
+  color: Color,
+  buffIndex: number,
+  picks: BuffPick[],
+  value: number,
+  lastSquareStep: number,
+  options: Square[],
+): { picks: BuffPick[]; value: number } {
+  if (lastSquareStep < 0 || options.length < 2) return { picks, value };
+  const incumbent = aiScoreSequence(game, color, buffIndex, picks);
+  if (incumbent == null) return { picks, value };
+
+  const chosen = picks[lastSquareStep]?.square;
+  let bestPicks = picks;
+  let bestScore = incumbent;
+  let tried = 0;
+  for (const sq of options) {
+    if (sq === chosen) continue;
+    if (++tried > AI_REFINE_CANDIDATES) break;
+    const alt = picks.map((p, i) => (i === lastSquareStep ? { ...p, square: sq } : p));
+    const score = aiScoreSequence(game, color, buffIndex, alt);
+    if (score != null && score > bestScore) {
+      bestScore = score;
+      bestPicks = alt;
+    }
+  }
+  if (bestPicks === picks) return { picks, value };
+
+  // The worth-firing gate downstream reads `value`, so it has to describe the
+  // sequence actually being returned. Recomputed from the enemy material the
+  // new picks land on, the same way the greedy pass counts it.
+  const opp: Color = color === "w" ? "b" : "w";
+  let newValue = 0;
+  for (const p of bestPicks) {
+    const piece = p.square !== undefined ? game.board.pieces[p.square] : null;
+    if (piece && piece.color === opp) newValue = Math.max(newValue, AI_PIECE_VALUE[piece.type]);
+  }
+  // A sweep that catches three pawns on the way and ends on an empty square is
+  // worth firing, and the landing-square rule alone would score it zero. The
+  // simulated material gain is the honest floor for it.
+  const gained = bestScore - aiPositionScore(game, color);
+  return { picks: bestPicks, value: Math.max(newValue, gained) };
+}
+
 /** Collect a full pick sequence for an activated buff without a UI. Returns
  * null when the buff currently has no valid use, plus a rough value of the
  * best target so the caller can decide whether firing now is worth it. */
@@ -2111,11 +2241,21 @@ function aiCollectPicks(
   const inst0 = game.buffs?.players[color].buffs[buffIndex];
   const def0 = inst0 && BUFF_BY_ID[inst0.id];
   const sacrifice = !!def0 && pickIsSacrifice(def0);
+  // The candidates offered at the LAST square step, kept so the refinement
+  // pass below can try the alternatives the greedy scorer passed over. Only
+  // the last step is revisited: it is where a card's geometry resolves (a
+  // sweep's endpoint, a teleport's destination), and re-searching every step
+  // would multiply out for no benefit on the one and two pick cards that make
+  // up nearly the whole library.
+  let lastSquareStep = -1;
+  let lastSquareOptions: Square[] = [];
   for (let step = 0; step < 16; step++) {
     const target = buffNextTarget(game, color, buffIndex, picks);
-    if (!target) return { picks, value };
+    if (!target) return refineLastSquarePick(game, color, buffIndex, picks, value, lastSquareStep, lastSquareOptions);
     if (target.kind === "square") {
       if (!target.squares.length) return null;
+      lastSquareStep = picks.length;
+      lastSquareOptions = target.squares;
       let best = target.squares[0];
       let bestScore = -Infinity;
       for (const sq of target.squares) {
@@ -2146,7 +2286,9 @@ function aiCollectPicks(
       picks.push({ buffIndex: best.index });
     }
   }
-  return { picks, value };
+  // The 16-step guard tripped, so the card never finished asking. Refine
+  // anyway rather than returning a different shape from the normal path.
+  return refineLastSquarePick(game, color, buffIndex, picks, value, lastSquareStep, lastSquareOptions);
 }
 
 /** Fire at most one of the bot's activated buffs, auto-picking targets.
