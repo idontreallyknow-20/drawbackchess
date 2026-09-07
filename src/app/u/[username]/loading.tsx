@@ -6,11 +6,13 @@ import { SkeletonHeader } from "@/components/ui/Skeleton";
 export default function Loading() {
   return (
     <main className="min-h-screen pb-16">
-      {/* A skeleton with no h1 leaves the route headingless for the whole
-          load, which is when someone arriving by screen reader most needs to
-          know where they are. Generic because the real name has not arrived
-          yet; the loaded page replaces it with the actual one. */}
-      <h1 className="sr-only">Player profile</h1>
+      {/* No h1 here, deliberately, and it is not an oversight: the page
+          component's own ProfileSkeleton carries one, and sampling the
+          arrival frame by frame shows that skeleton mounts alongside this
+          fallback rather than after it. Two identical sr-only headings were
+          live at once, which breaks the one-h1 rule the route sweep checks.
+          The component's heading is the one to keep: it also covers
+          client-side navigation, where this file never renders at all. */}
       <SkeletonHeader />
       <section className="mx-auto max-w-6xl px-5 py-8 sm:px-6">
         <div className="flex items-center gap-4">

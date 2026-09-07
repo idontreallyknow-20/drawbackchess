@@ -1536,6 +1536,26 @@ function AchievementsStrip({ username }: { username: string }) {
 function ProfileSkeleton() {
   return (
     <section className="mx-auto max-w-6xl px-5 py-8 sm:px-6">
+      {/* The route has THREE loading states and this is the one that was
+          headingless: the client component's own, shown while it fetches, and
+          reached on any client-side navigation where `loading.tsx` never
+          renders at all. Without a heading here the page had none for the
+          whole fetch, which on a slow connection is most of the time anyone
+          spends on it.
+
+          The heading lives here rather than in `loading.tsx` because this
+          component covers every path, including the one that file misses.
+          `loading.tsx` deliberately has none, or the two would stack.
+
+          Known and accepted: this component is mounted TWICE for a frame or
+          two on arrival, once as the Suspense fallback in ProfilePage and once
+          as ProfileContent's own `!profile` return, so two identical sr-only
+          headings are briefly live. Removing one leaves a phase with none,
+          which is the worse failure: a duplicate heading for 100ms is not
+          something a reader will notice, and a missing one for the length of a
+          fetch is. Worth knowing if the route sweep's one-h1 assertion ever
+          flakes here; it should read settled state. */}
+      <h1 className="sr-only">Player profile</h1>
       <div className="flex items-center gap-4">
         <div className="skeleton h-[72px] w-[72px] shrink-0 rounded-full" style={{ borderRadius: "50%" }} />
         <div className="min-w-0">
