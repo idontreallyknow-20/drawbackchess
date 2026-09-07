@@ -363,7 +363,10 @@ export function PuzzleRunner({
           </div>
           <Link
             href={`/codex/nerf/${puzzle.rule.id}`}
-            className="mt-1 block text-[14px] font-semibold text-gold-leaf hover:underline"
+            // 21px tall: a full-width block link whose height is its line box.
+            // Both rule links are the route out of a puzzle into the card that
+            // explains it, which is the one thing a stuck player reaches for.
+            className="mt-1 flex min-h-[44px] items-center text-[14px] font-semibold text-gold-leaf hover:underline [@media(pointer:fine)]:min-h-0"
           >
             {puzzle.rule.name}
           </Link>
@@ -387,7 +390,10 @@ export function PuzzleRunner({
             </h2>
             <Link
               href={`/codex/nerf/${puzzle.foeRule.id}`}
-              className="mt-1 block text-[14px] font-semibold text-gold-leaf hover:underline"
+              // 21px tall: a full-width block link whose height is its line box.
+            // Both rule links are the route out of a puzzle into the card that
+            // explains it, which is the one thing a stuck player reaches for.
+            className="mt-1 flex min-h-[44px] items-center text-[14px] font-semibold text-gold-leaf hover:underline [@media(pointer:fine)]:min-h-0"
             >
               {puzzle.foeRule.name}
             </Link>

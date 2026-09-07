@@ -52,6 +52,17 @@ Working rules for every round, non-negotiable:
   Every touch-target defect found so far has been masked by some width query
   standing in for a pointer query, and a probe that only varies width
   reproduces the same blind spot it is meant to find.
+- **A detector that reports hundreds of findings on one surface is usually
+  wrong about that surface.** Every time the sweep's touch-target check has
+  produced a big number it has been the check, not the site: 241 GlossaryText
+  spans (the exemption tested `tagName === "A"`), 120 codex rows (the row was
+  the target and the link inside it was reported), 108 settings switches (the
+  hit area lives on an absolutely-positioned `::before`, which
+  `getBoundingClientRect` does not see), 64 puzzle-board squares (a chess
+  square at 360 is 42px because the board is 336px wide, and demanding 44
+  would be demanding a board that does not fit), and the whole fine-pointer
+  count. Read the top ten findings on the worst route before believing the
+  total, and check the shape they share.
 
 ---
 

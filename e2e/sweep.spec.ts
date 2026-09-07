@@ -134,6 +134,14 @@ function routes(): Route[] {
     { url: "/privacy-policy", slug: "privacy-policy" },
     { url: "/profile", slug: "profile" },
     { url: "/profile/edit", slug: "profile-edit" },
+    // Added round 7. Both shipped in this session and neither was swept, so
+    // the newest surfaces on the site were the only ones with no regression
+    // net under them. /settings/appearance is here as well as /settings
+    // because the section route is a different page (its own title, canonical
+    // and 404), not a scroll position on the index.
+    { url: "/puzzles", slug: "puzzles" },
+    { url: "/settings", slug: "settings" },
+    { url: "/settings/appearance", slug: "settings-appearance" },
     { url: "/stats", slug: "stats" },
     { url: "/terms-of-service", slug: "terms-of-service" },
     { url: "/tournaments", slug: "tournaments" },
@@ -527,7 +535,49 @@ async function probe(page: Page, interactiveSelector: string): Promise<DomReport
       if (!visible(el) || srOnly(el)) return;
       if ((el as HTMLButtonElement).disabled) return;
       if (getComputedStyle(el).pointerEvents === "none") return;
-      const r = el.getBoundingClientRect();
+      // A chessboard square is not a touch target in this sense. Its size is
+      // set by the board, which is sized to the viewport: at 360 the board is
+      // 336px wide, so a 44px square is arithmetically impossible and demanding
+      // one would be demanding a board that does not fit the screen. The board
+      // is one target the size of the board.
+      //
+      // This bites unevenly and that is worth knowing: `Board.tsx` renders its
+      // squares as divs with a gridcell role and only ONE roving tab stop, so
+      // the selector caught one of its 64; `PuzzleBoard.tsx` renders real
+      // buttons, so it caught all 64. Same design, two very different numbers,
+      // for a reason that has nothing to do with either board's hit areas.
+      if (el.closest('[role="grid"]')) return;
+      const box = el.getBoundingClientRect();
+      // A control can carry its hit area on an absolutely-positioned pseudo
+      // element that reaches outside its own box, which is the standard way to
+      // give a small switch a thumb-sized target without making the switch
+      // itself bigger. `.settings-toggle::before { inset: -10px -2px }` is
+      // exactly this, and measuring the element alone reported all 27 of them
+      // on /settings as defects.
+      //
+      // Only counted when the element is POSITIONED, because otherwise the
+      // pseudo's containing block is some ancestor and its insets say nothing
+      // about where it sits relative to this box. Only negative insets expand:
+      // a pseudo pulled inwards is decoration, not a target.
+      const r = (() => {
+        const own = getComputedStyle(el);
+        if (own.position === "static") return box;
+        let { top, left, right, bottom } = box;
+        for (const pseudo of ["::before", "::after"]) {
+          const ps = getComputedStyle(el, pseudo);
+          if (!ps || ps.content === "none" || ps.position !== "absolute") continue;
+          if (ps.display === "none" || ps.pointerEvents === "none") continue;
+          const n = (v: string) => {
+            const x = parseFloat(v);
+            return Number.isFinite(x) ? x : 0;
+          };
+          top = Math.min(top, box.top + n(ps.top));
+          left = Math.min(left, box.left + n(ps.left));
+          right = Math.max(right, box.right - n(ps.right));
+          bottom = Math.max(bottom, box.bottom - n(ps.bottom));
+        }
+        return { top, left, right, bottom, width: right - left, height: bottom - top } as DOMRect;
+      })();
       // Half a pixel of slack: a control laid out at 43.7px is a rounding
       // artefact of the layout, not a design that missed the target.
       if (r.width >= 43.5 && r.height >= 43.5) return;
