@@ -1,5 +1,31 @@
 // Does the search's blindness to buff-granted moves show up in the win rates?
 //
+// HISTORICAL AS OF ROUND 8. THE BLINDNESS THIS MEASURES NO LONGER EXISTS.
+//
+// A13 made `negamax` buff-aware, so the search this file was written to study
+// is gone and every win-rate row it reads was measured against it. Running
+// this now mixes an old engine's measurements with a new engine's `grant` and
+// `persists` probes, which is not a comparison of anything.
+//
+// Worse, the finding did not survive the fix. A paired A/B with the same
+// seeds, the card held in BOTH arms and only the searcher differing
+// (`npm run test:search-buff-strength`), gives -0.9 +-3.6 points for
+// `amazon_army` over 120 pairs. This file scaled the interaction below to
+// about 21 points for that card; at +-3.6 the experiment had the power to see
+// 21 and did not. The 4.5-sigma interaction is real in the data and its
+// CAUSE is not established: "the search cannot see the card" was the
+// explanation and a direct experiment declines to support it.
+//
+// Kept because the method is still right and the question is still open. What
+// it needs is a fresh sweep against the new engine (A2), and then either the
+// interaction reappears, in which case something else causes it, or it does
+// not, in which case it was the blindness after all and the A/B was
+// underpowered or confounded by its own design (it grants the card after a
+// random 8-ply opening; the win-rate harness grants at ply 0 from the standard
+// start, which is a real difference).
+//
+// Do not cite the numbers below as current.
+//
 //   ./node_modules/.bin/tsx scripts/analyze-search-bias.ts
 //   ./node_modules/.bin/tsx scripts/analyze-search-bias.ts --json
 //
