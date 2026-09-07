@@ -38,6 +38,7 @@ import {
   newGame,
 } from "../src/engine/game";
 import { attackedBy } from "../src/engine/board";
+import { BUFF_BY_ID } from "../src/engine/buffs/library";
 import { SQ, squareName, type Color, type PieceType, type Square } from "../src/engine/types";
 
 let failures = 0;
@@ -51,14 +52,19 @@ const VALUE: Record<PieceType, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 100 
 
 /** An empty board with both kings tucked in a corner, plus the buff under test. */
 function position(cardId: string, pieces: [number, number, PieceType, Color][]) {
-  const g = newGame(UNRESTRICTED_NERF, UNRESTRICTED_NERF);
-  enableDraftMode(g, "buff");
+  // A fixed seed so the position, and therefore every assertion below, is
+  // the same on every run.
+  const g = newGame(UNRESTRICTED_NERF, UNRESTRICTED_NERF, 1);
+  // (game, seed, opts) rather than (game, mode). Passing "buff" as the seed
+  // ran fine under tsx, which strips types without checking them, and only
+  // the integration typecheck caught it.
+  enableDraftMode(g, 1, { mode: "buff" });
   for (let sq = 0; sq < 64; sq++) g.board.pieces[sq] = null;
   g.board.pieces[SQ(0, 0)] = { type: "k", color: "w" };
   g.board.pieces[SQ(7, 7)] = { type: "k", color: "b" };
   for (const [f, r, type, color] of pieces) g.board.pieces[SQ(f, r)] = { type, color };
   g.board.turn = "w";
-  acquireBuff(g, "w", cardId);
+  acquireBuff(g, "w", cardId, BUFF_BY_ID[cardId]!.tier);
   return g;
 }
 
