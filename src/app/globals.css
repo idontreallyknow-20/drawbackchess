@@ -1087,7 +1087,11 @@ html[data-anim="off"] .rune-loader { animation: none; }
 /* Victory burst: the Level-3 celebration behind the game-over panel. One
    energy ring blooms outward while a handful of sparks in the four energy
    hues climb and die. One shot, pointer-events-none, transform/opacity only,
-   never rendered under reduced motion (the caller gates it). */
+   never rendered under reduced motion (the caller gates it).
+
+   Every duration and delay is scaled by --beat, the ending's tempo (see THE
+   ENDING, AS THREE ACTS below): the burst is part of the ending, so "fast"
+   has to reach it too. --beat defaults to 1 wherever it is not set. */
 .victory-burst {
   position: absolute;
   inset: 0;
@@ -1104,13 +1108,14 @@ html[data-anim="off"] .rune-loader { animation: none; }
   border-radius: 999px;
   border: 2px solid rgb(var(--energy-gold-rgb) / 0.8);
   opacity: 0;
-  animation: victory-ring 1.1s cubic-bezier(0.15, 0.7, 0.2, 1) 0.15s both;
+  animation: victory-ring calc(1.1s * var(--beat, 1)) cubic-bezier(0.15, 0.7, 0.2, 1)
+    calc(0.15s * var(--beat, 1)) both;
 }
 .victory-burst__ring--echo {
   border-width: 1px;
   border-color: rgb(var(--energy-void-rgb) / 0.6);
-  animation-delay: 0.3s;
-  animation-duration: 1.3s;
+  animation-delay: calc(0.3s * var(--beat, 1));
+  animation-duration: calc(1.3s * var(--beat, 1));
 }
 @keyframes victory-ring {
   0% { opacity: 0; transform: scale(0.3); }
@@ -1127,7 +1132,8 @@ html[data-anim="off"] .rune-loader { animation: none; }
   background: rgb(var(--spark-rgb, var(--energy-gold-rgb)));
   box-shadow: 0 0 8px 1px rgb(var(--spark-rgb, var(--energy-gold-rgb)) / 0.7);
   opacity: 0;
-  animation: victory-spark 1.4s ease-out var(--vdelay, 0ms) both;
+  animation: victory-spark calc(1.4s * var(--beat, 1)) ease-out
+    calc(var(--vdelay, 0ms) * var(--beat, 1)) both;
 }
 @keyframes victory-spark {
   0% { opacity: 0; transform: translateY(0) scale(0.6); }
@@ -2464,7 +2470,8 @@ html[data-anim="off"] .nerf-reveal-cell {
   /* Deliberately NOT overflow:hidden. The rule text carries GlossaryText
      popovers that open past the card's edge; the sweep is clipped by its own
      wrapper instead. */
-  animation: nerf-unseal-in var(--dur-3, 320ms) var(--ease-out, ease-out) both;
+  animation: nerf-unseal-in calc(var(--dur-3, 320ms) * var(--beat, 1))
+    var(--ease-out, ease-out) calc(var(--unseal-delay, 0ms) * var(--beat, 1)) both;
 }
 .nerf-unseal__seal {
   position: absolute;
@@ -2487,7 +2494,8 @@ html[data-anim="off"] .nerf-reveal-cell {
     transparent
   );
   opacity: 0;
-  animation: nerf-unseal-seal 260ms var(--ease-io, ease-in-out) both;
+  animation: nerf-unseal-seal calc(260ms * var(--beat, 1)) var(--ease-io, ease-in-out)
+    calc(var(--unseal-delay, 0ms) * var(--beat, 1)) both;
 }
 @keyframes nerf-unseal-seal {
   0% { opacity: 0; transform: translateY(-110%); }
@@ -2498,7 +2506,8 @@ html[data-anim="off"] .nerf-reveal-cell {
 /* The name lands last and lands hardest: it is the answer to the question the
    whole game asked. --ease-spring is sanctioned here — this is the reveal. */
 .nerf-unseal .nerf-unseal__name {
-  animation: nerf-unseal-name 320ms var(--ease-spring, ease-out) 160ms both;
+  animation: nerf-unseal-name calc(320ms * var(--beat, 1)) var(--ease-spring, ease-out)
+    calc((160ms + var(--unseal-delay, 0ms)) * var(--beat, 1)) both;
 }
 @keyframes nerf-unseal-name {
   0% { opacity: 0; transform: translateY(-6px) scale(0.96); }
@@ -2511,6 +2520,114 @@ html[data-anim="off"] .nerf-unseal .nerf-unseal__name {
   transform: none;
 }
 html[data-anim="off"] .nerf-unseal__seal > i { animation: none; opacity: 0; }
+
+/* --- THE ENDING, AS THREE ACTS ----------------------------------------------
+   The seal beat above is the payoff; these are the beats around it, so that the
+   payoff has somewhere to land instead of arriving in the same frame as
+   everything else. GameOver.tsx owns the timings and passes them in; this file
+   owns the shapes.
+
+     act I    the verdict            no class, no delay, never withheld
+     act II   .ending-act (200ms)    the two rules, the opponent's under a lid
+       ...    .ending-seal (780ms)   the lid lifts off the opponent's rule
+       ...    .nerf-unseal (840ms)   the rule arrives under it and its name lands
+     act III  .ending-act (1080ms)   the record: cards drafted, match timeline
+
+   EVERY duration and delay here is multiplied by --beat, the tempo GameOver
+   sets from useMotionTempo (1 normal, 0.6 fast). That indirection is the whole
+   point: globals.css clamps `transition-duration` for data-anim="fast" and
+   touches no @keyframes, so before this the player who asked for fast
+   animations sat through the identical ending as everyone else. Same reason
+   the victory burst below reads --beat.
+
+   Act I carries the outcome, the reason and the rating, and is deliberately
+   NOT in an act: the thing the player came for is legible in the first frame,
+   and the primary actions below the acts are clickable in the first frame too.
+   A choreography may not gate either (design-system.md §6). */
+@keyframes ending-act-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.ending-act {
+  animation: ending-act-in calc(var(--dur-3, 320ms) * var(--beat, 1))
+    var(--ease-out, ease-out) calc(var(--act-delay, 0ms) * var(--beat, 1)) both;
+}
+
+/* The lid over the opponent's rule. It is an OVERLAY on the finished card, not
+   a placeholder swapped out for it: the card sits underneath at its true size
+   from the first frame, so the panel never resizes and the buttons under it
+   never move while the ending plays. Inert and invisible to assistive tech —
+   the rule beneath is already in the accessibility tree, because information
+   is never what an animation withholds. */
+.ending-seal {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--edge-strong);
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  pointer-events: none;
+  transform-origin: 50% 0;
+  animation: ending-seal-lift calc(var(--seal-dur, 380ms) * var(--beat, 1))
+    var(--ease-io, ease-in-out) calc(var(--seal-delay, 780ms) * var(--beat, 1)) both;
+}
+/* Lifted like a lid, not faded like a dialog: it hinges from its top edge, so
+   the card is uncovered from the bottom up and the rule's name is the last
+   thing to come clear. */
+@keyframes ending-seal-lift {
+  0% { opacity: 1; transform: translateY(0) scaleY(1); }
+  45% { opacity: 0.96; transform: translateY(-1%) scaleY(0.98); }
+  100% { opacity: 0; transform: translateY(-14%) scaleY(0.84); }
+}
+.ending-seal__mark {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid rgb(var(--accent-gold-rgb) / 0.4);
+  background: rgb(var(--accent-gold-rgb) / 0.1);
+  color: var(--accent-gold);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+/* No colour of its own: the lid sets one, and on the press-to-reveal button
+   the same face has to take the button's hover colour with it. */
+.ending-seal__label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.2;
+  text-align: center;
+}
+/* Animations off, or an operating system asking for reduced motion: the acts
+   simply are not a sequence. Everything is printed at once and the lid is not
+   rendered at all, so nothing can be left covering the rule if an animation
+   never runs. GameOver drops the classes in JS as well; these are the backstop
+   that keeps a delayed beat from ever hiding content. */
+html[data-anim="off"] .ending-act {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+html[data-anim="off"] .ending-seal { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ending-act,
+  .nerf-unseal,
+  .nerf-unseal .nerf-unseal__name {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .ending-seal { display: none; }
+  .nerf-unseal__seal > i { animation: none; opacity: 0; }
+}
 
 /* Subtle running-clock pulse (under 30s). Clock urgency is one of the few
    effects allowed to loop (see design-system.md motion rules). Opacity-only so

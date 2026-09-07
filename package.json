@@ -23,6 +23,7 @@
     "analyze:search-bias": "npx -y tsx scripts/analyze-search-bias.ts",
     "audit:augment-purity": "npx -y tsx scripts/audit-augment-purity.ts",
     "bench:search-buffs": "npx -y tsx scripts/bench-search-buffs.ts",
+    "test:move-review": "npx -y tsx scripts/bench-move-review.ts",
     "test:search-buff-strength": "npx -y tsx scripts/sim-search-buff-strength.ts",
     "test:arena-seat": "npx -y tsx scripts/test-arena-seat.ts",
     "test:rules": "npm run server:build && node scripts/gen-card-icons.mjs --check && node scripts/test-hexes.cjs && node scripts/check-sig-plugins.cjs && node scripts/check-vfx-coverage.cjs",

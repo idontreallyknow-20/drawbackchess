@@ -2328,3 +2328,63 @@ list; both fixes are mechanical now, but Durable Objects do not run under
 COMPACT rule text is still 12px and sentence-shaped: raising it moves the dock,
 `MobileBuffDrawer` and the minimized draft panel at once, and C52's own numbers
 say a narrower column will wrap worse, so it wants its own round.
+
+## 2026-09-07 14:00 EDT (round 11, cut short: game-over choreography, and two engine numbers re-measured)
+
+Branch `claude/ralph-loop-optimization-nl2902`. The owner called time mid-round,
+so this entry says plainly what landed, what was dropped unfinished, and what
+was deliberately NOT shipped.
+
+**Landed: the game-over choreography** (`src/components/GameOver.tsx`,
+`src/app/globals.css`). New `.ending-act` and `.ending-seal` motion, inside the
+design system's vocabulary. Verified in a browser at 1440x900 in dark and
+light: a real timeout game reaches the panel, `.ending-act` is present, and
+there are no page errors in either theme. `test:animations`, `test:anim-props`
+and `test:reduced-motion` all pass.
+
+**A26 answered, and it was a non-issue.** The question was whether round 9's
+hard deadline left `MoveReview`'s 60ms budget able to reach an EVEN depth,
+since `classifyLoss` refuses to grade an odd or shallower-than-2 search. New
+`scripts/bench-move-review.ts` (`npm run test:move-review`) drives
+`analyzeBoard` over 51 middlegame positions: **51 of 51 reach depth 2**, p50
+11.1ms, p95 29.1ms, worst 40.5ms. The budget was never the binding constraint
+and the hard deadline cost the review nothing, because at 300ms the same
+positions still finish in a worst case of 37.6ms. Depth 2 costs what it costs
+and the deepening loop stops on its own. Worth recording separately: the
+same-even-depth guarantee is ENFORCED rather than assumed, so a budget that is
+too small degrades the panel into saying nothing, never into a wrong grade.
+
+**A25 re-measured, and the number in the backlog was wrong by a factor of four
+in the dangerous direction.** New `scripts/bench-node-throughput.ts` drives
+`pickAIMove` over 27 middlegame positions at five budgets and two levels:
+throughput on the current engine is **186 nodes/ms median, p05 103, max 369**,
+not the ~450 the node cap was sized against in July, because round 8 put buff
+augmentation inside `genMoves` and made every node more expensive. So the cap
+of 2000 nodes per ms-of-budget allows **10.75x the budget at the median
+position and 19.34x at the slowest**, not the 4.4x on record. An 80ms ask can
+burn 1.55 seconds on the frozen-clock Durable Object path.
+
+**Deliberately not fixed.** I wrote the fix (a one-shot probe: after 8000 nodes
+the search checks whether `Date.now()` has advanced at all, and if it has not,
+re-sizes the cap to bound CPU instead of merely bounding runaway) and then
+reverted it. It changes abort logic on a path that cannot be tested here, since
+Durable Objects do not run under `next dev`, and shipping unverified abort
+logic is how the July `exceededCpu` incident happened in the first place.
+Lowering `NODES_PER_MS` outright is the wrong fix and the measurement says so:
+a fast desktop searches several times quicker than this loaded box, so a cap
+tight enough to help Workers would start biting before the clock in ordinary
+browsers, costing playing strength on the main path to fix a rare one. The
+probe shape is right and it needs a Workers-side measurement before it ships.
+
+**Dropped unfinished.** Four agents were stopped mid-work. Their partial edits
+were reverted rather than merged: a re-run of the material model, a partial
+sweep-detector edit, and three new e2e feel specs of which one failed on
+timeout and one never ran. A red test suite is worse than no test suite, so
+those went. The balance ladder refit, the premove parity audit and the full
+route re-sweep are still open, and the backlog carries them.
+
+One pre-existing failure, stated so it is not mistaken for a regression:
+`e2e/smoke.spec.ts` "buff-mode bot game" fails on this box with a page-closed
+timeout. It fails identically with every change stashed, so it is
+environmental (a loaded 4-CPU box, 7.5 minutes of file time), not caused by
+anything here.

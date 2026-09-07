@@ -145,6 +145,19 @@ const IDLE_REVIEW: ReviewState = {
 // typical, 40ms worst, so a whole game reviews in about a second with no block
 // longer than a dropped frame.
 //
+// Re-measured after two engine changes that both had a claim on this number
+// (round 8 moved buff augmentation inside `genMoves`, making every node more
+// expensive; round 9 turned the search's abort from `budget * 2` into a hard
+// `budget`, so this 60 now buys half the wall time it used to). It survives
+// both, and `scripts/bench-move-review.ts` is the guard that keeps it honest:
+// 51 of 51 middlegame positions reach depth 2, p50 11.1ms, p95 29.1ms, worst
+// 40.5ms. The budget is not the binding constraint here and never was -- given
+// 300ms the same positions still finish in a worst case of 37.6ms, because
+// depth 2 simply costs what it costs and the deepening loop stops on its own.
+// The margin is 1.5x on this box, so a device that much slower degrades: not
+// into a wrong grade, but into "unclear", which is what classifyLoss's guard
+// is for.
+//
 // What depth 2 buys, thanks to the quiescence search underneath it, is the
 // resolution of capture sequences: hung pieces, losing trades and a king that
 // can be taken. That is what a blunder actually is, most of the time. What it
