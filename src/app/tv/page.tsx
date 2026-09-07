@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight, Eye, Maximize2, Radio, X } from "lucide-reac
 // stack and card database (~26k lines + framer-motion + the VFX engine) out of
 // the /tv route bundle, the dominant cause of slow TV load (~1.6MB to a fraction).
 import { ClockPill } from "@/components/ClockPill";
+import { useZenHotkey } from "@/lib/useZenMode";
 import { HeroBoard } from "@/components/HeroBoard";
 import { ModeBadge } from "@/components/ModeBadge";
 import { Piece } from "@/components/Pieces";
@@ -131,6 +132,11 @@ export default function TvPage() {
 }
 
 function TvView() {
+  // Watching is the surface zen suits best: there is nothing to click, so the
+  // chrome is pure overhead. The site header and footer stand down globally
+  // under html[data-zen], and the exit control is rendered by the header, so
+  // this is only the key binding.
+  useZenHotkey();
   const searchParams = useSearchParams();
   const rawMode = searchParams.get("mode");
   const modeFilter: DraftMode | null =

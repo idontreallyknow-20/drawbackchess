@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Board } from "@/components/Board";
 import { SiteHeader } from "@/components/SiteHeader";
+import { useZenHotkey } from "@/lib/useZenMode";
 import { BoardAnalysis, analyzeBoard } from "@/engine/ai";
 import { generateMoves, makeMove, moveToSAN, movesToSAN, moveToUCI } from "@/engine/board";
 import { initialBoard } from "@/engine/board";
@@ -410,6 +411,10 @@ function AnalysisInner() {
 }
 
 export default function AnalysisPage() {
+  // `z` already worked on both game pages and now on the saved-game replay.
+  // Analysis is the same activity (a board you read rather than play), and
+  // the exit control is global, so the binding is all this needs.
+  useZenHotkey();
   return (
     <main className="min-h-screen">
       <SiteHeader active="/analysis" />
