@@ -1,0 +1,460 @@
+{
+ "generated": "2026-09-07T11:50:29.328Z",
+ "position": [
+  "e2e4",
+  "e7e5",
+  "g1f3",
+  "b8c6",
+  "f1c4",
+  "g8f6",
+  "d2d3",
+  "f8c5",
+  "b1c3",
+  "d7d6"
+ ],
+ "baselineMoves": 40,
+ "slope": {
+  "b": -0.12847594500546336,
+  "se": 0.103251862633389,
+  "sigma": 1.244296632803964,
+  "r2": 0.035553053296256354,
+  "n": 44
+ },
+ "heavyGrant": {
+  "threshold": 12,
+  "n": 11,
+  "meanResidual": -11.66684987843112,
+  "otherN": 33,
+  "otherMeanResidual": 1.4172381932748046,
+  "diff": -13.084088071705926,
+  "se": 4.380307280698177,
+  "sigma": 2.98702516359091,
+  "belowTierMean": 10
+ },
+ "interaction": {
+  "lasting": {
+   "slope": -1.1950979469267549,
+   "se": 0.3438632360225047,
+   "sigma": 3.475503693708448,
+   "r2": 0.3347954146698856,
+   "n": 26
+  },
+  "oneShot": {
+   "slope": -0.0464035660982654,
+   "se": 0.09244391565762138,
+   "sigma": 0.5019645237673329,
+   "r2": 0.015503868650314057,
+   "n": 18
+  },
+  "durationMainEffect": {
+   "diff": -1.182117322327739,
+   "se": 3.5318257444121395,
+   "sigma": 0.3347043166549256
+  }
+ },
+ "rows": [
+  {
+   "id": "bishop_polish",
+   "tier": 1,
+   "grant": 3,
+   "persists": 2,
+   "delta": 15,
+   "residual": 14.662136867325547
+  },
+  {
+   "id": "bn4_leapfrog",
+   "tier": 1,
+   "grant": 3,
+   "persists": 1,
+   "delta": -8.333333333333332,
+   "residual": -8.671196466007785
+  },
+  {
+   "id": "bn4_seven_league_boots",
+   "tier": 1,
+   "grant": 5,
+   "persists": 1,
+   "delta": -4.166666666666666,
+   "residual": -4.504529799341119
+  },
+  {
+   "id": "ferz_king",
+   "tier": 1,
+   "grant": 1,
+   "persists": 2,
+   "delta": 15,
+   "residual": 14.662136867325547
+  },
+  {
+   "id": "ghost_pawn",
+   "tier": 1,
+   "grant": 1,
+   "persists": 1,
+   "delta": -10,
+   "residual": -10.337863132674453
+  },
+  {
+   "id": "half_step",
+   "tier": 1,
+   "grant": 9,
+   "persists": 2,
+   "delta": -5,
+   "residual": -5.337863132674453
+  },
+  {
+   "id": "little_leap",
+   "tier": 1,
+   "grant": 2,
+   "persists": 2,
+   "delta": 0,
+   "residual": -0.33786313267445345
+  },
+  {
+   "id": "long_knight",
+   "tier": 1,
+   "grant": 27,
+   "persists": 1,
+   "delta": -10,
+   "residual": -10.337863132674453
+  },
+  {
+   "id": "quiet_march",
+   "tier": 1,
+   "grant": 2,
+   "persists": 1,
+   "delta": 5,
+   "residual": 4.662136867325547
+  },
+  {
+   "id": "sentinel_pawn",
+   "tier": 1,
+   "grant": 1,
+   "persists": 2,
+   "delta": 10,
+   "residual": 9.662136867325547
+  },
+  {
+   "id": "teleport_knight",
+   "tier": 1,
+   "grant": 9,
+   "persists": 1,
+   "delta": 20,
+   "residual": 19.662136867325547
+  },
+  {
+   "id": "tempo_shuffle",
+   "tier": 1,
+   "grant": 5,
+   "persists": 1,
+   "delta": 5,
+   "residual": 4.662136867325547
+  },
+  {
+   "id": "vault",
+   "tier": 1,
+   "grant": 2,
+   "persists": 2,
+   "delta": 5,
+   "residual": 4.662136867325547
+  },
+  {
+   "id": "bn4_crowned_strider",
+   "tier": 2,
+   "grant": 1,
+   "persists": 4,
+   "delta": 0,
+   "residual": -0.5843630479552809
+  },
+  {
+   "id": "ov_gravity_flip",
+   "tier": 2,
+   "grant": 2,
+   "persists": 2,
+   "delta": 0,
+   "residual": -0.5843630479552809
+  },
+  {
+   "id": "pawn_push",
+   "tier": 2,
+   "grant": 1,
+   "persists": 1,
+   "delta": -5,
+   "residual": -5.584363047955281
+  },
+  {
+   "id": "rally",
+   "tier": 2,
+   "grant": 9,
+   "persists": 1,
+   "delta": 0,
+   "residual": -0.5843630479552809
+  },
+  {
+   "id": "rank_runner",
+   "tier": 2,
+   "grant": 5,
+   "persists": 1,
+   "delta": -5,
+   "residual": -5.584363047955281
+  },
+  {
+   "id": "reposition",
+   "tier": 2,
+   "grant": 37,
+   "persists": 1,
+   "delta": 20,
+   "residual": 19.415636952044718
+  },
+  {
+   "id": "spring_pawn",
+   "tier": 2,
+   "grant": 5,
+   "persists": 2,
+   "delta": 0,
+   "residual": -0.5843630479552809
+  },
+  {
+   "id": "wa_camel_rider",
+   "tier": 2,
+   "grant": 5,
+   "persists": 2,
+   "delta": -4.166666666666666,
+   "residual": -4.751029714621947
+  },
+  {
+   "id": "bn4_pathfinders",
+   "tier": 3,
+   "grant": 4,
+   "persists": 3,
+   "delta": -12.5,
+   "residual": -16.05329873538535
+  },
+  {
+   "id": "bn4_queens_gambol",
+   "tier": 3,
+   "grant": 1,
+   "persists": 1,
+   "delta": -4.166666666666666,
+   "residual": -7.719965402052018
+  },
+  {
+   "id": "double_step_army",
+   "tier": 3,
+   "grant": 1,
+   "persists": 1,
+   "delta": 0,
+   "residual": -3.5532987353853516
+  },
+  {
+   "id": "overclock",
+   "tier": 3,
+   "grant": 9,
+   "persists": 3,
+   "delta": -5,
+   "residual": -8.55329873538535
+  },
+  {
+   "id": "warp_step",
+   "tier": 3,
+   "grant": 108,
+   "persists": 1,
+   "delta": -5,
+   "residual": -8.55329873538535
+  },
+  {
+   "id": "berolina_pawns",
+   "tier": 4,
+   "grant": 10,
+   "persists": 5,
+   "delta": 25,
+   "residual": 19.881356670149774
+  },
+  {
+   "id": "hunter_knight",
+   "tier": 4,
+   "grant": 3,
+   "persists": 1,
+   "delta": 10,
+   "residual": 4.881356670149774
+  },
+  {
+   "id": "kingslide",
+   "tier": 4,
+   "grant": 1,
+   "persists": 1,
+   "delta": 15,
+   "residual": 9.881356670149774
+  },
+  {
+   "id": "overclock_major",
+   "tier": 4,
+   "grant": 39,
+   "persists": 1,
+   "delta": 0,
+   "residual": -5.118643329850226
+  },
+  {
+   "id": "royal_decree",
+   "tier": 4,
+   "grant": 1,
+   "persists": 2,
+   "delta": 0,
+   "residual": -5.118643329850226
+  },
+  {
+   "id": "twin_knights",
+   "tier": 4,
+   "grant": 8,
+   "persists": 5,
+   "delta": 25,
+   "residual": 19.881356670149774
+  },
+  {
+   "id": "bn4_court_procession",
+   "tier": 5,
+   "grant": 10,
+   "persists": 3,
+   "delta": -4.166666666666666,
+   "residual": -12.576358826358826
+  },
+  {
+   "id": "chimpanzini_bananini",
+   "tier": 5,
+   "grant": 8,
+   "persists": 5,
+   "delta": 20.833333333333336,
+   "residual": 12.423641173641176
+  },
+  {
+   "id": "ghost_legion",
+   "tier": 5,
+   "grant": 2,
+   "persists": 2,
+   "delta": 0,
+   "residual": -8.40969215969216
+  },
+  {
+   "id": "phase_army",
+   "tier": 5,
+   "grant": 23,
+   "persists": 1,
+   "delta": -5,
+   "residual": -13.40969215969216
+  },
+  {
+   "id": "bn4_dancing_master",
+   "tier": 6,
+   "grant": 17,
+   "persists": 2,
+   "delta": -12.5,
+   "residual": -20.48425430778372
+  },
+  {
+   "id": "bn4_stormcrossing",
+   "tier": 6,
+   "grant": 26,
+   "persists": 3,
+   "delta": -8.333333333333332,
+   "residual": -16.31758764111705
+  },
+  {
+   "id": "onslaught",
+   "tier": 6,
+   "grant": 13,
+   "persists": 3,
+   "delta": -4.166666666666666,
+   "residual": -12.150920974450385
+  },
+  {
+   "id": "rgb_keyboard",
+   "tier": 6,
+   "grant": 13,
+   "persists": 5,
+   "delta": 0,
+   "residual": -7.9842543077837185
+  },
+  {
+   "id": "royal_ascension",
+   "tier": 6,
+   "grant": 1,
+   "persists": 5,
+   "delta": 15,
+   "residual": 7.0157456922162815
+  },
+  {
+   "id": "amazon_army",
+   "tier": 7,
+   "grant": 17,
+   "persists": 3,
+   "delta": -25,
+   "residual": -36.697235513024985
+  },
+  {
+   "id": "triple_amazon",
+   "tier": 7,
+   "grant": 16,
+   "persists": 2,
+   "delta": -5,
+   "residual": -16.697235513024985
+  },
+  {
+   "id": "eternal_reign",
+   "tier": 8,
+   "grant": 1,
+   "persists": 5,
+   "delta": 25,
+   "residual": 9.600168350168351
+  }
+ ],
+ "silent": [
+  "bn4_vaulting_pole",
+  "diagonal_step",
+  "rook_slide",
+  "bw2_cornered_king",
+  "long_castle_anywhere",
+  "bn4_falconers_glove",
+  "bn4_gryphon_rider",
+  "bw3_second_face",
+  "bw3_tunnelers",
+  "camel_knight",
+  "cannon",
+  "gm_lootbox",
+  "grasshopper",
+  "knight_nightrook",
+  "onearmmuscleupismydream",
+  "ov_feng_shui_plot",
+  "ov_templar_vows",
+  "ov_wizard_duel",
+  "phase_rook",
+  "sliding_king",
+  "wa_arcane_conduit",
+  "wazir_bishop",
+  "wazir_rook",
+  "ww_dragoons",
+  "bishop_archbishop",
+  "bn4_kings_champion",
+  "bn4_kings_leap_year",
+  "bn4_kings_own_wings",
+  "dragon_form",
+  "dragon_mount",
+  "dragon_pawn",
+  "excalibur",
+  "ov_regency_council",
+  "bw2_bolt_hole",
+  "cr_oh_no_my_queen",
+  "ov_promotion_jubilee",
+  "ov_world_serpent",
+  "queens_echo",
+  "wc_berserk_pawn",
+  "amazon_knight",
+  "colossus",
+  "double_amazon",
+  "loyal_pawn",
+  "age_of_heroes",
+  "god_knight",
+  "divine_fortress",
+  "divine_right",
+  "godslayer_knight",
+  "titan"
+ ]
+}

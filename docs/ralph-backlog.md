@@ -31,6 +31,16 @@ Working rules for every round, non-negotiable:
   verify, then resumed. `sim-card-winrate.ts` flushes every 10 cards and
   resumes from its own shard file, so stopping it never costs more than the
   current batch.
+- **Restart `next dev` between rounds.** It leaks: after about seven hours of
+  HMR and route compiles the dev server sat at **9.1 GB resident**, which is 57
+  percent of the box on its own. That single process was the whole of a
+  near-OOM in round 7 (1.1 GB available, load average 74); killing it took
+  available memory from 1.1 GB to 12.9 GB in three seconds, before anything
+  else was touched. Check `ps -eo rss,args --sort=-rss | head` before blaming
+  the workers.
+- When memory does get tight, `pkill` and `pkill -9` themselves fail or return
+  144 under load, and a second `pgrep` will show the processes still alive.
+  `pgrep -f pat | xargs -r kill -9` works where `pkill -f pat` does not.
 
 ---
 
@@ -44,6 +54,8 @@ Working rules for every round, non-negotiable:
 | 3 | Surface ladder restored to its documented values, sentence case in the nav and settings menu plus `scripts/check-case.ts` to hold it, the material ladder applied (18 cards) and pinned as an invariant |
 | 4 | Route sweep harness (48 routes, 6 widths, 3 themes, 828 cells, 13.5 min), touch targets fixed after it proved every rem-based one was 12.5 percent short, eight routes given the h1 they lacked |
 | 5 | The bot now simulates a card's effect before choosing its targets, which fixes a blunder that was corrupting every win-rate measurement of every activated card; changelog caught up; sweep restarted |
+| 6 | `amazon_army` root-caused: the search-depth hypothesis was measured and REFUTED, and the real defect is that `negamax` cannot see buff-granted moves below the root. `SearchStats` added to `pickAIMove`; `test:search-buffs` locks the defect. Plus the system-states round: the polled inbox was silent about a dead connection, and sub-13px interactive text went 312 to 151 |
+| 7 | A6 confirmed independently from the win-rate data via the duration x grant-size interaction (3.5 sigma where predicted, 0.5 sigma where predicted absent). Ladder checked for contamination and cleared. Board keyboard play, contrast tokens, touch-target shapes, `/settings` route |
 
 ---
 
@@ -254,6 +266,81 @@ the defect, pins its size at 17 granted moves in a fixed position so the file
 cannot quietly stop measuring anything, keeps the refuted depth hypothesis
 refuted, and turns its message inside out the moment the search starts seeing
 buffs.
+
+### A6 confirmed from the data as well (round 7)
+
+The above is an argument from the code. `scripts/analyze-search-bias.ts`
+(`npm run analyze:search-bias`) asks whether the defect leaves a fingerprint in
+the 617 measured cards, which is a harder question, because the obvious
+comparison proves nothing: move-granting cards do measure below everything else
+(mean +2.6 against +5.8, and the gap widens to -19.1 at t7), but at those tiers
+the comparison group is mass-removal and spawn cards which are genuinely
+enormous. "Cards that add moves are weaker than cards that add queens" is not
+evidence of a measurement bug.
+
+**The obvious test fails too.** If invisible moves alone made a card measure
+badly, the residual should scale with the grant. It does not: the slope is 1.2
+sigma, and a threshold split PEAKS at 12 granted moves and decays above it,
+which no real dose-response does. The three largest grants in the library are
+`warp_step` (108 moves), `overclock_major` (39) and `reposition` (37), and their
+residuals are -8.6, -5.1 and **+19.4**. Those should be the worst cards on the
+board and they are among the best.
+
+**The reason is in their text.** "Move one piece up to three squares ...
+**once**." "All your pieces may move like kings ... **for 1 turn**." Against
+`amazon_army` "for your next **three** turns" and `onslaught` "for your next 3
+turns". A card spent on the turn it fires cannot be hurt by a search that
+forgets it one ply down: the root sees the move, plays it, and there is no
+future left to get wrong. A card that lasts three turns is wrong about every ply
+it searches.
+
+So the defect predicts an **interaction**, not a main effect. Duration decides
+whether the search is wrong; grant size decides by how much; neither should
+predict anything alone. Measured (both variables read out of the engine, not
+parsed from card text):
+
+| | slope, points per granted move | sigma | n | r2 |
+|---|---|---|---|---|
+| grant outlives its turn (2+) | **-1.20 +-0.34** | **3.5** | 26 | 0.33 |
+| grant spent on its turn (1) | -0.05 +-0.09 | 0.5 | 18 | 0.02 |
+
+Main effects, for contrast: duration alone **0.3 sigma**, grant size alone
+**1.2 sigma**. The signal lives entirely in the interaction, which is the shape
+A6 predicts and a far harder pattern to produce by chance than either half. The
+grant>=12 threshold that peaks and decays is this same interaction seen through
+the wrong variable.
+
+Scale check: `amazon_army` grants 17 moves and lasts three turns, so 1.2 x 17 is
+about **20 points against a measured -25**. The defect accounts for most of that
+card, and for the family behind it.
+
+One measurement trap worth recording, because it inverted the answer on the
+first attempt: probing duration by playing *quiet* moves reports a "once" card
+as permanent, because its charge is spent by playing the granted move, not by
+taking a turn. The probe has to play the card's own moves.
+
+**Consequence for the ladder: no move-granting card may be retiered downward on
+win-rate evidence until A13 lands and the family is re-measured.** That covers
+44 cards with a measurement and 93 holders in total.
+
+**But the ladder itself is clean, which was worth checking rather than
+assuming.** The tier floor is fitted against the M=0 baseline, and the biased
+cards nearly all carry no material, so they sit in that baseline and drag it
+down. If the drag were large, every material bucket would look more excessive
+than it is and the whole ladder would be tilted. Measured:
+
+| M band | n | mean | excluding the 26 biased cards |
+|---|---|---|---|
+| M=0 | 533 | +3.99 | 507 cards, **+4.06** |
+| 0 to 1 | 20 | +10.96 | unchanged |
+| 1 to 3 | 38 | +11.28 | unchanged |
+| 3 to 5 | 11 | +8.73 | unchanged |
+| over 5 | 15 | +26.00 | unchanged |
+
+26 cards in a 533-card bucket move the baseline by **0.07 points**. A6 corrupts
+the per-card reading for one family and does not reach the ladder. (Note the
+baseline is now +3.99, not the +0.9 recorded in round 1: the sweep has kept
+running and there are far more rows behind it.)
 
 ## B. Feel: the practice-games loop
 
