@@ -663,6 +663,11 @@ async function focusAudit(page: Page, maxStops: number): Promise<Array<NonNullab
 
 const SCREENS_DIR = path.join(process.cwd(), "e2e", "__screens__");
 
+// The ratchet's baseline. Checked in, and the only file in this harness that
+// is: everything else under __screens__ is output. Shrink-only, so it records
+// what today's tree produces and fails when tomorrow's produces more.
+const BASELINE_FILE = path.join(__dirname, "sweep-baseline.json");
+
 /**
  * Mint the rows the account-shaped dynamic routes need. `npm run dev` starts
  * against an empty database, so without this /u/[username], /clubs/[slug] and
@@ -1409,6 +1414,74 @@ test("report: write the defect list", async () => {
   }
   console.log(lines.join("\n"));
 
-  // The sweep reports; it does not gate. Assert only that it ran.
-  expect(out.routesSwept.length).toBeGreaterThan(0);
+  // -------------------------------------------------------------------------
+  // The ratchet.
+  //
+  // A survey that only ever prints a number is read once and then ignored, and
+  // nothing stops the number going back up. This turns it into the same
+  // shrink-only shape scripts/check-buttons.ts and check-case.ts already use:
+  // a committed baseline of counts per route and kind, a failure when any of
+  // them GROWS or a new pair appears, and a nag when one is stale because the
+  // defects were fixed.
+  //
+  // Counts rather than individual defects, deliberately. A defect's identity
+  // includes its CSS path and its measured pixel size, both of which churn on
+  // any unrelated edit, so an identity-based baseline would be permanently
+  // out of date and would train people to regenerate it without reading it. A
+  // count per (route, kind) is stable under refactors and still catches the
+  // thing worth catching: this route grew a new kind of problem.
+  //
+  // Only meaningful on a FULL run. A narrowed run (SWEEP_WIDTHS or
+  // SWEEP_THEMES set) legitimately sees fewer cells, so it reports and does
+  // not gate; otherwise a quick single-width check would look like a hundred
+  // fixes and rewrite the baseline with a number no full run can meet.
+  const fullRun = WIDTHS.length === ALL_WIDTHS.length && THEMES.length === ALL_THEMES.length;
+  const complete = out.notMeasured.length === 0;
+
+  const counts: Record<string, number> = {};
+  for (const d of defects) {
+    const key = `${d.route} ${d.kind}`;
+    counts[key] = (counts[key] || 0) + 1;
+  }
+
+  if (!fs.existsSync(BASELINE_FILE) || process.env.SWEEP_WRITE_BASELINE === "1") {
+    fs.writeFileSync(BASELINE_FILE, JSON.stringify({ counts }, null, 1));
+    console.log(`\n[sweep] baseline written to ${path.relative(process.cwd(), BASELINE_FILE)} (${Object.keys(counts).length} route/kind pairs)`);
+    expect(out.routesSwept.length).toBeGreaterThan(0);
+    return;
+  }
+
+  const baseline: Record<string, number> = JSON.parse(fs.readFileSync(BASELINE_FILE, "utf8")).counts;
+  const grown: string[] = [];
+  const appeared: string[] = [];
+  const shrunk: string[] = [];
+  for (const [key, n] of Object.entries(counts)) {
+    const was = baseline[key];
+    if (was === undefined) appeared.push(`${key}: ${n} new`);
+    else if (n > was) grown.push(`${key}: ${was} -> ${n}`);
+  }
+  for (const [key, was] of Object.entries(baseline)) {
+    const now = counts[key] ?? 0;
+    if (now < was) shrunk.push(`${key}: ${was} -> ${now}`);
+  }
+
+  if (shrunk.length) {
+    console.log(`\n[sweep] ${shrunk.length} route/kind pair(s) improved. Re-run with SWEEP_WRITE_BASELINE=1 to lock the gains in:`);
+    for (const line of shrunk.slice(0, 20)) console.log(`    ${line}`);
+  }
+
+  if (!fullRun || !complete) {
+    console.log(
+      `\n[sweep] reporting only, not gating: ${!fullRun ? "narrowed run (SWEEP_WIDTHS/SWEEP_THEMES set)" : `${out.notMeasured.length} route(s) not measured`}.`,
+    );
+    expect(out.routesSwept.length).toBeGreaterThan(0);
+    return;
+  }
+
+  const regressions = [...appeared, ...grown];
+  if (regressions.length) {
+    console.log(`\n[sweep] ${regressions.length} REGRESSION(S):`);
+    for (const line of regressions) console.log(`    ${line}`);
+  }
+  expect(regressions, `the sweep found defects this baseline does not allow:\n  ${regressions.join("\n  ")}`).toEqual([]);
 });
