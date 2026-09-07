@@ -35,7 +35,12 @@ const arg = (k, dflt) => {
   return i >= 0 && args[i + 1] ? args[i + 1] : dflt;
 };
 const label = arg("--label", "run");
-const engineOff = arg("--engine", "on") === "off";
+// Number of times to press the Engine toggle before recording. 1 turns the
+// engine off (the page-only baseline); 2 turns it off and back on, which is the
+// control for that baseline — same clicks, same focus, engine still running —
+// so a difference between --clicks 1 and --clicks 2 is the engine and nothing
+// else about the procedure.
+const clicks = Number(arg("--clicks", "0"));
 // The step delay has to be long enough for a ladder to finish, or the
 // measurement is of an interrupted ladder rather than a completed one.
 const stepMs = Number(arg("--step", "900"));
@@ -70,10 +75,13 @@ const url = `http://localhost:3000/analysis?moves=${encodeURIComponent(LINE)}`;
 await page.goto(url, { waitUntil: "load" });
 await page.waitForSelector("[data-eval-mode]", { timeout: 30000 });
 
-if (engineOff) {
+for (let i = 0; i < clicks; i++) {
   await page.getByTitle("Toggle engine").click();
   await page.waitForTimeout(400);
 }
+// The toggle keeps focus after a click, and the page's arrow-key handler is on
+// window; blur it so every run drives the line from the same focus state.
+await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
 
 // Rewind to the start of the line, settle, then start recording.
 await page.keyboard.press("ArrowUp");
@@ -112,7 +120,8 @@ console.log(
   JSON.stringify(
     {
       label,
-      engine: engineOff ? "off" : "on",
+      engine: clicks % 2 === 1 ? "off" : "on",
+      toggleClicks: clicks,
       plies: PLIES,
       longTasks: perf.tasks.length,
       longestMs: Math.round(longest),
