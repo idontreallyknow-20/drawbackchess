@@ -1068,6 +1068,214 @@ function heldBuffs(game: NerfGame, color: Color): { inst: BuffInstance; def: Buf
     .filter((x): x is { inst: BuffInstance; def: Buff } => !!x.def);
 }
 
+// --- Buff-aware search support (backlog A13) --------------------------------
+//
+// `negamax` searches bare BoardStates, and only `legalMoves` runs
+// `def.augmentMoves`, so before this every move-granting buff existed at the
+// root and nowhere below it: the bot played a move that only its card made
+// legal, then evaluated every follow-up as if it did not hold the card.
+// `buildSearchBuffs` + `applySearchAugments` give the search the same augment
+// hooks per node, under three constraints that made the change risky enough to
+// be filed on its own.
+//
+// 1. NOTHING LIVE IS REACHABLE. The audit behind this (scripts/audit-augment-
+//    purity.ts) found ten generators that write `inst.state` from inside
+//    `augmentMoves` — the "use it or lose it" bookkeeping shared by the nine
+//    lossy openers and Dryad Grove sets `armed` / `offered` whenever the move
+//    is on offer. Called per node that would arm a real card off a hypothetical
+//    position and burn its charge in the real game. Rather than allowlisting
+//    the pure ones (283 hooks, 71 of which never fire in any probe position, so
+//    an allowlist would be guessing), the search runs against a private view:
+//    cloned instances, a cloned BuffMatchState, cloned captured pools and
+//    cloned player slots. Every mutator on the api therefore writes into
+//    throwaway objects. An impure generator can mis-score a search; it cannot
+//    reach the game.
+//
+//    The same audit found ZERO `api.rng` draws in the entire library, and
+//    `fxRng` is stateless anyway (seeded per call from the synced board, not a
+//    persistent stream — see its comment), so calling these hooks per node
+//    cannot advance anything a replica would have to agree about. The desync
+//    hazard recorded against this task does not exist.
+//
+// 2. NO PER-NODE API REBUILD. `makeBuffApi` is ~20 closures; building one per
+//    node is far too slow for a hot path. Instead exactly two apis are built
+//    per search (one per side) over mutable view games, and the only per-node
+//    work is retargeting `.board` at the node's board. That is a shared
+//    object, but every generator runs synchronously inside
+//    `applySearchAugments` immediately after the retarget and nothing in the
+//    library retains the api, so there is no live range for it to go stale in;
+//    and because the view is entirely clones, a stale read could only mis-score.
+//
+// 3. EXPIRY IS MODELLED. `timedAugment(n)` lasts the owner's next n moves, so
+//    applying it at every ply would over-value a three-turn card at depth 12 —
+//    trading one bias for another. The side to move at ply p has played
+//    exactly `p >> 1` of its own moves to get there, so the per-ply table below
+//    holds instances whose counters are already decremented by that much, and
+//    a card drops out of the table at the ply it expires. Charge-limited
+//    augments (`augment` / `lossyAugment`, 133 of the 283) are spent by PLAYING
+//    the granted move rather than by time passing, so they carry a bit in a
+//    spent mask that negamax threads down each line: once a line plays the
+//    granted move, deeper plies in that line stop being offered it.
+
+/** One held move-granting buff, prepared for a specific search ply. */
+export interface SearchAugment {
+  def: Buff;
+  /** Private clone of the live instance, timed counter already aged to the ply. */
+  inst: BuffInstance;
+  /** Bit in the spent mask for charge-limited augments, or -1 for timed ones. */
+  chargeBit: number;
+}
+
+/** Everything the search needs to reproduce `legalMoves`'s augment step at an
+ *  interior node, precomputed once per search. */
+export interface SearchBuffs {
+  /** byPly[p] = augments available to the side to move at ply p. */
+  byPly: SearchAugment[][];
+  /** api[p & 1] — the BuffApi of the side to move at ply p (parity 0 = root). */
+  api: [BuffApi, BuffApi];
+  /** The mutable private view games behind those apis. */
+  view: [NerfGame, NerfGame];
+  /** bitOf[p & 1] maps a granted move's `via` id to its spent-mask bit. */
+  bitOf: [Map<string, number>, Map<string, number>];
+}
+
+/** Spent-mask bits available per side. Sides hold single-digit numbers of
+ *  move-granting cards in practice; a card past the cap is simply left out of
+ *  the search (falling back to the old root-only behaviour for that card)
+ *  rather than being given an untracked, permanently unspent charge. */
+const MAX_AUGMENT_SLOTS = 16;
+
+function cloneForSearch(game: NerfGame, bs: BuffMatchState): NerfGame {
+  const clonePlayer = (c: Color) => {
+    const ps = bs.players[c];
+    return {
+      ...ps,
+      buffs: ps.buffs.map((b) => ({ ...b, state: { ...b.state } })),
+      flags: { ...ps.flags },
+      revived: { ...ps.revived },
+      inventory: ps.inventory ? { ...ps.inventory } : undefined,
+    };
+  };
+  const searchBs: BuffMatchState = {
+    ...bs,
+    effects: bs.effects.map((e) => ({ ...e })),
+    extraMoves: { ...bs.extraMoves },
+    skips: { ...bs.skips },
+    players: { w: clonePlayer("w"), b: clonePlayer("b") },
+  };
+  return {
+    ...game,
+    buffs: searchBs,
+    white: { ...game.white },
+    black: { ...game.black },
+    captured: { w: { ...game.captured.w }, b: { ...game.captured.b } },
+    fx: undefined,
+  };
+}
+
+/**
+ * Prepare the held move-granting buffs of both sides for a search rooted at
+ * `game`, covering plies 0..maxPly. Returns null when there is nothing to do
+ * (no draft game, a Chess Diff sub-game, or neither side holds a card with an
+ * `augmentMoves` hook), which is the overwhelmingly common case and costs the
+ * search nothing.
+ */
+export function buildSearchBuffs(game: NerfGame, maxPly: number): SearchBuffs | null {
+  const bs = game.buffs;
+  // A Chess Diff is plain chess: legalMoves runs no augments there either.
+  if (!bs || bs.diff) return null;
+
+  const me = game.board.turn;
+  const opp: Color = me === "w" ? "b" : "w";
+  const sides: [Color, Color] = [me, opp];
+
+  const live = sides.map((c) => heldBuffs(game, c).filter((h) => !!h.def.augmentMoves));
+  if (!live[0].length && !live[1].length) return null;
+
+  // Two private views, one per side, so a generator that reaches for a mutator
+  // writes into a clone instead of the live game.
+  const view: [NerfGame, NerfGame] = [cloneForSearch(game, bs), cloneForSearch(game, bs)];
+  const api: [BuffApi, BuffApi] = [makeBuffApi(view[0], me), makeBuffApi(view[1], opp)];
+  const bitOf: [Map<string, number>, Map<string, number>] = [new Map(), new Map()];
+
+  const byPly: SearchAugment[][] = [];
+  for (let ply = 0; ply <= maxPly; ply++) byPly.push([]);
+
+  for (let parity = 0; parity < 2; parity++) {
+    let nextBit = 0;
+    for (const { inst, def } of live[parity]) {
+      const charges = inst.state.charges;
+      let chargeBit = -1;
+      if (typeof charges === "number") {
+        // A charge already exhausted in the real game grants nothing at all.
+        if (charges <= 0) continue;
+        if (nextBit >= MAX_AUGMENT_SLOTS) continue;
+        chargeBit = parity * MAX_AUGMENT_SLOTS + nextBit++;
+        bitOf[parity].set(def.id, chargeBit);
+      }
+      const turns = inst.state.turns;
+      // The side to move at ply p has played p >> 1 of its own moves getting
+      // there, which is exactly what tickTurns would have decremented.
+      for (let ply = parity; ply <= maxPly; ply += 2) {
+        const state = { ...inst.state };
+        if (typeof turns === "number") {
+          const aged = turns - (ply >> 1);
+          if (aged <= 0) break; // expired here, and at every deeper ply
+          state.turns = aged;
+        }
+        byPly[ply].push({ def, inst: { ...inst, state }, chargeBit });
+      }
+    }
+  }
+
+  if (byPly.every((l) => !l.length)) return null;
+  return { byPly, api, view, bitOf };
+}
+
+/**
+ * Append the buff-granted moves available to the side to move at `ply` on
+ * `board`, exactly as `legalMoves` would at the root. `spentMask` carries the
+ * charge-limited augments already used further up this line.
+ *
+ * Nerf filters, shields, walls and zone effects are NOT reapplied here: the
+ * search has always generated interior moves with bare `generateMoves`, so
+ * those were already invisible below the root and this change neither adds to
+ * nor removes from that gap. It closes only the augment half.
+ */
+export function applySearchAugments(
+  sb: SearchBuffs,
+  board: BoardState,
+  ply: number,
+  spentMask: number,
+  moves: Move[],
+): void {
+  const list = sb.byPly[ply];
+  if (!list || !list.length) return;
+  const parity = ply & 1;
+  // Retarget the private view at this node's board. Generators run
+  // synchronously below and none of them retains the api, so the shared object
+  // is never read outside this call.
+  sb.view[parity].board = board;
+  sb.api[parity].board = board;
+  for (const a of list) {
+    if (a.chargeBit >= 0 && (spentMask & (1 << a.chargeBit)) !== 0) continue;
+    try {
+      a.def.augmentMoves!(moves, a.inst, sb.api[parity]);
+    } catch {
+      // A generator that throws on some hypothetical position must not take
+      // the whole search down with it; it just contributes nothing here.
+    }
+  }
+}
+
+/** Fold a played move into the spent mask: a charge-limited augment used in
+ *  this line is not offered again deeper in it. */
+export function markAugmentSpent(sb: SearchBuffs, ply: number, move: Move, spentMask: number): number {
+  if (!move.via) return spentMask;
+  const bit = sb.bitOf[ply & 1].get(move.via);
+  return bit === undefined ? spentMask : spentMask | (1 << bit);
+}
+
 /** A barred effect whose squares form exactly one complete file or rank is a
  * board-splitting WALL, not just a no-landing zone (Fault Line, Great Wall,
  * Great Divide, Sundering, and the whole-file / whole-rank hexes all build one

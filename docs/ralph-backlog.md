@@ -100,8 +100,8 @@ which is why nothing caught it.
 | A8 | **The pocket discount is probably backwards.** Measured in round 7 and the answer is no. The whole family, not the one card that raised it: pocket cards sit at **+1.1pt** residual against their own tier (n=13), non-pocket material cards at **+7.3pt** (n=71), a difference of **-6.3 +-5.0pt, 1.3 sigma** in the OPPOSITE direction to the hypothesis, and unresolvable either way. `bn4_care_package` +41.7 is the top of a spread running down to `legendary_forge` -16.7; those two carry the same payload class and sit 58 points apart on 12 pairs each, which is the error bar, exactly as round 1 found for `legendary_forge` against `bodyguard`. The mechanical argument (a drop lands anywhere, dodges every nerf filter, breaks stalemate) may still be right and the sweep may simply not resolve 5%, but changing a multiplier on the largest number in a noisy column is the failure mode this model exists to avoid. Multiplier stays 0.95; reasoning rewritten in the model's header | M | DROPPED (not supported) |
 | A9 | **Two parser holes, both closed (round 8), and `KNOWN_MISREAD` is now empty.** A REPLACEMENT ("X ... and Y returns **in its place**") is a transform written the long way round, so the card is worth the difference: `seance` **3.25 to 1.30**, which is its hand-checked value. A GLOSS is a later sentence re-describing the piece an earlier one already scored, and the tell is that one of the two terms carries the parser's own `best-of` mark, i.e. "this sentence says WHICH one": `wc_lost_and_found` **4.94 to 3.25**, which is what the engine actually revives (`['r','b','n','p'].find(revivable)` places one piece). Both are now pinned in `PARSE_EXPECTATIONS` rather than held out, which is the stronger statement: a hold-out says "we know this is wrong", a pin says "we know this is right". Proved narrow by diffing every card's M before and after: **exactly 2 of 1665 moved**, and they are the two. The replacement pass deliberately does nothing when the sentence names two candidate antecedents, on the same principle as the parser's existing `pending` logic | S | DONE |
 | A5 | Rework, not just retier, cards that are cheap AND boring (pure "+3 material, no decision") | M | TODO |
-| A6 | **`amazon_army` measured -25 points. Root-caused: the bot's search cannot see buff-granted moves below the root.** Settled in round 6, see the write-up below. Pinned by `npm run test:search-buffs`. The fix is an engine change to a hot path with a desync hazard, so it is filed separately as A13 | M | DIAGNOSED |
-| A13 | **Make `negamax` buff-aware.** `negamax`/`quiesce` take a bare `BoardState` and call `generateMoves(board)`; only the root calls `legalMoves(game)`, which is the only function that runs `def.augmentMoves`. So every move-granting buff exists at ply 0 and nowhere else. Design sketch and the three hazards are in `scripts/test-search-buff-visibility.ts`. Do not attempt this in the same round as anything else | L | TODO |
+| A6 | **`amazon_army` measured -25. The search could not see buff-granted moves below the root, and now it can.** The code defect was real, was root-caused in round 6, and was FIXED in round 8 (A13). What did not survive is the win-rate mechanism I attributed to it: see "the null" below. Pinned by `npm run test:search-buffs` | M | DONE |
+| A13 | **Make `negamax` buff-aware.** DONE (round 8). `buildSearchBuffs` / `applySearchAugments` in `game.ts` and `genMoves` in `ai.ts`. The search runs against a PRIVATE VIEW (cloned instances, cloned match state, cloned captured pools and player slots), so an impure generator can mis-score a search and cannot reach the game. Expiry is modelled: the side to move at ply p has played `p >> 1` of its own moves, so per-ply instances carry pre-aged counters and drop out when they expire; charge-limited augments (133 of 283) carry a bit in a mask threaded down each line. Two `BuffApi`s per SEARCH, not per node; per node only `.board` is retargeted. Zero cost when no move-granting card is held, proved by identical node counts (10479 at medium/60ms, 523739 at hard/2000ms). With one held it costs a ply at the 60ms floor and a ply at hard, and the fixed-depth decomposition says why: nodes 1.61 to 1.65x, microseconds per node 0.99 to 1.06x, so essentially all of it is the genuinely wider tree and none is augment overhead | L | DONE |
 | A7 | Work the `pending-review` backlog in `docs/card-audit.md`: 266 duplicate-signature, 211 near-duplicate, 90 dominated | L | TODO |
 | A11 | **`queens_rampage` was a play-policy bug, not a tier problem.** FIXED (round 5) by `refineLastSquarePick` in `src/engine/game.ts`: the bot now re-picks a card's last square by simulating the activation on a detached copy of the game and scoring the resulting position, instead of ranking squares by the piece standing on them. Pinned by `npm run test:ai-activation`, which fails on two of three assertions without the fix | S | DONE |
 | A12 | **Reframed in round 8: this is not a missing second axis, it is a parser blind spot.** The row used to say the model prices material and is blind to everything else, so the twelve cards measuring above +30 at M=0 needed a second model. Reading all EIGHTEEN of them against their descriptions says otherwise: **fourteen are material the parser cannot read**, and only four are genuinely non-material. Unparsed material: `hw3_doomed_vow` +55 (an enemy piece is dragged off the board), `mass_mind_control` +55 (two enemy pieces defect, which is a double swing), `reality_warp` +50 (two of your pieces become queens, so +2x(9-value)), `bn4_ascension_small` +45.8 (a minor becomes a queen, +6), `hw3_time_bomb` +45 and `lightning_strike` +44.4 and `total_atomic` +33.3 and `atomic_captures` +31.8 and `detonation_field` +30 (all mass or conditional removal), `detonate` +44.4 (-1 pawn, +N adjacent), `smurf_account` +41.7 (a fresh ROOK drops in, and the effect category "capture-denial" is wrong too), `giants_maul` +41.7 (crush a minor or rook, then freeze), `bn4_endless_militia` +35 (three captured pawns return), `pay_to_win` +33.3 (a copy of a minor or rook into the pocket). Genuinely non-material, and the only four that would need a second axis: `mirror_of_souls` +50 (swap two pieces OF THE SAME KIND, so net zero material by construction and pure position), `dragon_pawn` +41.7 (a movement grant), `piece_parole` +40 (a shield plus a nerf suspension), `ballerina_cappuccina` +31.8 (a formation move, i.e. tempo). So the work is A14, not a second model | M | REFRAMED |
@@ -362,6 +362,72 @@ One measurement trap worth recording, because it inverted the answer on the
 first attempt: probing duration by playing *quiet* moves reports a "once" card
 as permanent, because its charge is spent by playing the granted move, not by
 taking a turn. The probe has to play the card's own moves.
+
+### Round 8: the fix landed, and it refuted two things I had written down
+
+**The RNG hazard I recorded does not exist, and it was the one I called
+disqualifying.** I wrote that a generator touching `api.rng` "would advance the
+game's RNG stream once per searched node". `api.rng` is `fxRng(game, me)`
+(`game.ts:879`), which builds a **fresh** RNG on every call, seeded from the
+board signature, the ply, the colour and a digest of the public card state.
+There is no persistent stream to advance. My note predated that redesign and I
+did not check it before writing it as the reason not to attempt the fix.
+
+A purity audit of all **283** cards defining `augmentMoves`
+(`scripts/audit-augment-purity.ts`, which drives each hook through a
+Proxy-instrumented `BuffApi` against a before/after snapshot in three
+positions) found **zero** RNG draws, **zero** board-mutator calls and **zero**
+unstable outputs. It did find a real hazard I had not named: **10 cards write
+`inst.state` from inside `augmentMoves`** (`lossyAugment` sets
+`inst.state.armed` and `dryad_grove` sets `inst.state.offered` when the move is
+merely on offer), which per node would arm a live card off a hypothetical
+position and burn its charge in the real game. Solved structurally with the
+private view rather than by an allowlist, because 71 of the 283 never produced
+a move in any probe position and are therefore **unproven, not proven pure** --
+an allowlist would have been guessing about those.
+
+**The null, and it is a correction to the round-7 claim.** A paired A/B with
+the same seeds, White holding the card in BOTH arms and only its searcher
+differing (`scripts/sim-search-buff-strength.ts`):
+
+| card | pairs | buff-aware minus blind |
+|---|---|---|
+| `amazon_army` (3 turns) | 120 | **-0.9 +-3.6 pt** (0.2 sigma) |
+| `twin_knights` (permanent) | 80 | -4.4 +-4.8 pt (0.9 sigma) |
+
+The arms diverged in 33% of pairs, so the design had signal capacity. Round 7
+scaled the observational interaction to about **21 points** for `amazon_army`
+(1.26 x 17 granted moves), and at +-3.6 this experiment had the power to see 21
+points and did not.
+
+So: **the code defect was real and is fixed; the causal story I attached to it
+is not confirmed.** The 4.5-sigma interaction is still in the data and still
+wants an explanation, but "the search cannot see the card" is no longer that
+explanation on the strength of a direct experiment. Candidate confounds worth
+testing before anyone believes the interaction again: timed multi-turn cards
+with large grants may simply be designed weaker; and the harnesses differ (this
+one grants the card after a random 8-ply opening, the win-rate harness grants
+at ply 0 from the standard start), which is a real difference and not a
+dismissal.
+
+The project's own harness at its recorded settings moved `amazon_army` from
+**-25.0 to -20.8**, `onslaught` -4.2 to -4.2, `twin_knights` +25 to +12.5 --
+all inside its own +-9.7 error bar, i.e. it cannot resolve this either.
+
+**The section 1c tier quarantine STAYS.** It says "retire when A13 lands", and
+A13 has landed, but the family has not been re-measured and the honest reading
+of the numbers above is that the bias is smaller than believed rather than
+absent. Retiring a guard on an unmeasured assumption is the thing the guard
+exists to prevent.
+
+**A third thing I got wrong:** the success branch of my own
+`test-search-buff-visibility.ts` was unreachable by construction. Assertion 1
+required `generateMoves` NOT to return granted moves; assertion 2's victory
+branch required exactly that. It could report the defect and could never report
+the fix. Rewritten to drive `buildSearchBuffs` + `applySearchAugments`, which is
+what `negamax` actually calls, with an expiry assertion (live at plies 0, 2 and
+4; gone at 6) and the depth cost pinned at its measured size rather than
+asserted to be zero.
 
 **Consequence for the ladder: no move-granting card may be retiered downward on
 win-rate evidence until A13 lands and the family is re-measured.** That covers

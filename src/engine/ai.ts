@@ -1,5 +1,12 @@
 import { findKing, generateMoves, makeMove } from "./board";
-import { NerfGame, legalMoves } from "./game";
+import {
+  NerfGame,
+  SearchBuffs,
+  applySearchAugments,
+  buildSearchBuffs,
+  legalMoves,
+  markAugmentSpent,
+} from "./game";
 import { triggersOwnNerfLoss } from "./moveSafety";
 import { BoardState, Color, Move, PieceType } from "./types";
 
@@ -137,6 +144,11 @@ type SearchState = {
   // first and playing strength is unchanged.
   nodes: number;
   nodeCap: number;
+  // Move-granting buffs held at the root, prepared per ply so interior nodes
+  // see the same augmented move set legalMoves produces (backlog A13). Null
+  // whenever nobody holds such a card, which is the common case and keeps the
+  // pre-existing search path byte-for-byte unchanged.
+  buffs: SearchBuffs | null;
 };
 
 // Rough search throughput used to convert a time budget into a node cap.
@@ -148,14 +160,33 @@ type SearchState = {
 // worth of real CPU. Precision does not matter, only the order of magnitude.
 const NODES_PER_MS = 1000;
 
-function newSearchState(extended: boolean, budgetMs = 0): SearchState {
+function newSearchState(extended: boolean, budgetMs = 0, buffs: SearchBuffs | null = null): SearchState {
   return {
     killers: [],
     history: new Int32Array(64 * 64),
     extended,
     nodes: 0,
     nodeCap: budgetMs > 0 ? budgetMs * 2 * NODES_PER_MS : 0,
+    buffs,
   };
+}
+
+// Quiescence depth, and therefore how far past `maxDepth` a granted move can
+// still turn up. The per-ply augment table has to cover both.
+const QUIESCE_DEPTH = 6;
+
+// Interior move generation. Identical to `generateMoves` unless the side to
+// move holds a move-granting card, in which case it also runs that card's
+// `augmentMoves` hook, which is the whole point of A13.
+function genMoves(board: BoardState, state: SearchState, ply: number, spentMask: number): Move[] {
+  const moves = generateMoves(board);
+  if (state.buffs) applySearchAugments(state.buffs, board, ply, spentMask, moves);
+  return moves;
+}
+
+// A granted move consumes its card's charge for the rest of THIS line only.
+function childMask(state: SearchState, ply: number, m: Move, spentMask: number): number {
+  return state.buffs ? markAugmentSpent(state.buffs, ply, m, spentMask) : spentMask;
 }
 
 // MVV-LVA for captures (most valuable victim taken by least valuable attacker
@@ -297,6 +328,12 @@ export interface SearchStats {
   depth: number;
   /** Root moves considered, which is the branching factor being paid for. */
   rootMoves: number;
+  /**
+   * Nodes visited across every deepening iteration. Depth alone cannot tell a
+   * search that got cheaper from one that got shallower at the same budget,
+   * which is the question A13's per-node augment step has to answer.
+   */
+  nodes?: number;
 }
 
 export function pickAIMove(
@@ -313,6 +350,7 @@ export function pickAIMove(
   if (stats) {
     stats.rootMoves = moves.length;
     stats.depth = 0;
+    stats.nodes = 0;
   }
 
   const me = game.board.turn;
@@ -349,13 +387,17 @@ export function pickAIMove(
   const p = weaken?.params;
   const sampling = !!p && (p.topK > 1 || p.temperatureCp > 0 || p.evalNoiseCp > 0);
 
+  // The root already sees granted moves (legalMoves ran the augments above);
+  // this is what lets every node BELOW the root see them too.
+  const searchBuffs = buildSearchBuffs(game, maxDepth + QUIESCE_DEPTH + 1);
+
   if (sampling && weaken) {
-    const ranked = rankedRoot(game, moves, opp, maxDepth, budget, extended);
+    const ranked = rankedRoot(game, moves, opp, maxDepth, budget, extended, searchBuffs);
     return sampleWeakened(ranked, weaken.params, weaken.random);
   }
 
   const start = Date.now();
-  const state = newSearchState(extended, budget);
+  const state = newSearchState(extended, budget, searchBuffs);
 
   let bestMove: Move | null = null;
 
@@ -371,7 +413,10 @@ export function pickAIMove(
 
     for (const m of orderMoves(moves, bestMove, state, 0)) {
       const nb = makeMove(game.board, m);
-      const score = -negamax(nb, d - 1, -beta, -alpha, opp, start, budget, state, 1);
+      const score = -negamax(
+        nb, d - 1, -beta, -alpha, opp, start, budget, state, 1,
+        childMask(state, 0, m, 0),
+      );
       if (Number.isNaN(score)) {
         timedOut = true;
         break;
@@ -395,6 +440,7 @@ export function pickAIMove(
     if (d >= 1 && Date.now() - start > budget) break;
   }
 
+  if (stats) stats.nodes = state.nodes;
   return bestMove ?? moves[0];
 }
 
@@ -413,9 +459,10 @@ function rankedRoot(
   maxDepth: number,
   budget: number,
   extended: boolean,
+  searchBuffs: SearchBuffs | null = null,
 ): RankedRootMove[] {
   const start = Date.now();
-  const state = newSearchState(extended, budget);
+  const state = newSearchState(extended, budget, searchBuffs);
   let ranked: RankedRootMove[] = moves.map((move) => ({ move, scoreCp: 0 }));
   let priority: Move | null = null;
 
@@ -426,7 +473,10 @@ function rankedRoot(
       const nb = makeMove(game.board, m);
       // Full window (-Inf, +Inf): no root-level alpha narrowing, so each move
       // gets an exact score rather than a bound.
-      const score = -negamax(nb, d - 1, -Infinity, Infinity, opp, start, budget, state, 1);
+      const score = -negamax(
+        nb, d - 1, -Infinity, Infinity, opp, start, budget, state, 1,
+        childMask(state, 0, m, 0),
+      );
       if (Number.isNaN(score)) {
         timedOut = true;
         break;
@@ -554,10 +604,14 @@ function negamax(
   budget: number,
   state: SearchState,
   ply: number,
+  spentMask = 0,
 ): number {
   // Node cap first: on Workers the clock check below never fires (Date.now()
   // is frozen during synchronous compute), so this is the only abort there.
-  if (state.nodeCap > 0 && ++state.nodes > state.nodeCap) return TIMEOUT_SENTINEL;
+  // Counted unconditionally (the cap test is unchanged) so `SearchStats.nodes`
+  // is meaningful even for an uncapped search.
+  state.nodes++;
+  if (state.nodeCap > 0 && state.nodes > state.nodeCap) return TIMEOUT_SENTINEL;
   if (budget > 0 && Date.now() - start > budget * 2) return TIMEOUT_SENTINEL;
 
   // Terminal king captures score from the side to move's perspective (like
@@ -567,14 +621,17 @@ function negamax(
   const bk = findKing(board, "b");
   if (wk == null) return side === "w" ? -100000 : 100000;
   if (bk == null) return side === "b" ? -100000 : 100000;
-  if (depth === 0) return quiesce(board, alpha, beta, side, 6, state);
+  if (depth === 0) return quiesce(board, alpha, beta, side, QUIESCE_DEPTH, state, ply, spentMask);
 
-  const moves = orderMoves(generateMoves(board), null, state, ply);
+  const moves = orderMoves(genMoves(board, state, ply, spentMask), null, state, ply);
   const opp: Color = side === "w" ? "b" : "w";
   let best = -Infinity;
   for (const m of moves) {
     const nb = makeMove(board, m);
-    const v = -negamax(nb, depth - 1, -beta, -alpha, opp, start, budget, state, ply + 1);
+    const v = -negamax(
+      nb, depth - 1, -beta, -alpha, opp, start, budget, state, ply + 1,
+      childMask(state, ply, m, spentMask),
+    );
     if (Number.isNaN(v)) return TIMEOUT_SENTINEL;
     if (v > best) best = v;
     if (best > alpha) alpha = best;
@@ -598,8 +655,11 @@ function quiesce(
   side: Color,
   depth: number,
   state: SearchState,
+  ply: number,
+  spentMask: number,
 ): number {
-  if (state.nodeCap > 0 && ++state.nodes > state.nodeCap) return TIMEOUT_SENTINEL;
+  state.nodes++;
+  if (state.nodeCap > 0 && state.nodes > state.nodeCap) return TIMEOUT_SENTINEL;
   const wk = findKing(board, "w");
   const bk = findKing(board, "b");
   if (wk == null) return side === "w" ? -100000 : 100000;
@@ -610,11 +670,17 @@ function quiesce(
   if (alpha < standPat) alpha = standPat;
   if (depth === 0) return alpha;
 
-  const captures = orderMoves(generateMoves(board).filter((m) => m.captured));
+  // A buff-granted move can be a capture, so the augment step belongs here too
+  // or the quiescence search still resolves the position as if the card were
+  // not held.
+  const captures = orderMoves(genMoves(board, state, ply, spentMask).filter((m) => m.captured));
   const opp: Color = side === "w" ? "b" : "w";
   for (const m of captures) {
     const nb = makeMove(board, m);
-    const score = -quiesce(nb, -beta, -alpha, opp, depth - 1, state);
+    const score = -quiesce(
+      nb, -beta, -alpha, opp, depth - 1, state, ply + 1,
+      childMask(state, ply, m, spentMask),
+    );
     if (Number.isNaN(score)) return TIMEOUT_SENTINEL;
     if (score >= beta) return beta;
     if (score > alpha) alpha = score;

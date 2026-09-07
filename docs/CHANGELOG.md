@@ -1657,3 +1657,127 @@ empty state both working).
 `/tutorial/first-game` is flaky by nature: its findings differ run to run
 because the game state differs, so it needs a seeded position before its count
 means anything.
+
+---
+
+## 2026-09-07 17:30 UTC
+
+The bot's search can see buff-granted moves now. Landing it refuted three
+things this session had written down as established, so those come first.
+
+### The RNG hazard did not exist, and it was the one called disqualifying
+
+Round 6 declined to attempt this fix and gave three reasons. The second was
+that a generator touching `api.rng` "would advance the game's RNG stream once
+per searched node", corrupting live games rather than merely mis-scoring them.
+
+`api.rng` is `fxRng(game, me)` (`game.ts:879`), which builds a **fresh** RNG on
+every call, seeded from the board signature, the ply, the colour and a digest
+of the public card state. There is no persistent stream to advance. The note
+predated that redesign and was never checked against it.
+
+A purity audit of all **283** cards defining `augmentMoves`
+(`npm run audit:augment-purity`, which drives each hook through a
+Proxy-instrumented `BuffApi` against a before/after snapshot in three
+positions) found **zero** RNG draws, **zero** board-mutator calls and **zero**
+unstable outputs.
+
+It found a real hazard nobody had named: **10 cards write `inst.state` from
+inside `augmentMoves`.** `lossyAugment` sets `inst.state.armed` and
+`dryad_grove` sets `inst.state.offered` when the move is merely on offer, so
+per node that would arm a live card off a hypothetical position and burn its
+charge in the real game. The ten are `dryad_grove`, `ghost_legion`,
+`op_colts_gallop`, `op_drawbridge_in`, `op_fire_escape`, `op_freight_elevator`,
+`op_grand_march`, `op_old_post_road`, `op_palace_gate`, `op_viziers_errand`.
+
+### The fix
+
+`buildSearchBuffs` / `applySearchAugments` in `game.ts`, `genMoves` replacing
+`generateMoves` inside `negamax` and `quiesce` in `ai.ts`.
+
+The impurity is handled structurally rather than by an allowlist, because 71 of
+the 283 hooks never produced a move in any probe position and are therefore
+**unproven, not proven pure** -- an allowlist would have been a guess about
+those. Instead the search runs against a private view: cloned instances, cloned
+match state, cloned captured pools and player slots. A generator that reaches
+for a mutator writes into a throwaway. It can mis-score a search; it cannot
+reach the game.
+
+Expiry is modelled rather than ignored, which was the third hazard. The side to
+move at ply p has played `p >> 1` of its own moves, which is exactly what
+`tickTurns` would have decremented, so per-ply instances carry pre-aged
+counters and drop out when they expire. Charge-limited augments (133 of 283)
+carry a bit in a mask threaded down each line, so playing the granted move
+stops it being offered deeper.
+
+Allocation was the second hazard and the answer was two `BuffApi`s per SEARCH
+rather than per node, over mutable view games, retargeting only `.board` per
+node.
+
+### It costs a ply, and that is not buried
+
+| card | level | budget | depth | nodes | ms |
+|---|---|---|---|---|---|
+| none | medium | 60ms | 3 to 3 | **identical (10479)** | -10 |
+| `amazon_army` | medium | 60ms | **3 to 2** | -4% | +27 |
+| none | medium | 700ms | 3 to 3 | **identical** | -15 |
+| `amazon_army` | medium | 700ms | 3 to 3 | +65% | +58 |
+| none | hard | 2000ms | 5 to 5 | **identical (523739)** | -707 |
+| `amazon_army` | hard | 2000ms | **5 to 4** | +31% | +241 |
+
+One ply at the 60ms floor and one at hard's 2000ms, for a holder of a
+move-granting card. Zero cost otherwise, proved by identical node counts. The
+fixed-depth decomposition says where it goes: nodes 1.61 to 1.65x,
+microseconds per node 0.99 to 1.06x. Essentially all of it is the genuinely
+wider tree and none is augment overhead.
+
+### The null, which corrects the round-7 claim
+
+A paired A/B, same seeds, White holding the card in BOTH arms and only its
+searcher differing (`npm run test:search-buff-strength`):
+
+| card | pairs | buff-aware minus blind |
+|---|---|---|
+| `amazon_army` (3 turns) | 120 | **-0.9 +-3.6 pt** (0.2 sigma) |
+| `twin_knights` (permanent) | 80 | -4.4 +-4.8 pt (0.9 sigma) |
+
+The arms diverged in 33% of pairs, so the design had signal capacity. Round 7
+scaled the observational interaction to about **21 points** for `amazon_army`
+(1.26 x 17 granted moves). At +-3.6 this had the power to see 21 points and
+did not.
+
+**The code defect was real and is fixed. The causal story attached to it is not
+confirmed.** The 4.5-sigma interaction is still in the data and still wants an
+explanation, but "the search cannot see the card" is no longer that explanation
+on the strength of a direct experiment. Worth testing before anyone believes
+the interaction again: timed multi-turn cards with large grants may simply be
+designed weaker, and the two harnesses differ (this one grants the card after a
+random 8-ply opening, the win-rate harness grants at ply 0 from the standard
+start), which is a real difference rather than a dismissal.
+
+The project's own harness at its recorded settings moved `amazon_army` **-25.0
+to -20.8**, `onslaught` -4.2 to -4.2, `twin_knights` +25 to +12.5, all inside
+its own +-9.7 error bar, so it cannot resolve this either.
+
+**The section 1c tier quarantine stays.** It says "retire when A13 lands", and
+A13 has landed, but the family has not been re-measured and the honest reading
+is that the bias is smaller than believed rather than absent. Retiring a guard
+on an unmeasured assumption is the thing the guard exists to prevent.
+
+### And the test could never have reported success
+
+`test-search-buff-visibility.ts`'s success branch was unreachable by
+construction: assertion 1 required `generateMoves` NOT to return granted moves,
+while assertion 2's victory branch required exactly that. It could report the
+defect and could never report the fix. Rewritten to drive `buildSearchBuffs` +
+`applySearchAugments`, which is what `negamax` actually calls, with an expiry
+assertion (live at plies 0, 2 and 4; gone at 6) and the depth cost pinned at
+its measured size rather than asserted to be zero.
+
+Guards: `test:desync` (sample hash `5579b1a5`, unchanged), `test:snapshot`,
+`test:spectator-sync`, `test:apex`, `test:lab` (2112/2112), `test:rules`,
+`test:balance-pass`, `test:ai-activation`, `test:search-buffs`.
+
+Still invisible below the root and out of scope: nerf filters, shields, walls
+and zone effects. `analyzeBoard` stays buff-free, since it is deliberately
+plain-chess analysis over a bare board.

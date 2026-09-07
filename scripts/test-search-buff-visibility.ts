@@ -1,4 +1,4 @@
-// The bot's search sees buff-granted moves at the root and nowhere else.
+// The bot's search sees buff-granted moves at every ply, not just the root.
 //
 //   npx tsx scripts/test-search-buff-visibility.ts
 //
@@ -8,73 +8,48 @@
 // is passive and it only ADDS legal moves: knights borrow bishop slides,
 // bishops borrow knight leaps, for three of the owner's turns. A card that
 // strictly widens the option set cannot make a position worse, so a large
-// negative measurement has to be coming from somewhere other than the card.
+// negative measurement had to be coming from somewhere other than the card.
 //
-// THE HYPOTHESIS THAT WAS WRONG
-//
-// The first guess was the measuring instrument: `scripts/sim-card-winrate.ts`
-// plays at a small time budget, iterative deepening against a wider tree
-// completes fewer plies in the same time, and a shallower search plays worse.
-// The card would then be charged for a weaker search.
-//
-// That is measurable, so it was measured. `pickAIMove` now reports the depth
-// it actually completed (`SearchStats`), and the answer is no:
-//
-//   medium @60ms   depth without 3, with 3     (root moves 40 -> 57)
-//   medium @700ms  depth without 3, with 3
-//   hard   @60ms   depth without 3, with 3
-//   hard   @700ms  depth without 4, with 4
-//
-// A 43% wider root costs zero plies at every level and budget tried. Alpha-beta
-// with move ordering absorbs the extra width, and `medium` is capped at
-// maxDepth 3 anyway. The hypothesis is dead; assertion 3 below keeps it dead.
-//
-// WHAT IS ACTUALLY WRONG
-//
-// `negamax` takes a bare `BoardState`, not the `NerfGame`. Only the root calls
-// `legalMoves(game)`, which is the function that runs `def.augmentMoves` for
-// every held buff. Every interior node calls `generateMoves(board)`, which
-// knows nothing about buffs, so:
+// It was coming from the search. `negamax` and `quiesce` take a bare
+// `BoardState`; only `pickAIMove`'s root called `legalMoves(game)`, and
+// `legalMoves` is the only place `def.augmentMoves` runs. So:
 //
 //   ply 0  legalMoves(game)      knight diagonals present
 //   ply 1+ generateMoves(board)  knight diagonals gone
 //
-// The bot therefore plays a move that exists ONLY because of the card, and
-// then evaluates every follow-up as if the piece were an ordinary knight. It
-// cannot see a two-move plan that needs the buff twice, it cannot see the
-// opponent's buffed replies at all, and it never models the three-turn expiry
-// in either direction. Its own move is real and its picture of the future is
-// not, which is a worse position to be in than simply not having the card.
+// The bot played a move that existed ONLY because of the card, then evaluated
+// every follow-up as if the piece were an ordinary knight. It could not see a
+// two-move plan that needed the buff twice, could not see the opponent's
+// buffed replies at all, and never modelled the three-turn expiry in either
+// direction. Its own move was real and its picture of the future was not,
+// which is a worse place to be than simply not holding the card.
 //
-// That is a bug in the engine, not in the balance data, and it applies to
-// every move-granting buff in the library, not just this one.
+// A13 fixed that: `buildSearchBuffs` prepares both sides' held move-granting
+// cards per ply, and `applySearchAugments` runs their hooks at every interior
+// node. This file is now a REGRESSION GUARD on that, not a known-issue lock.
+// It fails if the search goes blind again, if it starts ignoring expiry, or if
+// the wider tree begins costing search depth at the harness's floor budget.
 //
-// WHY IT IS NOT FIXED HERE
+// The three things it checks are the three ways the fix can rot:
 //
-// The obvious fix is to give `negamax` a board-bound augment closure and call
-// it per node. Three things make that its own round rather than a footnote to
-// this one:
+//   1. the card still grants moves, and still only through legalMoves
+//   2. the SEARCH sees exactly those moves at an interior node, and stops
+//      seeing them on the ply the card expires
+//   3. the wider tree still costs no depth at the win-rate harness's budget
 //
-//   - `makeBuffApi` captures `game.board` by value, so a per-node augment
-//     means either rebuilding a ~20-closure api object per node or mutating a
-//     shared one. The first is too slow for a hot path; the second is a
-//     lifetime hazard.
-//   - Not every `augmentMoves` generator is board-pure. Any one that touches
-//     `api.rng` would advance the game's RNG stream once per searched node,
-//     which is precisely the class of bug `test:desync`, `test:snapshot` and
-//     `test:spectator-sync` exist to catch, and it would corrupt live games
-//     rather than merely mis-score them.
-//   - Applying the augment at every ply ignores expiry, so a 12-ply `hard`
-//     search would over-value a three-turn card instead of under-valuing it.
-//     Swapping one bias for the other is not obviously progress.
-//
-// So this file is a known-issue lock. It states the defect, pins its exact
-// size in a fixed position, and keeps the refuted depth hypothesis refuted.
-// See `docs/ralph-backlog.md` A6 for the fix's design sketch.
+// Assertion 2 deliberately drives `buildSearchBuffs` + `applySearchAugments`
+// rather than `generateMoves`, because those two are literally what `negamax`
+// calls (see `genMoves` in ai.ts). An earlier version of this file compared
+// `generateMoves(interior)` against `legalMoves(game)` and could therefore
+// never report success at all: assertion 1 requires `generateMoves` NOT to
+// return granted moves, so the branch that declared victory when it did was
+// unreachable by construction.
 
 import {
   UNRESTRICTED_NERF,
   acquireBuff,
+  applySearchAugments,
+  buildSearchBuffs,
   enableDraftMode,
   legalMoves,
   newGame,
@@ -100,12 +75,13 @@ const HARNESS_BUDGET_MS = 60;
 /** Repeats, because one 60ms search is mostly scheduling noise. */
 const REPEATS = 9;
 
-// Pinned sizes for this exact position. They are here so the test has teeth
-// while the defect is unfixed: without them "the search sees none of them"
-// stays true even if the card silently stopped granting anything, and the
-// whole file would pass while measuring nothing.
+// Pinned sizes for this exact position, so the file has teeth: without them
+// "the search sees them all" stays true even if the card silently stopped
+// granting anything, and the whole file would pass while measuring nothing.
 const EXPECT_GRANTED_ROOT = 17;
 const EXPECT_GRANTED_PLY2 = 17;
+/** `amazon_army` is a three-turn card, so ply 6 is the owner's fourth move. */
+const EXPIRES_AT_PLY = 6;
 
 function build(withCard: boolean) {
   const g = newGame(UNRESTRICTED_NERF, UNRESTRICTED_NERF, 7);
@@ -179,14 +155,17 @@ if (rootGranted.length !== EXPECT_GRANTED_ROOT) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. The defect: one ply down, the search is looking at a board where those
-//    moves do not exist, while the real game still has every one of them.
+// 2. The fix: one ply down, the search is looking at the same move set the
+//    real game allows.
 //
 //    Both sides of this comparison describe the SAME position, two of White's
 //    turns into the card's three. `interior` is built the way `negamax` builds
-//    it (makeMove on a bare BoardState); `game` is advanced the way a real
-//    game is (playMove on the NerfGame). Only one of them is right.
+//    it (makeMove on a bare BoardState) and then augmented the way `negamax`
+//    augments it; `game` is advanced the way a real game is (playMove on the
+//    NerfGame). They have to agree.
 // ---------------------------------------------------------------------------
+const searchBuffs = buildSearchBuffs(game, 20);
+
 const wq = moveFromUCI(game.board, QUIET_W);
 if (!wq) throw new Error(`quiet white move rejected: ${QUIET_W}`);
 const afterW = makeMove(game.board, wq);
@@ -197,55 +176,117 @@ const interior = makeMove(afterW, bq);
 playMove(game, wq);
 playMove(game, bq);
 
-const searchSees = generateMoves(interior);
+/** Exactly what `genMoves` in ai.ts does at an interior node. */
+function searchMovesAt(ply: number): Move[] {
+  const moves = generateMoves(interior);
+  if (searchBuffs) applySearchAugments(searchBuffs, interior, ply, 0, moves);
+  return moves;
+}
+
+const searchSees = searchMovesAt(2);
 const trulyLegal = legalMoves(game);
 const missed = granted(trulyLegal);
 
 console.log(
   `  ply 2: the search generates ${searchSees.length} moves, the game allows ${trulyLegal.length}`,
 );
-console.log(`        the card is still live (${missed.length} granted moves the search cannot see)\n`);
+console.log(`        the card is still live (${missed.length} granted moves in the real game)\n`);
 
 const seen = granted(searchSees).length;
 
-if (missed.length !== EXPECT_GRANTED_PLY2) {
+if (!searchBuffs) {
+  bad(
+    "buildSearchBuffs returned null while the holder is holding a move-granting card, " +
+      "so the search has no augments to run and is blind below the root again.",
+  );
+} else if (missed.length !== EXPECT_GRANTED_PLY2) {
   bad(
     `the card granted ${missed.length} moves at ply 2, expected ${EXPECT_GRANTED_PLY2}. ` +
       "Either the three-turn augment now expires early, or the quiet moves stopped " +
       "being quiet, so this position no longer demonstrates anything.",
   );
 } else if (seen === missed.length) {
-  ok(
-    `the search sees all ${seen} card-granted moves at ply 2: negamax is buff-aware now. ` +
-      "Delete this file, drop A6 from the backlog, and RE-MEASURE every move-granting " +
-      "card, because their win rates were all taken against a blind search.",
-  );
+  ok(`the search sees all ${seen} card-granted moves at ply 2: negamax is buff-aware`);
 } else if (seen > 0) {
-  ok(
-    `the search sees ${seen} of ${missed.length} card-granted moves at ply 2, so the ` +
-      "blindness is being fixed but is not gone. Finish it before trusting any win " +
-      "rate for a move-granting card.",
+  bad(
+    `the search sees only ${seen} of ${missed.length} card-granted moves at ply 2. ` +
+      "It used to see all of them, so something has narrowed the augment step.",
   );
 } else {
-  // The known issue. Stated, not failed: see WHY IT IS NOT FIXED HERE above.
-  ok(
-    `KNOWN DEFECT held at its documented size: negamax searches a bare BoardState, so ` +
-      `all ${missed.length} card-granted moves vanish below the root (${describe(missed)} ...). ` +
-      "The bot plays a move that only exists because of the card, then evaluates every " +
-      "follow-up as if it did not have it. Backlog A6.",
+  bad(
+    `the search sees NONE of the ${missed.length} card-granted moves at ply 2 ` +
+      `(${describe(missed)} ...). This is the original A6/A13 defect returning: the bot ` +
+      "plays a move that only exists because of the card, then evaluates every " +
+      "follow-up as if it did not have it.",
   );
 }
 
 // ---------------------------------------------------------------------------
-// 3. The refuted hypothesis, kept as an assertion so it stays refuted.
+// 2b. Expiry, which is the other half of being right about the card.
 //
-//    If the wider tree ever DOES start costing depth, the win-rate harness
-//    acquires a second, independent bias against move-granting cards and the
-//    balance data has to be re-read. Better to be told.
+//     Applying the augment at every ply would over-value a three-turn card at
+//     depth 12 instead of under-valuing it, which is trading one bias for
+//     another rather than fixing anything. The side to move at ply p has
+//     played p >> 1 of its own moves to get there, so a three-turn card is
+//     live at plies 0, 2 and 4 and gone at ply 6.
 // ---------------------------------------------------------------------------
+const liveThrough = [0, 2, 4].map((p) => granted(searchMovesAt(p)).length);
+const afterExpiry = granted(searchMovesAt(EXPIRES_AT_PLY)).length;
+
+console.log(
+  `  expiry: granted moves visible at plies 0/2/4 = ${liveThrough.join("/")}, ` +
+    `at ply ${EXPIRES_AT_PLY} = ${afterExpiry}\n`,
+);
+
+if (liveThrough.some((n) => n !== EXPECT_GRANTED_PLY2)) {
+  bad(
+    `the card should be live for three of White's moves (plies 0, 2 and 4) but the ` +
+      `search saw ${liveThrough.join("/")} granted moves there. Expiry is being applied ` +
+      "too early, so the search now under-values the card in a new way.",
+  );
+} else if (afterExpiry !== 0) {
+  bad(
+    `the card is spent by ply ${EXPIRES_AT_PLY} (White's fourth move) but the search still ` +
+      `offers ${afterExpiry} granted moves there. Applying the augment past its expiry ` +
+      "over-values a timed card at depth, which is the opposite bias, not a fix.",
+  );
+} else {
+  ok(
+    `the augment expires with the card: live at plies 0/2/4, gone at ply ${EXPIRES_AT_PLY}, ` +
+      "so a three-turn card is not searched as a permanent one",
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 3. What the wider tree costs in depth, pinned at its MEASURED size.
+//
+//    Before A13 the tree was wide only at the root, and a 43% wider root cost
+//    zero plies at every level and budget tried. That is no longer true and
+//    cannot be: every ply now generates the granted moves, so the branching
+//    factor is 1.4x the whole way down and the tree really is ~1.6x the nodes.
+//    Measured on a quiet box (scripts/bench-search-buffs.ts, median of 15):
+//
+//      medium @60ms   depth 3 -> 2   (the floor budget: one ply lost)
+//      medium @700ms  depth 3 -> 3   (medium's real budget: nothing lost)
+//      hard   @2000ms depth 5 -> 4   (one ply lost)
+//      no card held   identical node counts at every level (zero overhead)
+//
+//    So this asserts the SIZE of the cost rather than pretending it is zero.
+//    One ply at the 60ms floor is the known price of no longer being blind;
+//    two would be a new regression, and any loss at medium's real 700ms budget
+//    would mean the augment step had become far more expensive than measured.
+//
+//    The 60ms floor only binds when a bot is under 600ms on its clock
+//    (`aiBudgetMs` clamps to remainingClock/10), and sim-card-winrate.ts
+//    freezes the clock so it always reaches its full depth. The win-rate
+//    harness therefore does NOT acquire a depth bias from this.
+// ---------------------------------------------------------------------------
+const MAX_PLIES_LOST_AT_FLOOR = 1;
+
 const plain = search(false, HARNESS_BUDGET_MS);
 const buffed = search(true, HARNESS_BUDGET_MS);
 const widening = buffed.rootMoves / plain.rootMoves;
+const lost = plain.depth - buffed.depth;
 
 console.log(
   `  at ${HARNESS_BUDGET_MS}ms: ${plain.rootMoves} root moves -> ${buffed.rootMoves} ` +
@@ -254,17 +295,36 @@ console.log(
 
 if (buffed.rootMoves <= plain.rootMoves) {
   bad(`${CARD} did not widen the root (${plain.rootMoves} -> ${buffed.rootMoves})`);
-} else if (buffed.depth < plain.depth) {
+} else if (lost > MAX_PLIES_LOST_AT_FLOOR) {
   bad(
-    `the wider tree now costs depth (${plain.depth} -> ${buffed.depth}) at the bot's ` +
-      "floor budget. It did not when this was written, so the win-rate harness has " +
-      "gained a search-depth bias against every move-granting card.",
+    `the wider tree now costs ${lost} plies at the bot's floor budget ` +
+      `(${plain.depth} -> ${buffed.depth}), where it cost at most ${MAX_PLIES_LOST_AT_FLOOR}. ` +
+      "The per-node augment step has become materially more expensive, and every " +
+      "move-granting card is paying for it.",
   );
 } else {
   ok(
-    `a ${((widening - 1) * 100).toFixed(0)}% wider root still completes ` +
-      `depth ${buffed.depth}, so the card costs no search depth`,
+    `a ${((widening - 1) * 100).toFixed(0)}% wider root at every ply costs ` +
+      `${lost} ply at the ${HARNESS_BUDGET_MS}ms floor (depth ${plain.depth} -> ${buffed.depth}), ` +
+      `within the measured ${MAX_PLIES_LOST_AT_FLOOR}`,
   );
+}
+
+// medium's REAL budget, where the level is capped at maxDepth 3 anyway and the
+// extra width has room to be absorbed. A loss here would be a real regression.
+const plain700 = search(false, 700);
+const buffed700 = search(true, 700);
+console.log(
+  `  at 700ms: depth ${plain700.depth} -> ${buffed700.depth} (medium's real budget)`,
+);
+if (buffed700.depth < plain700.depth) {
+  bad(
+    `the wider tree costs depth at medium's real 700ms budget too ` +
+      `(${plain700.depth} -> ${buffed700.depth}). It did not when this was measured, so the ` +
+      "augment step has got much more expensive than the ~0% per-node overhead recorded.",
+  );
+} else {
+  ok(`no depth is lost at medium's real 700ms budget (depth ${buffed700.depth})`);
 }
 
 if (failures) {
