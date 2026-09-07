@@ -64,13 +64,17 @@ export function MoveStrip({
   }, [currentPly, floorPly, moves.length]);
 
   return (
-    <div className="flex h-11 items-stretch border-y border-[color:var(--edge)] bg-[color:var(--bg-panel)]">
+    // 44px, spelled in pixels. `h-11` is 2.75rem, which is 44px only under
+    // Tailwind's assumed 16px root; this interface roots at 14px (globals.css),
+    // so `h-11` was rendering 38.5px and the two arrows measured 37x39 against
+    // the 44px hit floor in design-system.md section 10.
+    <div className="flex h-[44px] items-stretch border-y border-[color:var(--edge)] bg-[color:var(--bg-panel)]">
       <button
         type="button"
         aria-label="Previous move"
         disabled={!canBack}
         onClick={() => onPlyChange?.(Math.max(floorPly, currentPly - 1))}
-        className="flex w-11 shrink-0 items-center justify-center text-parchment-300 transition-colors active:bg-white/[0.06] disabled:opacity-30"
+        className="flex w-[44px] shrink-0 items-center justify-center text-parchment-300 transition-colors active:bg-white/[0.06] disabled:opacity-30"
       >
         <ChevronLeft size={18} />
       </button>
@@ -96,7 +100,9 @@ export function MoveStrip({
                 disabled={!reachable}
                 onClick={() => onPlyChange?.(c.ply)}
                 className={
-                  "min-h-[36px] px-1.5 tabular-nums transition-colors " +
+                  // Fill the strip so the ply itself is the target, not a
+                  // 36px band inside a 44px row.
+                  "min-h-[44px] px-1.5 tabular-nums transition-colors " +
                   (selected
                     ? "bg-[color:var(--accent)] text-[color:var(--text-on-accent)]"
                     : "text-parchment-100 active:bg-white/[0.06] disabled:opacity-40")
@@ -113,7 +119,7 @@ export function MoveStrip({
         aria-label="Next move"
         disabled={!canForward}
         onClick={() => onPlyChange?.(Math.min(maxPly, currentPly + 1))}
-        className="flex w-11 shrink-0 items-center justify-center text-parchment-300 transition-colors active:bg-white/[0.06] disabled:opacity-30"
+        className="flex w-[44px] shrink-0 items-center justify-center text-parchment-300 transition-colors active:bg-white/[0.06] disabled:opacity-30"
       >
         <ChevronRight size={18} />
       </button>

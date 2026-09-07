@@ -969,3 +969,119 @@ of the px values the design system speaks in, because the root is 14px and
 Tailwind's rem scale is never overridden. `p-4` is 14px where section 4 says
 16. Correcting it centrally makes the app roughly 14 percent roomier, and
 density is valued here on purpose.
+
+---
+
+## 2026-09-07 06:10 EDT
+
+Tablet band (768 to 1279) on the match surfaces. The 640-to-1024 range had no
+layout of its own: everything switched on at `sm` and did not adapt again until
+`lg`. Measured on the local bot game, board width against the vertical space
+left unused under it:
+
+| viewport | board before | dead column below | board after |
+|---|---|---|---|
+| 768x1024 | 424px | 540px | 720px |
+| 834x1112 | 490px | 562px | 720px |
+| 900x1200 | 556px | 584px | 720px |
+| 1024x1366 | 324px | 732px | 720px |
+
+The board was width-bound by a 252px move rail every time while half the screen
+went unpainted, and at 1024 the `lg` command rail landed on top of that and took
+the board from 636px (at 980) down to 324px.
+
+- `src/components/matchLayout.ts` (new): one place for the portrait-tablet band,
+  `(min-width:768px) and (max-width:1279.98px) and (orientation:portrait)`, as
+  literal class strings so the JIT emits them. The band is orientation-aware on
+  purpose: in landscape the height is the scarce axis and a stacked column would
+  push the game actions below the fold, so landscape keeps the rail.
+- In the band both match views (`OnlineMatch`, `/game`) now use the column that
+  design-system.md section 9 already describes for phones: board across the
+  column, player strips with their clocks above and below, and `MobileMatchStack`
+  under it carrying the actions, move strip, rule, dock, chat and stakes. Chat
+  and the dock had no home at all between 640 and 1024 before this.
+- The buff drawer stands down in the band (the dock is inline there) and is left
+  to the sm..lg landscape range, per section 9.
+
+Hit areas. Several controls used `sm:` as a proxy for "has a mouse", which is
+wrong for every tablet. Measured at 768x1024 with a coarse pointer:
+
+- `Button` size `md` rendered 40px (`sm:min-h-[40px]`). Now `(pointer: fine)`,
+  which is what the comment above it already claimed. The history filter chips
+  (36px), and the buff-targeting Done/Cancel buttons, get the same treatment.
+- `MoveList` nav buttons measured 25px at 1024x768 (`sm:h-7`). Now 44px on touch.
+- `h-11` is 38.5px at this interface's 14px root, not 44px (see backlog C32).
+  `MoveStrip` (the phone move navigation) and the buff drawer's toggle now spell
+  44px in pixels; the drawer's bar measures 46px and `mobileChrome` reserves
+  exactly that, up from a 2.75rem reserve that was about 7px short.
+
+Sub-44px controls on the touch sweep: history 8 to 4 at 768 and 834, game 9 to 5
+at 1024x768, phone counts down across the board. No horizontal overflow at any
+of the fifteen widths checked, and 1280 and up is byte-for-byte unchanged.
+
+Not fixed, needs a decision: at 1024 to 1279 in LANDSCAPE the three-column
+desktop layout still leaves the board 324px (at 1024x768) to 494px (at
+1194x834), against 640px and 706px for the two-column shape at the same widths.
+Moving the command rail to `xl` fixes it, but chat only exists in that rail and
+in `MobileMatchStack`, so it would disappear for that band until chat has a
+second home. See the report for the numbers.
+
+## 2026-09-07 06:07 EDT
+
+The two moments that carry this game: the card draft and the secret-nerf
+reveal. Everything below is transform/opacity only, uses the `--ease-*` /
+`--dur-*` vocabulary, respects `data-anim` and the low-time hold, and never
+delays authoritative state. Not committed; working tree only.
+
+The draft (`src/components/DraftOverlay.tsx`, `DraftOverlay.css`):
+- The flight into the pocket was invisible. `.plate` sets `overflow-y: auto`,
+  which forces the browser to compute `overflow-x` as `auto` too, so the
+  confirmed card was hard-clipped at the panel's edge about a third of the way
+  to the buff dock, every single time. The card is now handed to a fixed
+  position layer outside the panel (its rect is measured at confirm time and
+  the in-grid copy drops in the same frame), so the whole journey is on screen.
+  Same 550ms, same commit-on-landing, same 900ms fallback.
+- The flight is now an arc rather than a diagonal slide: the card swells for
+  100ms, then x runs on `--ease-out` while y runs on `--ease-io`, so the axes
+  fall out of step and the path bows. The flare and mote trail ride with it.
+- The deal is ordered by tier, weakest first, so the beat builds to the card
+  that matters. The old `tier * 12` nudge only biased a slot-ordered delay and
+  routinely lost: a tier 1 card in the last slot flipped after a tier 10 in the
+  first. The best card now lands last and turns over last, a beat slower.
+- The card flip runs on `--ease-spring` (a reveal, one of the three sanctioned
+  uses), so a card turns a few degrees past flat and rocks back. That is the
+  settle the deal never had.
+- Cards fade up as they fly instead of appearing pre-formed, so the stagger is
+  something you can count.
+- The vault used to burn out completely and leave the stage empty for about a
+  quarter of a second before the first card appeared, even though its own
+  stylesheet says the cards deal out of the light. The deal now starts 160ms
+  early, while the core, flash and shockwave are still fading, and a new
+  `.draft-deal-bloom` seam carries that light as the cards fly out of it.
+- Selecting a card had no motion at all. A single ring now closes onto it over
+  320ms; the check badge lands on `--ease-spring` at `--dur-2` instead of an
+  off-vocabulary 160ms.
+- Every anonymous bezier in the file was replaced by a named constant mirroring
+  the CSS tokens.
+- A pick committed mid-flight when motion is switched off (the low-time hold
+  does exactly this under 20 seconds) now commits at once instead of waiting
+  out the fallback timer.
+
+The reveal (`src/components/GameOver.tsx`, `globals.css`):
+- The secret nerf reveal was a React conditional. The sealed card was replaced
+  by the rule between one frame and the next, with no transition of any kind.
+  It now plays the same beats as the in-game nerf reveal, at 480ms instead of
+  two seconds: the card rises and fades in over `--dur-3`, a tier tinted band
+  sweeps down it, and the rule's NAME lands last on `--ease-spring`.
+- It fires on both routes to the same moment: opening the "Rules this game"
+  fold (the default path, which had no beat at all) and pressing the sealed
+  card. Armed from render rather than from the click, so the animation starts
+  when the fold opens rather than a frame late. It disarms after one play and
+  spectators never arm it.
+- The reveal is announced through `role="status"` in every motion mode, not
+  only when the animation runs.
+
+Route transitions: deliberately not added. See the report reasoning; the short
+version is that every route already ships a `loading.tsx` skeleton in the final
+geometry, and a transition would put frames between a player and a board whose
+clock is running.

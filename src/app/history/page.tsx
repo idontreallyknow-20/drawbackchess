@@ -86,7 +86,10 @@ export default function HistoryPage() {
               type="button"
               onClick={() => setFilter(f.id)}
               className={
-                "min-h-[44px] sm:min-h-0 px-4 py-2 border font-display text-[13px] transition " +
+                // The 44px floor is a touch rule, not a width one: these chips
+                // measured 36px on a 768x1024 iPad, which is a touch device
+                // well past `sm`. Relax on a fine pointer instead.
+                "min-h-[44px] [@media(pointer:fine)]:min-h-0 px-4 py-2 border font-display text-[13px] transition " +
                 (filter === f.id
                   ? "bg-[color:var(--bg-raised)] border-gold text-gold-leaf"
                   : "border-[color:var(--edge)] text-parchment-200 hover:border-[color:var(--edge-strong)] hover:bg-[color:var(--bg-raised)]")

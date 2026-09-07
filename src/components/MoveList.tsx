@@ -220,7 +220,10 @@ function HistoryButton({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className="h-11 sm:h-7 inline-flex items-center justify-center border border-parchment-300/10 bg-white/[0.03] text-parchment-200 hover:border-gold/50 hover:text-gold-leaf disabled:opacity-35 disabled:cursor-not-allowed transition"
+      // 28px nav buttons are a mouse affordance, not a width one: on a
+      // 1024x768 tablet the `sm:h-7` shrink measured 25px against the 44px hit
+      // floor. Tighten on a fine pointer instead, so touch keeps its target.
+      className="h-[44px] [@media(pointer:fine)]:h-7 inline-flex items-center justify-center border border-parchment-300/10 bg-white/[0.03] text-parchment-200 hover:border-gold/50 hover:text-gold-leaf disabled:opacity-35 disabled:cursor-not-allowed transition"
     >
       {children}
     </button>

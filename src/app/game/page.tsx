@@ -55,6 +55,16 @@ import { computeFxVisual, fxVisualFields } from "@/components/effects/fxZones";
 import { useSignatureQueue } from "@/components/effects/useSignatureQueue";
 import { MobileBuffDrawer } from "@/components/MobileBuffDrawer";
 import { cardFaceIcon } from "@/lib/cardIcon";
+import {
+  TABLET_STACK_BOARD,
+  TABLET_STACK_CENTER,
+  TABLET_STACK_COL,
+  TABLET_STACK_FAB,
+  TABLET_STACK_HIDE,
+  TABLET_STACK_SCROLL,
+  TABLET_STACK_SHOW,
+  TABLET_STACK_UNCLIP,
+} from "@/components/matchLayout";
 import { bottomChromePadClass } from "@/components/mobileChrome";
 import { DraftNotice } from "@/components/DraftNotice";
 import {
@@ -1696,8 +1706,10 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
   // bottom clock get pushed off). Literal strings only, so Tailwind's JIT
   // emits them.
   const boardFitClass = hint
-    ? "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-11rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-11rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full"
-    : "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-8rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-8rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full";
+    ? "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-11rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-11rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full " +
+      TABLET_STACK_BOARD
+    : "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-8rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-8rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full " +
+      TABLET_STACK_BOARD;
 
   const handleMove = (m: Move) => {
     if (game.result || isReviewingHistory) return;
@@ -1896,7 +1908,22 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
     ) : null;
 
   return (
-    <main className="flex min-h-dvh flex-col sm:h-dvh sm:min-h-0 sm:overflow-hidden">
+    <main className={"flex min-h-dvh flex-col sm:h-dvh sm:min-h-0 sm:overflow-hidden " + TABLET_STACK_SCROLL}>
+      {/* The live game had NO h1 at all: the only one on this route sits in
+          the pre-game nerf-draft branch, so the moment a game started the
+          page lost its heading. A screen reader landing here was told nothing
+          about what the page is, and /tutorial/first-game inherited the same
+          gap because it renders this same wrapper.
+
+          Visually hidden rather than displayed, because the board IS the
+          content and a printed heading above it would be exactly the
+          brochure-style padding section 4 rules out on app surfaces. It names
+          the mode and the side, which is what a player arriving by keyboard
+          needs to know first. */}
+      <h1 className="sr-only">
+        {gameMode === "nerf" ? "Nerf mode" : gameMode === "buff" ? "Buff mode" : "Chess"} game
+        against the computer, playing {myColor === "w" ? "White" : "Black"}
+      </h1>
       <CompactSiteHeader
         status={
           <span className="zen-hide hidden sm:inline">
@@ -1918,6 +1945,8 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
       <div
         className={
           "mx-auto flex w-full max-w-[1360px] flex-1 min-h-0 flex-col gap-2 px-0 sm:overflow-hidden sm:px-6 xl:max-w-[1680px] " +
+          TABLET_STACK_UNCLIP +
+          " " +
           bottomChromePadClass(!!game.buffs)
         }
       >
@@ -2028,11 +2057,17 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
             }
           />
           <RailResizeHandle railWidth={railWidth} resizeRail={resizeRail} />
-          <div className="flex min-h-0 flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-start">
-            <div ref={boardShellRef} className="min-h-0 min-w-0 sm:flex-none">
+          <div className={"flex min-h-0 flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-start " + TABLET_STACK_COL}>
+            {/* In the band the whole column — player strips, board, stack —
+                shares the board's width and centres as one, so the strips line
+                up with the board's edges instead of spanning the viewport. */}
+            <div
+              ref={boardShellRef}
+              className={`min-h-0 min-w-0 sm:flex-none ${TABLET_STACK_BOARD} ${TABLET_STACK_CENTER}`}
+            >
               {/* Mobile-only player strips: the side rails (clocks, cards,
                   actions) are hidden below the sm breakpoint. */}
-              <div className="flex items-center justify-between gap-2 px-2 sm:hidden">
+              <div className={"flex items-center justify-between gap-2 px-2 sm:hidden " + TABLET_STACK_SHOW}>
                 <BoardPlayerRow
                   // Material counts read the COMMITTED position (a queued premove
                   // must never bump the capture tally early); history review
@@ -2055,7 +2090,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
                   />
                 )}
               </div>
-              <div data-board-measure className={`relative mx-auto sm:mx-0 ${boardFitClass}`}>
+              <div data-board-measure className={`relative mx-auto sm:mx-0 ${TABLET_STACK_CENTER} ${boardFitClass}`}>
                 <Board
                   board={boardForDisplay}
                   // Removal FX diff the committed position, never the premove /
@@ -2158,7 +2193,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
                 )}
                 {!isReviewingHistory && <BoardSplashHost rows={againstMe} />}
               </div>
-              <div className="flex items-center justify-between gap-2 px-2 sm:hidden">
+              <div className={"flex items-center justify-between gap-2 px-2 sm:hidden " + TABLET_STACK_SHOW}>
                 <BoardPlayerRow
                   // Material counts read the COMMITTED position (a queued premove
                   // must never bump the capture tally early); history review
@@ -2236,6 +2271,11 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
             <div
               className={
                 "hidden min-h-0 overflow-hidden gap-3 sm:grid sm:h-[var(--board-height)] sm:w-72 sm:shrink-0 " +
+                // The move rail is the thing that was squeezing the board on a
+                // portrait tablet; there its clocks ride the player strips and
+                // its move list is the horizontal strip in the stack.
+                TABLET_STACK_HIDE +
+                " " +
                 (clockEnabled ? "sm:grid-rows-[auto_minmax(0,1fr)_auto]" : "sm:grid-rows-[minmax(0,1fr)]")
               }
               style={railHeightStyle}
@@ -2436,7 +2476,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
         <Button tone="leaf"
          
           onClick={() => setShowResult(true)}
-          className="fixed bottom-4 right-3 z-40 px-4 py-2 text-sm font-semibold shadow-xl sm:bottom-16 lg:bottom-4">
+          className={"fixed bottom-4 right-3 z-40 px-4 py-2 text-sm font-semibold shadow-xl sm:bottom-16 lg:bottom-4 " + TABLET_STACK_FAB}>
           Show result
         </Button>
       )}

@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 import { Move } from "@/engine/types";
+import { TABLET_STACK_SHOW } from "./matchLayout";
 import { MoveStrip } from "./MoveStrip";
 
 /**
@@ -9,7 +10,12 @@ import { MoveStrip } from "./MoveStrip";
  * order: the game actions, the horizontal move strip, then the sections that
  * used to hide behind two fixed drawers and a dropdown (your cards, your rule,
  * chat, stakes). The page scrolls; nothing is clipped and nothing floats over
- * the board. Desktop (sm and up) keeps the side rails and never renders this.
+ * the board.
+ *
+ * A portrait tablet gets the same column (see matchLayout.ts): it has a
+ * phone's proportions at a larger scale, and the side-rail shape was leaving
+ * 540-584px of the screen empty there while squeezing the board. Landscape and
+ * `xl` keep the side rails and never render this.
  */
 export function MobileMatchStack({
   actions,
@@ -37,7 +43,7 @@ export function MobileMatchStack({
   extra?: ReactNode;
 }) {
   return (
-    <div className="mt-2 flex flex-col gap-3 pb-4 sm:hidden">
+    <div className={"mt-2 flex flex-col gap-3 pb-4 sm:hidden " + TABLET_STACK_SHOW}>
       {actions && <div className="plate p-2 px-3">{actions}</div>}
       <MoveStrip moves={moves} currentPly={currentPly} onPlyChange={onPlyChange} minPly={minPly} />
       {rule && <div className="px-2">{rule}</div>}

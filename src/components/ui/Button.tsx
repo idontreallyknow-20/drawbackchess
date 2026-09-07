@@ -60,13 +60,19 @@ const TONE: Record<ButtonTone, string> = {
 // floor in docs/design-system.md §10) and only tightens once there is a
 // pointer. `xs` is the exception and is for dense data rows only — it clears
 // 36px, never 44, so it is not allowed to be the only way to do something.
+//
+// "Once there is a pointer" is `(pointer: fine)`, not `sm:`. It used to be
+// `sm:`, which reads a WIDTH as a proxy for a mouse and so is wrong for every
+// tablet: a 768x1024 iPad is a touch device on the far side of `sm`, and it
+// was being handed 40px controls. Measured on that viewport, "Find a match"
+// and "Play a bot" both rendered 40px tall against the 44px floor.
 const SIZE: Record<ButtonSize, string> = {
   // Lichess's .button is padding .8em 1em at 14px, about 40px tall. That is
   // the floor for anything that is a real control; xs/sm are for dense data
   // rows only and still clear 36px.
   xs: "min-h-[36px] gap-1 px-2.5 py-1 text-[12px]",
   sm: "min-h-[36px] gap-1.5 px-3 py-1.5 text-[13px]",
-  md: "min-h-[44px] gap-2 px-[1em] py-[0.8em] text-sm sm:min-h-[40px]",
+  md: "min-h-[44px] gap-2 px-[1em] py-[0.8em] text-sm [@media(pointer:fine)]:min-h-[40px]",
   // `lg` is Lichess's lobby button: 52px tall, 16px label, a roomy gap so a
   // leading icon reads as part of the label rather than a decoration.
   lg: "min-h-[52px] gap-3 px-5 py-3 text-[16px]",
@@ -76,7 +82,7 @@ const SIZE: Record<ButtonSize, string> = {
 const ICON_SIZE: Record<ButtonSize, string> = {
   xs: "min-h-[36px] min-w-[36px] p-1 text-[12px]",
   sm: "min-h-[36px] min-w-[36px] p-1.5 text-[13px]",
-  md: "min-h-[44px] min-w-[44px] p-2 text-sm sm:min-h-[40px] sm:min-w-[40px]",
+  md: "min-h-[44px] min-w-[44px] p-2 text-sm [@media(pointer:fine)]:min-h-[40px] [@media(pointer:fine)]:min-w-[40px]",
   lg: "min-h-[48px] min-w-[48px] p-2.5 text-base",
 };
 

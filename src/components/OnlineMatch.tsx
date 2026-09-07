@@ -37,6 +37,15 @@ const GameOver = dynamic(() => import("@/components/GameOver").then((m) => m.Gam
 import { MobileNavMenu } from "@/components/MobileNavMenu";
 import { MobileBuffDrawer } from "@/components/MobileBuffDrawer";
 import { cardFaceIcon } from "@/lib/cardIcon";
+import {
+  TABLET_STACK_BOARD,
+  TABLET_STACK_CENTER,
+  TABLET_STACK_COL,
+  TABLET_STACK_FAB,
+  TABLET_STACK_HIDE,
+  TABLET_STACK_SCROLL,
+  TABLET_STACK_UNCLIP,
+} from "@/components/matchLayout";
 import { bottomChromePadClass } from "@/components/mobileChrome";
 import { MobileMatchStack } from "@/components/MobileMatchStack";
 import { BoardTools } from "@/components/board/BoardTools";
@@ -2629,13 +2638,18 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
   // chrome on short landscape viewports, and the old 7rem reserve let the
   // board push the bottom clock off-screen / under the drawer there.
   // Literal class strings only, so Tailwind's JIT emits them.
-  const boardFitClass = hint
-    ? railCollapsed
-      ? "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw-380px))] max-w-full"
-      : "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full"
-    : railCollapsed
-    ? "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw-380px))] max-w-full"
-    : "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full";
+  // A portrait tablet drops both rails and takes the column (matchLayout.ts),
+  // so it gets one more term appended to every branch.
+  const boardFitClass =
+    (hint
+      ? railCollapsed
+        ? "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw-380px))] max-w-full"
+        : "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-15rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full"
+      : railCollapsed
+      ? "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw-380px))] max-w-full"
+      : "w-[min(100vw,max(60dvh,calc(100dvh-12rem)))] sm:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw-344px))] lg:w-[min(var(--board-cap,720px),calc(100dvh-12rem),calc(100vw_-_380px_-_var(--match-rail-w,320px)))] max-w-full") +
+    " " +
+    TABLET_STACK_BOARD;
   // Takebacks are casual-only (and off in Draft games, whose rolled offers
   // and applied buffs cannot rewind) and need a move of mine on the board.
   const takebackAvailable =
@@ -2852,7 +2866,8 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
   return (
     <main
       className={
-        "flex min-h-dvh flex-col sm:h-dvh sm:min-h-0 sm:overflow-hidden" +
+        "flex min-h-dvh flex-col sm:h-dvh sm:min-h-0 sm:overflow-hidden " +
+        TABLET_STACK_SCROLL +
         (recordingLayout ? " recording-mode" : "")
       }
     >
@@ -2913,7 +2928,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
             onClick={toggleMute}
             aria-label={muted ? "Unmute" : "Mute"}
             title={muted ? "Sound off" : "Sound on"}
-            className="h-11 w-11 sm:h-9 sm:w-9 rounded-full">
+            className="h-[44px] w-[44px] sm:h-[36px] sm:w-[36px] rounded-full">
             {muted ? (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -2932,7 +2947,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
             onClick={() => setSettingsOpen(true)}
             aria-label="Settings"
             title="Settings"
-            className="h-11 w-11 sm:h-9 sm:w-9 rounded-full">
+            className="h-[44px] w-[44px] sm:h-[36px] sm:w-[36px] rounded-full">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -2944,6 +2959,8 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       <div
         className={
           "match-content mx-auto flex w-full max-w-[1360px] flex-1 min-h-0 flex-col gap-2 px-0 sm:overflow-hidden sm:px-6 xl:max-w-[1680px] " +
+          TABLET_STACK_UNCLIP +
+          " " +
           bottomChromePadClass(!!(isDraft && game.buffs))
         }
       >
@@ -3060,8 +3077,14 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           {!railCollapsed && !recordingLayout && (
             <RailResizeHandle railWidth={railWidth} resizeRail={resizeRail} />
           )}
-          <div className="match-board-col flex min-h-0 flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-start">
-            <div ref={boardShellRef} className="match-board-shell min-h-0 min-w-0 sm:flex-none">
+          <div className={"match-board-col flex min-h-0 flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-start " + TABLET_STACK_COL}>
+            {/* In the band the whole column — player strips, board, stack —
+                shares the board's width and centres as one, so the strips line
+                up with the board's edges instead of spanning the viewport. */}
+            <div
+              ref={boardShellRef}
+              className={`match-board-shell min-h-0 min-w-0 sm:flex-none ${TABLET_STACK_BOARD} ${TABLET_STACK_CENTER}`}
+            >
               {/* Player bars at every breakpoint (2026-07 layout pass): the
                   opponent's identity + clock ride directly above the board and
                   the viewer's directly below it, so nothing forces a scan
@@ -3108,7 +3131,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
               <div
                 data-board-measure
                 className={
-                  `relative mx-auto sm:mx-0 transition-opacity duration-200 ${boardFitClass}` +
+                  `relative mx-auto sm:mx-0 ${TABLET_STACK_CENTER} transition-opacity duration-200 ${boardFitClass}` +
                   // Reconnecting: dim the board 20% (it stays visible, never
                   // unmounted) while input is disabled below.
                   (connectionLost ? " opacity-80" : "")
@@ -3377,6 +3400,11 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
             <div
               className={
                 "match-side-rail hidden min-h-0 overflow-hidden gap-3 sm:grid sm:h-[var(--board-height)] sm:w-72 sm:shrink-0 " +
+                // The move rail is what squeezed the board on a portrait
+                // tablet; there the move list is the horizontal strip in the
+                // stack under the board instead.
+                TABLET_STACK_HIDE +
+                " " +
                 (clockEnabled && !start.rated
                   ? "sm:grid-rows-[auto_minmax(0,1fr)_auto]"
                   : "sm:grid-rows-[minmax(0,1fr)_auto]")
@@ -3751,7 +3779,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
         <Button tone="leaf"
          
           onClick={() => setShowResult(true)}
-          className="fixed bottom-4 right-3 z-40 px-4 py-2 text-sm font-semibold shadow-xl sm:bottom-16 lg:bottom-4">
+          className={"fixed bottom-4 right-3 z-40 px-4 py-2 text-sm font-semibold shadow-xl sm:bottom-16 lg:bottom-4 " + TABLET_STACK_FAB}>
           Show result
         </Button>
       )}
