@@ -87,6 +87,34 @@
 // their own ESTIMATED bucket, separate from the terms read straight off the
 // page.
 //
+// AND A CARD THE PARSER READS WRONG IS HELD OUT BY NAME. KNOWN_MISREAD lists
+// the cards whose M has been checked against the engine and found wrong, with
+// the line of the buff that settles it and the parser fix that would retire
+// the entry. Those rows are printed in their own section instead of in
+// VIOLATIONS, because a floor computed from a number we know is wrong is not a
+// finding. Holding a card out is not a defence of its tier.
+//
+// THE OPEN QUESTION: THE POCKET DISCOUNT IS PROBABLY BACKWARDS.
+//
+// A pocketed piece is priced here at 0.95 of the same piece on the board, on
+// the reasoning that you still have to spend a turn placing it. In THIS engine
+// that reasoning does not survive contact with legalMoves (src/engine/game.ts,
+// the crazyhouse block): a drop lands on ANY empty square on the whole board,
+// it is appended AFTER every nerf and effect filter so no handicap can stop it,
+// and it counts as a legal move for stalemate resolution. A knight in the
+// pocket can therefore appear on a fork square, or beside the enemy king, with
+// no travel and nothing able to prevent it -- which is worth MORE than the same
+// knight standing in your own half, not five percent less.
+//
+// The measurement agrees and is the strongest single row in the sweep for a
+// small card: `bn4_care_package` (a random pocket minor, M=1.90) measures +41.7
+// +-14.9, which is 2.8 sigma and the only one of this model's three
+// measurement conflicts that clears the sweep's own 2-sigma bar. Its tier is
+// not the problem -- the floor already says t3 and it is t3 -- the MULTIPLIER
+// is. Raising it moves a whole family at once (Bodyguard, Second Army,
+// Legendary Forge, Stowaway, Pretender, Grand Reset), so it wants its own
+// measured round rather than a guess folded into this one.
+//
 // WHERE THE LADDER COMES FROM
 //
 // The floor is fitted to the measured sweep (docs/card-winrate*.json), and the
@@ -277,6 +305,21 @@ const MENTION = new RegExp(`\\b${NOUN_SRC}\\b`, "g");
  *  both at zero. */
 const COPY_MENTION = /\b(?:copy|copies|twin|twins|duplicate|double)\b/g;
 
+/** The pronoun a follow-on clause uses for a piece the previous clause named. */
+const PRONOUN_SUBJECT = /\b(?:it|they|them|both|that piece|the piece|the marked piece)\b/;
+
+/** Comma-separated clauses of a sentence, blanks dropped. Blanked-out trigger
+ *  clauses (see effectText) survive as whitespace and fall out here. */
+const clausesOf = (text: string): string[] => text.split(/,\s+/).filter((c) => c.trim());
+
+/** Does this fragment name a piece of its own? Both scanners carry /g, so
+ *  lastIndex is reset before each test or the answer depends on call order. */
+function hasNoun(text: string): boolean {
+  MENTION.lastIndex = 0;
+  COPY_MENTION.lastIndex = 0;
+  return MENTION.test(text) || COPY_MENTION.test(text);
+}
+
 function nounKey(word: string): string {
   const s = word.toLowerCase();
   if (s.startsWith("pawn")) return "p";
@@ -357,6 +400,12 @@ const DENY: RegExp[] = [
   /\bbanish(?:es|ed)?\b/,
   /\bbanned\b/,
   /\bblown off\b|\bswept off\b|\btaken? off the board\b/,
+  // "it leaves the board for a higher plane" (Apotheosis) is a removal, and
+  // the only five cards in the library that say "leaves the board" all mean
+  // it literally. The EXPIRY table above reads the LEASE form of the same
+  // words ("then leaves the board after 6 of your turns") before this list is
+  // ever consulted, so a timed piece is still priced as a lease, not a cost.
+  /\bleaves? the board\b/,
   /\bconsumed\b|\bdevours?\b|\bdevoured\b/,
   /\bwinks? out\b|\bvanish(?:es)?\b/,
   /\bkills?\b|\bkilled\b/,
@@ -486,7 +535,7 @@ const ODDS_WORDS: [RegExp, number][] = [
  *  stated only as a total. Enumerating those branches from prose is guesswork,
  *  so the card is refused outright and printed in the unparsed list. */
 const AMBIGUOUS_ODDS =
-  /\bequal (?:odds|segments|chance|chances|parts|slices)\b|\bjackpot\b|\btails\b|\bflip a coin\b|\breels?\b|\bmatch (?:all|two|none|three)\b|\bparlay\b|\bdealer\b/;
+  /\bequal (?:odds|segments|chance|chances|parts|slices)\b|\bjackpot\b|\btails\b|\bflip a coin\b|\breels?\b|\bmatch (?:all|two|none|three)\b|\bparlay\b|\bdealer\b|\bcroupier\b|\bland (?:red|black|the green)\b/;
 
 interface OddsToken {
   at: number;
@@ -611,8 +660,18 @@ function listLink(gap: string): Link {
   return /\b(?:or|nor|either|each|any)\b/.test(gap) ? "or" : "and";
 }
 
+/**
+ * The piece GOES AWAY again, which is what turns a duration into a lease.
+ *
+ * The departure verb is reached by "then" OR by "and": "a rook appears there
+ * and vanishes after 4 of your turns" is the same four-turn lease as "then
+ * vanishes", and reading only the "then" form priced Phantom Rook's four-turn
+ * rook as a permanent one. "rides off" is here for the same reason (Mercenary
+ * Queen: a three-turn queen who "rides off with her pay" was scored at a whole
+ * permanent queen, two rungs above what the card does).
+ */
 const EXPIRY =
-  /\b(then (?:leaves|fades|dissolves|drifts|scampers|winds down|returns|walks back|vanishes|disappears|expires|rides back|goes home)|leaves? the board after|drift away|fades? (?:away|back)|winds down|scampers back|crumbles? to dust|honks? off|turns? to dust|is dismissed)\b/;
+  /\b((?:then|and) (?:leaves|fades|dissolves|drifts|scampers|winds down|returns|walks back|vanishes|disappears|expires|rides back|rides off|goes home)|leaves? the board after|drift away|fades? (?:away|back)|winds down|scampers back|crumbles? to dust|honks? off|turns? to dust|is dismissed)\b/;
 
 const DURATION =
   /\b(?:for |after |works |lasts? |fights for )?(?:your |their |its |his |her )?(?:opponent's )?(?:next )?(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:of (?:your|their|its) )?turns?\b/;
@@ -739,11 +798,20 @@ function promotionTerms(effWhole: string, kind: string): Term[] {
   // card at eight points.
   const around = effWhole.slice(Math.max(0, m.index - 40), m.index + 45);
   if (!/\b(?:pawns?|it)\b/.test(around)) return [];
+  // The target may be plural. "All pawns on your 5th rank or beyond promote to
+  // knights" named its target perfectly clearly, and a singular-only pattern
+  // missed it, fell through to the queen default, and priced a board of
+  // knights at four queens.
   const target =
-    /\b(?:to|into|becomes?|becoming|crowned|knighted as) (?:a |an )?(queen|rook|bishop|knight)\b/.exec(
+    /\b(?:to|into|becomes?|becoming|crowned|knighted as) (?:a |an )?(queen|rook|bishop|knight)s?\b/.exec(
       effWhole,
     );
-  const key = target ? nounKey(target[1]) : "q";
+  // An UNSTATED target is priced at the cheapest promotion the game allows, not
+  // at a queen. Heir Apparent promotes "into that same kind of piece" as the
+  // minor that was just captured, and the queen default read a minor's worth of
+  // upgrade as eight points and demanded two rungs for it. The whole parser
+  // under-counts where the reading is not forced, and a FLOOR especially must.
+  const key = target ? nounKey(target[1]) : "n";
   const gained = PIECE_VALUE[key] - PIECE_VALUE.p;
   const countM = /\b(two|three|four|all|every|each) (?:of your )?pawns?\b/.exec(effWhole);
   let count = 1;
@@ -761,7 +829,7 @@ function promotionTerms(effWhole: string, kind: string): Term[] {
   }
   return [
     {
-      noun: `promotion to ${target ? target[1] : "queen"}`,
+      noun: `promotion to ${target ? target[1] : "a minor"}`,
       value: gained,
       count,
       sign: 1,
@@ -769,7 +837,7 @@ function promotionTerms(effWhole: string, kind: string): Term[] {
       conditionality: 1,
       m: gained * count,
       estimated,
-      note: target ? "promotion" : "promotion (target unstated, queen assumed)",
+      note: target ? "promotion" : "promotion (target unstated, priced at a minor)",
     },
   ];
 }
@@ -815,10 +883,20 @@ function parseCard(description: string, kind: string): Parse {
    * removed." puts the piece in one sentence and the verb in the other, and
    * without this the parser sees a noun with no verb followed by a verb with
    * no noun, and scores nothing.
+   *
+   * It expires after exactly one sentence. An antecedent two sentences back is
+   * not an antecedent: Golden Touch names two enemy pieces, then says of a
+   * DIFFERENT piece a sentence later that "it is lost", and a pending that
+   * survived the gap bound the wrong pronoun to the right noun and scored the
+   * card off a coincidence. Better to leave the card in the UNPARSED list.
    */
   let pending: { value: number; count: number; side: "self" | "opp"; estimated: boolean } | null = null;
 
   for (const s of sentences(description)) {
+    // Whatever the PREVIOUS sentence parked; anything parked below is for the
+    // next one round only.
+    const carried = pending;
+    pending = null;
     const raw = s.text.toLowerCase();
     const eff = effectText(raw);
     effWhole += `${eff} `;
@@ -928,7 +1006,18 @@ function parseCard(description: string, kind: string): Parse {
         if (afterVerb) {
           const firstVerbAt = firstVerbPosition(after, afterVerb === "gain" ? GAIN : DENY);
           const gap = firstVerbAt == null ? after : after.slice(0, firstVerbAt);
-          const passive = gap.length <= 3 || /\b(?:is|are|was|were|becomes?)\b/.test(gap);
+          // A gap that ends in a conjunction is still the same subject, but
+          // ONLY when what follows the conjunction is itself passive: "one of
+          // your own pawns bursts in the mess AND IS LOST too" is a cost the
+          // card charges, while "choose one of your queens AND REMOVE up to
+          // four enemy pieces" is an active verb with its own object, and
+          // taking the conjunction alone as license read that one as the
+          // holder throwing away his own queen.
+          const acrossConjunction =
+            /\b(?:and|but|then)\s*$/.test(gap) &&
+            /^(?:is|are|was|were)\b/.test(after.slice(firstVerbAt ?? 0).trimStart());
+          const passive =
+            gap.length <= 3 || /\b(?:is|are|was|were|becomes?)\b/.test(gap) || acrossConjunction;
           if (!GAP_DISQUALIFY.test(gap) && (afterVerb === "gain" || passive)) {
             verdict = afterVerb === "gain" ? 1 : -1;
           }
@@ -1020,39 +1109,49 @@ function parseCard(description: string, kind: string): Parse {
       }
     }
 
-    // A sentence with no noun of its own, a verb, and a pronoun subject is
+    // A CLAUSE with no noun of its own, a verb, and a pronoun subject is
     // finishing the previous sentence's thought.
-    if (!mentions.length && pending) {
-      const pronoun = /\b(?:it|they|them|both|that piece|the piece|the marked piece)\b/.test(eff);
-      const cleaned = dePlace(eff);
+    //
+    // Scoped to the clause rather than to the whole sentence, because a card
+    // can finish one thought and start another in the same breath. Apotheosis
+    // ("Raise one of your knights, bishops, or rooks to godhood: it leaves the
+    // board for a higher plane, and a queen joins your pocket") spends a minor
+    // in the first clause and gains a queen in the second; the sentence-level
+    // test saw the queen, refused the sentence outright, and scored the card
+    // at a free queen with no cost at all. A sentence with no nouns anywhere
+    // is still one clause with no nouns, so the older reading is unchanged.
+    const pronounClause = carried
+      ? clausesOf(eff).find((c) => !hasNoun(c) && PRONOUN_SUBJECT.test(c))
+      : null;
+    if (pronounClause && carried) {
+      const cleaned = dePlace(pronounClause);
       const verb = hits(GAIN, cleaned) ? 1 : hits(DENY, cleaned) ? -1 : 0;
-      if (pronoun && verb !== 0) {
+      if (verb !== 0) {
         const loaned =
           /\b(?:for you|to your side|to your colou?r|joins your|under your control|take control|is yours|fights? for)\b/.test(
             whole,
           );
         const sign =
           verb === 1
-            ? pending.side === "opp" && !loaned
+            ? carried.side === "opp" && !loaned
               ? -1
               : 1
-            : pending.side === "opp"
+            : carried.side === "opp"
               ? 1
               : -1;
-        const m = bias * sign * pending.value * pending.count * perm.v * cond.v;
-        if (pending.estimated) estimated = true;
+        const m = bias * sign * carried.value * carried.count * perm.v * cond.v;
+        if (carried.estimated) estimated = true;
         terms.push({
           noun: "(pronoun)",
-          value: pending.value,
-          count: pending.count,
+          value: carried.value,
+          count: carried.count,
           sign,
           permanence: perm.v,
           conditionality: cond.v,
           m,
-          estimated: pending.estimated,
+          estimated: carried.estimated,
           note: `bound to the previous sentence / ${perm.note} / ${cond.note}`,
         });
-        pending = null;
       }
     }
 
@@ -1063,7 +1162,18 @@ function parseCard(description: string, kind: string): Parse {
       const verdict = members.find((x) => x.verdict !== 0)?.verdict ?? 0;
       if (verdict === 0) continue;
       scoredHere++;
-      const alternatives = links[g] === "or" && members.length > 1;
+      /**
+       * An "up to N" in front of a list CAPS THE WHOLE LIST, and it caps it
+       * whichever conjunction the list uses.
+       *
+       * "up to two of your captured knights and bishops immediately return"
+       * (Queen's Testament) returns TWO pieces, not two knights and a bishop,
+       * and scoring the members separately bought the card a second rung it
+       * had not earned. So a capped list is priced the same way an "or" list
+       * is: N of the cheapest thing on it.
+       */
+      const capped = members.some((x) => x.note.startsWith("up to"));
+      const alternatives = (links[g] === "or" || capped) && members.length > 1;
 
       // Odds attach per member, by nearest stated probability.
       const probOf = (men: Mention): number => {
@@ -1117,17 +1227,23 @@ function parseCard(description: string, kind: string): Parse {
       const probs = members.map(probOf);
       const head = members.reduce((a, b) => (a.value <= b.value ? a : b));
       const count = Math.max(...members.map((x) => x.count));
+      // The cap has to be carried into the collapsed term, or it is lost: emit
+      // reads it back off the front of the note. Last Reserves ("up to two of
+      // your captured knights or bishops return") was scored at two full
+      // minors with no discount for the "up to" at all.
+      const cap = capped ? "up to, " : "";
       if (probs.every((p) => p !== 1)) {
         const ev = members.reduce((acc, men, i) => acc + men.value * probs[i], 0);
-        emit(ev, count, head, `${members.length}-way odds`, 1);
+        emit(ev, count, head, `${cap}${members.length}-way odds`, 1);
       } else {
-        emit(head.value, count, head, `${members.length}-way choice, priced at the cheapest`, 1);
+        emit(head.value, count, head, `${cap}${members.length}-way choice, priced at the cheapest`, 1);
       }
     }
 
-    // Park an unscored noun group for the next sentence's pronoun. Only when
-    // the sentence has exactly one group and scored nothing, so a card with
-    // two candidate antecedents never guesses between them.
+    // Park an unscored noun group for the NEXT sentence's pronoun, and for
+    // that sentence only (pending was cleared at the top of this loop). Only
+    // when the sentence has exactly one group and scored nothing, so a card
+    // with two candidate antecedents never guesses between them.
     const unscored = [...new Set(mentions.filter((x) => !consumed.has(x.at)).map((x) => x.group))];
     if (!scoredHere && unscored.length === 1) {
       const members = mentions.filter((x) => x.group === unscored[0]);
@@ -1138,8 +1254,6 @@ function parseCard(description: string, kind: string): Parse {
         side: head.side,
         estimated: head.estimated,
       };
-    } else if (scoredHere) {
-      pending = null;
     }
   }
 
@@ -1419,6 +1533,17 @@ const PARSE_EXPECTATIONS: { id: string; m: number; why: string }[] = [
   { id: "bn4_retraining", m: 0.0, why: "knight to bishop is a transform that nets nothing" },
   { id: "hw3_wrong_foot", m: 0.0, why: "'every piece they move must land on' is a movement rule, not a spawn" },
   { id: "bn4_field_hospital", m: 1.0, why: "the two-turn shield is not the pawn's lifespan" },
+  { id: "apotheosis", m: 5.7, why: "a pocket queen (8.55) MINUS the minor it spends (2.85), not a free queen" },
+  { id: "wc_sacrificial_bishop", m: 0.0, why: "a bishop fed to the volcano for a minor: the trade nets nothing" },
+  { id: "promotion_storm", m: 2.6, why: "'promote to knights' names its target: two pawns to minors, not to queens" },
+  { id: "bw3_heir_apparent", m: 1.6, why: "'that same kind of piece' is unstated, so it is priced at a minor" },
+  { id: "ww_mercenary_queen", m: 2.7, why: "a queen who 'rides off with her pay' after 3 turns is a lease, not a queen" },
+  { id: "phantom_rook", m: 2.0, why: "'appears there and vanishes after 4 of your turns' is a four-turn lease" },
+  { id: "bw2_queens_testament", m: 3.12, why: "'up to two of your knights and bishops' is TWO pieces, not two and one" },
+  { id: "ww_last_reserves", m: 3.9, why: "the 'up to' discount has to survive the or-list it caps" },
+  { id: "wc_pinata", m: 1.6, why: "the enemy piece knocked off, less the pawn that bursts and is lost" },
+  { id: "queens_apocalypse", m: 6.76, why: "the queen is the subject of 'choose', not of the 'and remove' that follows" },
+  { id: "cs_roulette", m: 0.0, why: "red / black / green zero is a branch list with no odds on any branch: refused" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -1441,6 +1566,39 @@ const MATERIAL_EFFECT_CATEGORIES = new Set([
 
 /** The coarse authored categories that claim to be about pieces and killing. */
 const MATERIAL_CATEGORIES = new Set(["pieces", "attack"]);
+
+/**
+ * Cards whose M is KNOWN to be wrong, checked against the engine rather than
+ * against the card text, with what the code actually does.
+ *
+ * These are held out of the violation list, because a floor computed from a
+ * number we know is wrong is not a finding, it is an accusation. They are
+ * printed in their own section instead, so holding them out cannot be
+ * mistaken for the parser having got them right. Each entry names the fix that
+ * would retire it: a card leaves this list when the parser can read it, not
+ * when somebody gets tired of seeing it.
+ *
+ * The bar for adding a row here is the engine, not an opinion: every entry
+ * below cites the line of the buff that settles it.
+ */
+const KNOWN_MISREAD: Record<string, { real: number; why: string }> = {
+  seance: {
+    real: 1.3,
+    why:
+      "src/engine/buffs/mystic/occult.ts removePiece(sq) then place(sq, 'r'): the rook stands where the " +
+      "minor did, so the card is worth the DIFFERENCE (5 - 3 = 2, x 0.65 for the gate). The parser reads " +
+      "'send one of your knights or bishops across to the other side' as scenery and bills nothing for it. " +
+      "Fix: a replacement ('X ... and Y returns in its place') is a transform written the long way round.",
+  },
+  wc_lost_and_found: {
+    real: 3.25,
+    why:
+      "src/engine/buffs/wild/chaos.ts revives ONE piece: ['r','b','n','p'].find(revivable) places a single " +
+      "type. 'a captured piece ... will return' and 'the heaviest lost piece comes back first' are the same " +
+      "piece described twice, and the parser scored both (2.6 + 3.25). Fix: a later sentence that re-describes " +
+      "the piece an earlier one already scored is a gloss, not a second body.",
+  },
+};
 
 interface Scored {
   id: string;
@@ -1673,8 +1831,22 @@ function main(): void {
 
   // --- Violations -----------------------------------------------------------
   const violations = scored
-    .filter((s) => s.gap > 0)
+    .filter((s) => s.gap > 0 && !KNOWN_MISREAD[s.id])
     .sort((a, b) => b.gap - a.gap || b.m - a.m);
+
+  const misread = scored.filter((s) => KNOWN_MISREAD[s.id]);
+  if (misread.length) {
+    console.log(`\n=== HELD OUT: KNOWN MISREADS (${misread.length}) ===`);
+    console.log("Scored, but checked against the engine and found wrong. Not accused, and not endorsed.");
+    for (const s of misread) {
+      const k = KNOWN_MISREAD[s.id];
+      console.log(
+        `  ${s.id.padEnd(22)} t${s.tier}  parser M=${s.m.toFixed(2)} (floor t${s.floor}), ` +
+          `really M=${k.real.toFixed(2)} (floor t${floorTier(k.real)})`,
+      );
+      console.log(`    ${k.why}`);
+    }
+  }
 
   console.log(`\n=== VIOLATIONS (${violations.length}) ===`);
   console.log("Cards priced below the material they move. Worst first.");

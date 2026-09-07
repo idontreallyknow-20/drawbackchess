@@ -387,6 +387,7 @@
    "animation": "bespoke+canvas",
    "location": "src/engine/buffs/tier9.ts",
    "tests": [
+    "material-model.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -1029,24 +1030,6 @@
    "action": "keep: reviewed tier ladder; higher rungs pay more (magnitude, scope, extra rider, or free-action timing)"
   },
   {
-   "id": "bn4_stowaway",
-   "name": "Stowaway",
-   "kind": "boon",
-   "tier": 1,
-   "effect": "After your next 5 turns, a pawn is discovered aboard and joins your pocket, ready to drop on a later turn.",
-   "trigger": "passive",
-   "duration": "5-turns",
-   "targets": "self",
-   "signature": "pieces|passive|init+onMove|5-turns|self|n:5,pawn",
-   "animation": "passive",
-   "location": "src/engine/buffs/boons4.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
    "id": "bn4_stutter_step",
    "name": "Stutter Step",
    "kind": "boon",
@@ -1094,24 +1077,6 @@
    "duration": "3-turns",
    "targets": "self",
    "signature": "nerf|passive|init+onMove|3-turns|self|move,n:3,square,time",
-   "animation": "passive",
-   "location": "src/engine/buffs/boons4.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
-   "id": "bn4_understudy",
-   "name": "Understudy",
-   "kind": "boon",
-   "tier": 1,
-   "effect": "The first time one of your pawns is captured, a fresh pawn joins your pocket, ready to drop on a later turn.",
-   "trigger": "passive",
-   "duration": "unstated",
-   "targets": "self",
-   "signature": "pieces|passive|onMove|unstated|self|capture,pawn,time",
    "animation": "passive",
    "location": "src/engine/buffs/boons4.ts",
    "tests": [
@@ -1261,6 +1226,7 @@
    "animation": "generated",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "sweep.spec.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -1562,6 +1528,7 @@
    "animation": "generated",
    "location": "src/engine/buffs/boons4.ts",
    "tests": [
+    "material-model.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -1638,6 +1605,8 @@
    "animation": "generated",
    "location": "src/engine/buffs/boons4.ts",
    "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [
@@ -1764,24 +1733,6 @@
    "action": "keep: reviewed tier ladder; higher rungs pay more (magnitude, scope, extra rider, or free-action timing)"
   },
   {
-   "id": "bn4_matryoshka_surprise",
-   "name": "Matryoshka Surprise",
-   "kind": "boon",
-   "tier": 2,
-   "effect": "Paint one of your pawns as a nesting doll. When it is captured, two smaller pawns pop out into your pocket, ready to drop on later turns.",
-   "trigger": "activated/lingering",
-   "duration": "unstated",
-   "targets": "self",
-   "signature": "pieces|activated|effect+targets+onMove|unstated|self|capture,pawn",
-   "animation": "generated",
-   "location": "src/engine/buffs/boons4.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
    "id": "bn4_measured_breath",
    "name": "Measured Breath",
    "kind": "boon",
@@ -1814,6 +1765,8 @@
    "animation": "generated",
    "location": "src/engine/buffs/boons4.ts",
    "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [
@@ -1978,24 +1931,6 @@
    "action": "keep: reviewed same-tier cluster; members differ by a real axis (file band, direction, piece class, trigger, query, or cosmetic skin)"
   },
   {
-   "id": "bn4_small_consolation",
-   "name": "Small Consolation",
-   "kind": "boon",
-   "tier": 2,
-   "effect": "The next 2 times your opponent captures one of your rooks or queens, a pawn joins your pocket.",
-   "trigger": "passive",
-   "duration": "unstated",
-   "targets": "enemy",
-   "signature": "pieces|passive|init+onMove|unstated|enemy|capture,n:2,pawn,queen,rook,time",
-   "animation": "passive",
-   "location": "src/engine/buffs/boons4.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
    "id": "bn4_spare_button",
    "name": "Spare Button",
    "kind": "boon",
@@ -2055,6 +1990,25 @@
    "action": "keep: reviewed cross-pool cluster; twins live in different draft pools (buff vs boon/hex vs opener) or scale by tier within their pool"
   },
   {
+   "id": "bn4_stowaway",
+   "name": "Stowaway",
+   "kind": "boon",
+   "tier": 2,
+   "effect": "After your next 5 turns, a pawn is discovered aboard and joins your pocket, ready to drop on a later turn.",
+   "trigger": "passive",
+   "duration": "5-turns",
+   "targets": "self",
+   "signature": "pieces|passive|init+onMove|5-turns|self|n:5,pawn",
+   "animation": "passive",
+   "location": "src/engine/buffs/boons4.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
    "id": "bn4_third_wind",
    "name": "Third Wind",
    "kind": "boon",
@@ -2107,6 +2061,25 @@
    "animation": "passive",
    "location": "src/engine/buffs/boons4.ts",
    "tests": [
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
+   "id": "bn4_understudy",
+   "name": "Understudy",
+   "kind": "boon",
+   "tier": 2,
+   "effect": "The first time one of your pawns is captured, a fresh pawn joins your pocket, ready to drop on a later turn.",
+   "trigger": "passive",
+   "duration": "unstated",
+   "targets": "self",
+   "signature": "pieces|passive|onMove|unstated|self|capture,pawn,time",
+   "animation": "passive",
+   "location": "src/engine/buffs/boons4.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -3032,6 +3005,25 @@
    "action": "keep (auto: no flags, harness-executed)"
   },
   {
+   "id": "bn4_matryoshka_surprise",
+   "name": "Matryoshka Surprise",
+   "kind": "boon",
+   "tier": 3,
+   "effect": "Paint one of your pawns as a nesting doll. When it is captured, two smaller pawns pop out into your pocket, ready to drop on later turns.",
+   "trigger": "activated/lingering",
+   "duration": "unstated",
+   "targets": "self",
+   "signature": "pieces|activated|effect+targets+onMove|unstated|self|capture,pawn",
+   "animation": "generated",
+   "location": "src/engine/buffs/boons4.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
    "id": "bn4_night_gardener",
    "name": "Night Gardener",
    "kind": "boon",
@@ -3333,6 +3325,7 @@
    "animation": "generated",
    "location": "src/engine/buffs/boons4b.ts",
    "tests": [
+    "material-model.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -3398,6 +3391,26 @@
    ],
    "flags": [],
    "action": "keep: reviewed same-tier cluster; members differ by a real axis (file band, direction, piece class, trigger, query, or cosmetic skin)"
+  },
+  {
+   "id": "bn4_small_consolation",
+   "name": "Small Consolation",
+   "kind": "boon",
+   "tier": 3,
+   "effect": "The next 2 times your opponent captures one of your rooks or queens, a pawn joins your pocket.",
+   "trigger": "passive",
+   "duration": "unstated",
+   "targets": "enemy",
+   "signature": "pieces|passive|init+onMove|unstated|enemy|capture,n:2,pawn,queen,rook,time",
+   "animation": "passive",
+   "location": "src/engine/buffs/boons4.ts",
+   "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
   },
   {
    "id": "bn4_sparring_rhythm",
@@ -3623,24 +3636,6 @@
    "action": "keep (auto: no flags, harness-executed)"
   },
   {
-   "id": "bw2_queens_testament",
-   "name": "Queen's Testament",
-   "kind": "boon",
-   "tier": 3,
-   "effect": "Her will is already written: the first time your opponent captures your queen, up to two of your captured knights and bishops immediately return to empty squares nearest your home rank.",
-   "trigger": "passive",
-   "duration": "one-shot",
-   "targets": "enemy",
-   "signature": "pieces|passive|onMove|one-shot|enemy|bishop,capture,knight,queen,rank,return,square,time",
-   "animation": "passive",
-   "location": "src/engine/buffs/boons2.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
    "id": "bw3_castle_in_the_storm",
    "name": "Castle in the Storm",
    "kind": "boon",
@@ -3668,24 +3663,6 @@
    "duration": "unstated",
    "targets": "enemy",
    "signature": "tempo|passive|onMove|unstated|enemy|clock,n:45,rank,seconds,time,untimed",
-   "animation": "passive",
-   "location": "src/engine/buffs/boons3.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
-   "id": "bw3_eleventh_hour",
-   "name": "Eleventh Hour",
-   "kind": "boon",
-   "tier": 3,
-   "effect": "When the last of the line is nearly spent, help arrives: the first time your non-king pieces number three or fewer, your best captured piece returns to the empty square nearest your home rank.",
-   "trigger": "passive",
-   "duration": "unstated",
-   "targets": "self",
-   "signature": "pieces|passive|onMove|unstated|self|capture,king,rank,return,square,time",
    "animation": "passive",
    "location": "src/engine/buffs/boons3.ts",
    "tests": [
@@ -3743,6 +3720,8 @@
    "animation": "passive",
    "location": "src/engine/buffs/boons3.ts",
    "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -4098,6 +4077,8 @@
    "animation": "generated",
    "location": "src/engine/buffs/boons4b.ts",
    "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -4860,6 +4841,26 @@
    "action": "keep (auto: no flags, harness-executed)"
   },
   {
+   "id": "bw2_queens_testament",
+   "name": "Queen's Testament",
+   "kind": "boon",
+   "tier": 4,
+   "effect": "Her will is already written: the first time your opponent captures your queen, up to two of your captured knights and bishops immediately return to empty squares nearest your home rank.",
+   "trigger": "passive",
+   "duration": "one-shot",
+   "targets": "enemy",
+   "signature": "pieces|passive|onMove|one-shot|enemy|bishop,capture,knight,queen,rank,return,square,time",
+   "animation": "passive",
+   "location": "src/engine/buffs/boons2.ts",
+   "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
    "id": "bw3_battlefield_commission",
    "name": "Battlefield Commission",
    "kind": "boon",
@@ -4890,6 +4891,25 @@
    "animation": "generated",
    "location": "src/engine/buffs/boons3.ts",
    "tests": [
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
+   "id": "bw3_eleventh_hour",
+   "name": "Eleventh Hour",
+   "kind": "boon",
+   "tier": 4,
+   "effect": "When the last of the line is nearly spent, help arrives: the first time your non-king pieces number three or fewer, your best captured piece returns to the empty square nearest your home rank.",
+   "trigger": "passive",
+   "duration": "unstated",
+   "targets": "self",
+   "signature": "pieces|passive|onMove|unstated|self|capture,king,rank,return,square,time",
+   "animation": "passive",
+   "location": "src/engine/buffs/boons3.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -5365,6 +5385,7 @@
    "animation": "generated",
    "location": "src/engine/buffs/boons4.ts",
    "tests": [
+    "material-model.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -5615,6 +5636,8 @@
    "animation": "generated",
    "location": "src/engine/buffs/boons4b.ts",
    "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -7197,6 +7220,8 @@
    "animation": "canvas",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -7818,6 +7843,7 @@
    "animation": "generated",
    "location": "src/engine/buffs/boons3.ts",
    "tests": [
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -11688,24 +11714,6 @@
    "action": "keep: reviewed tier ladder; higher rungs pay more (magnitude, scope, extra rider, or free-action timing)"
   },
   {
-   "id": "second_wind",
-   "name": "Second Wind",
-   "kind": "buff",
-   "tier": 1,
-   "effect": "One captured pawn returns to an empty square on your 2nd rank after your opponent's next move, once.",
-   "trigger": "activated/lingering",
-   "duration": "next-turn",
-   "targets": "enemy",
-   "signature": "pieces|activated|effect+targets+onMove|next-turn|enemy|capture,move,pawn,rank,return,square",
-   "animation": "generated",
-   "location": "src/engine/buffs/library.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
    "id": "sentinel_pawn",
    "name": "Sentinel Pawn",
    "kind": "buff",
@@ -11740,24 +11748,6 @@
    ],
    "flags": [],
    "action": "keep: reviewed tier ladder; higher rungs pay more (magnitude, scope, extra rider, or free-action timing)"
-  },
-  {
-   "id": "summon_intern",
-   "name": "Summon Intern",
-   "kind": "buff",
-   "tier": 1,
-   "effect": "The first time your opponent captures one of your pieces, the intern quietly takes over the empty desk: a pawn joins your pocket, to be dropped onto an empty square on a later turn.",
-   "trigger": "passive",
-   "duration": "unstated",
-   "targets": "enemy",
-   "signature": "pieces|passive|onMove|unstated|enemy|capture,pawn,square,time",
-   "animation": "bespoke+passive",
-   "location": "src/engine/buffs/funny/summons.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
   },
   {
    "id": "teleport_knight",
@@ -11883,24 +11873,6 @@
    "signature": "movement|passive|init+aug+onMove|one-shot|unstated|draft,knight,leap,n:1,n:3,reroll",
    "animation": "passive",
    "location": "src/engine/buffs/wild/elemental.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
-   "id": "ww_field_hospital",
-   "name": "Field Hospital",
-   "kind": "buff",
-   "tier": 1,
-   "effect": "The first time your opponent captures one of your knights, a new pawn is raised on an empty square of your back rank.",
-   "trigger": "passive",
-   "duration": "unstated",
-   "targets": "enemy",
-   "signature": "pieces|passive|onMove|unstated|enemy|capture,knight,pawn,rank,square,time",
-   "animation": "passive",
-   "location": "src/engine/buffs/wild/warfare.ts",
    "tests": [
     "lab-run-all.ts"
    ],
@@ -14033,6 +14005,7 @@
    "animation": "generated",
    "location": "src/engine/buffs/overhaul/t1.ts",
    "tests": [
+    "material-model.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -14051,6 +14024,7 @@
    "animation": "passive",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "sweep.spec.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -14244,6 +14218,25 @@
    "action": "keep (auto: no flags, harness-executed)"
   },
   {
+   "id": "second_wind",
+   "name": "Second Wind",
+   "kind": "buff",
+   "tier": 2,
+   "effect": "One captured pawn returns to an empty square on your 2nd rank after your opponent's next move, once.",
+   "trigger": "activated/lingering",
+   "duration": "next-turn",
+   "targets": "enemy",
+   "signature": "pieces|activated|effect+targets+onMove|next-turn|enemy|capture,move,pawn,rank,return,square",
+   "animation": "generated",
+   "location": "src/engine/buffs/library.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
    "id": "shieldmaiden",
    "name": "Shieldmaiden",
    "kind": "buff",
@@ -14360,6 +14353,25 @@
    "action": "keep (auto: no flags, harness-executed)"
   },
   {
+   "id": "summon_intern",
+   "name": "Summon Intern",
+   "kind": "buff",
+   "tier": 2,
+   "effect": "The first time your opponent captures one of your pieces, the intern quietly takes over the empty desk: a pawn joins your pocket, to be dropped onto an empty square on a later turn.",
+   "trigger": "passive",
+   "duration": "unstated",
+   "targets": "enemy",
+   "signature": "pieces|passive|onMove|unstated|enemy|capture,pawn,square,time",
+   "animation": "bespoke+passive",
+   "location": "src/engine/buffs/funny/summons.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
    "id": "undying_thrall",
    "name": "Undying Thrall",
    "kind": "buff",
@@ -14426,6 +14438,8 @@
    "animation": "generated",
    "location": "src/engine/buffs/wild/arcane.ts",
    "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -14598,6 +14612,25 @@
    "action": "keep (auto: no flags, harness-executed)"
   },
   {
+   "id": "ww_field_hospital",
+   "name": "Field Hospital",
+   "kind": "buff",
+   "tier": 2,
+   "effect": "The first time your opponent captures one of your knights, a new pawn is raised on an empty square of your back rank.",
+   "trigger": "passive",
+   "duration": "unstated",
+   "targets": "enemy",
+   "signature": "pieces|passive|onMove|unstated|enemy|capture,knight,pawn,rank,square,time",
+   "animation": "passive",
+   "location": "src/engine/buffs/wild/warfare.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
    "id": "ww_reclaim_the_fallen",
    "name": "Reclaim the Fallen",
    "kind": "buff",
@@ -14736,6 +14769,7 @@
    "animation": "bespoke",
    "location": "src/engine/buffs/funny/transforms.ts",
    "tests": [
+    "material-model.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -14774,6 +14808,7 @@
    "animation": "generated",
    "location": "src/engine/buffs/pt/casino.ts",
    "tests": [
+    "material-model.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -14828,6 +14863,7 @@
    "animation": "generated",
    "location": "src/engine/buffs/funny/meta.ts",
    "tests": [
+    "material-model.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -15245,26 +15281,6 @@
    "action": "keep: clock-hit ladder T3"
   },
   {
-   "id": "legendary_forge",
-   "name": "Legendary Forge",
-   "kind": "buff",
-   "tier": 3,
-   "effect": "The forge mends what war broke: one of your captured knights or bishops is reforged and returns to your pocket. Spend a later turn to drop it onto any empty square.",
-   "trigger": "activated",
-   "duration": "unstated",
-   "targets": "self",
-   "signature": "pieces|activated|effect+targets|unstated|self|bishop,capture,knight,return,square",
-   "animation": "canvas",
-   "location": "src/engine/buffs/fantasy/legends.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [
-    "duplicate-signature(bn4_veterans_return)"
-   ],
-   "action": "keep: reviewed cross-pool cluster; twins live in different draft pools (buff vs boon/hex vs opener) or scale by tier within their pool"
-  },
-  {
    "id": "main_character",
    "name": "Main Character",
    "kind": "buff",
@@ -15281,24 +15297,6 @@
    ],
    "flags": [],
    "action": "keep: reviewed cross-pool cluster; twins live in different draft pools (buff vs boon/hex vs opener) or scale by tier within their pool"
-  },
-  {
-   "id": "minor_recall",
-   "name": "Minor Recall",
-   "kind": "buff",
-   "tier": 3,
-   "effect": "Return a captured knight or bishop to your back rank, once.",
-   "trigger": "activated",
-   "duration": "one-shot",
-   "targets": "self",
-   "signature": "pieces|activated|effect+targets|one-shot|self|bishop,capture,knight,rank,return",
-   "animation": "generated",
-   "location": "src/engine/buffs/library.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
   },
   {
    "id": "mirror",
@@ -16063,24 +16061,6 @@
    "action": "keep (auto: no flags, harness-executed)"
   },
   {
-   "id": "promote_now",
-   "name": "Promote Now",
-   "kind": "buff",
-   "tier": 3,
-   "effect": "Choose one of your pawns on your 6th rank or beyond; it promotes to a queen after your opponent's next move, once.",
-   "trigger": "activated/lingering",
-   "duration": "next-turn",
-   "targets": "enemy",
-   "signature": "pieces|activated|effect+targets+onMove|next-turn|enemy|move,pawn,promote,queen,rank",
-   "animation": "generated",
-   "location": "src/engine/buffs/library.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep: reviewed tier ladder; higher rungs pay more (magnitude, scope, extra rider, or free-action timing)"
-  },
-  {
    "id": "raise_dead",
    "name": "Raise Dead",
    "kind": "buff",
@@ -16201,24 +16181,7 @@
    "animation": "generated",
    "location": "src/engine/buffs/mystic/occult.ts",
    "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
-   "id": "second_wind_major",
-   "name": "Second Wind Major",
-   "kind": "buff",
-   "tier": 3,
-   "effect": "Return a captured rook to any empty back-rank square, once. Using it spends your next unused reroll, if any.",
-   "trigger": "activated",
-   "duration": "one-shot",
-   "targets": "self",
-   "signature": "pieces|activated|effect+targets|one-shot|self|capture,rank,reroll,return,rook,square",
-   "animation": "generated",
-   "location": "src/engine/buffs/library.ts",
-   "tests": [
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -16534,24 +16497,6 @@
    "action": "keep (auto: no flags, harness-executed)"
   },
   {
-   "id": "wa_conjure_bishop",
-   "name": "Conjured Bishop",
-   "kind": "buff",
-   "tier": 3,
-   "effect": "Conjure your bishop's reflection: choose one of your bishops whose mirror square (same rank, file flipped left-to-right) is empty, and a new bishop appears there.",
-   "trigger": "activated",
-   "duration": "unstated",
-   "targets": "self",
-   "signature": "pieces|activated|effect+targets|unstated|self|bishop,file,rank,square",
-   "animation": "canvas",
-   "location": "src/engine/buffs/wild/arcane.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
    "id": "wa_far_step",
    "name": "Far Step",
    "kind": "buff",
@@ -16839,6 +16784,8 @@
    "animation": "bespoke+canvas",
    "location": "src/engine/buffs/wild/chaos.ts",
    "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -16877,6 +16824,7 @@
    "animation": "bespoke",
    "location": "src/engine/buffs/wild/chaos.ts",
    "tests": [
+    "material-model.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -17350,6 +17298,7 @@
    "animation": "generated",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "material-model.ts",
     "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
@@ -17949,6 +17898,27 @@
    "action": "keep (auto: no flags, harness-executed)"
   },
   {
+   "id": "legendary_forge",
+   "name": "Legendary Forge",
+   "kind": "buff",
+   "tier": 4,
+   "effect": "The forge mends what war broke: one of your captured knights or bishops is reforged and returns to your pocket. Spend a later turn to drop it onto any empty square.",
+   "trigger": "activated",
+   "duration": "unstated",
+   "targets": "self",
+   "signature": "pieces|activated|effect+targets|unstated|self|bishop,capture,knight,return,square",
+   "animation": "canvas",
+   "location": "src/engine/buffs/fantasy/legends.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [
+    "duplicate-signature(bn4_veterans_return)"
+   ],
+   "action": "keep: reviewed cross-pool cluster; twins live in different draft pools (buff vs boon/hex vs opener) or scale by tier within their pool"
+  },
+  {
    "id": "mass_recall",
    "name": "Mass Recall",
    "kind": "buff",
@@ -18015,6 +17985,25 @@
    "animation": "canvas",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
+   "id": "minor_recall",
+   "name": "Minor Recall",
+   "kind": "buff",
+   "tier": 4,
+   "effect": "Return a captured knight or bishop to your back rank, once.",
+   "trigger": "activated",
+   "duration": "one-shot",
+   "targets": "self",
+   "signature": "pieces|activated|effect+targets|one-shot|self|bishop,capture,knight,rank,return",
+   "animation": "generated",
+   "location": "src/engine/buffs/library.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -18576,7 +18565,9 @@
    "animation": "canvas",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "material-model.ts",
     "sim-capture-accounting.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -18795,6 +18786,7 @@
    "animation": "bespoke+canvas",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "material-model.ts",
     "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
@@ -18928,7 +18920,9 @@
    "animation": "generated",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "material-model.ts",
     "test-archive-replay.ts",
+    "test-balance-pass-2026-09.ts",
     "test-desync.cjs",
     "test-replay-spectate.cjs",
     "test-snapshot.cjs",
@@ -19118,6 +19112,26 @@
    "animation": "canvas",
    "location": "src/engine/buffs/wild/arcane.ts",
    "tests": [
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
+   "id": "wa_conjure_bishop",
+   "name": "Conjured Bishop",
+   "kind": "buff",
+   "tier": 4,
+   "effect": "Conjure your bishop's reflection: choose one of your bishops whose mirror square (same rank, file flipped left-to-right) is empty, and a new bishop appears there.",
+   "trigger": "activated",
+   "duration": "unstated",
+   "targets": "self",
+   "signature": "pieces|activated|effect+targets|unstated|self|bishop,file,rank,square",
+   "animation": "canvas",
+   "location": "src/engine/buffs/wild/arcane.ts",
+   "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -19449,6 +19463,7 @@
    "animation": "bespoke+canvas",
    "location": "src/engine/buffs/wild/chaos.ts",
    "tests": [
+    "material-model.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -19503,6 +19518,7 @@
    "animation": "canvas",
    "location": "src/engine/buffs/wild/chaos.ts",
    "tests": [
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -19900,24 +19916,8 @@
    "animation": "generated",
    "location": "src/engine/buffs/wild/warfare.ts",
    "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
-   "id": "ww_recommission",
-   "name": "Recommission",
-   "kind": "buff",
-   "tier": 4,
-   "effect": "Return one of your captured rooks to an empty square on your back rank. For the rest of the game the refitted rook may pass through one friendly piece on each move, landing only on an empty square (it cannot capture on a phased move).",
-   "trigger": "activated/lingering",
-   "duration": "permanent",
-   "targets": "self",
-   "signature": "pieces|activated|effect+targets+aug+onMove|permanent|self|capture,move,rank,return,rook,square",
-   "animation": "canvas",
-   "location": "src/engine/buffs/wild/warfare.ts",
-   "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -20008,6 +20008,8 @@
    "animation": "bespoke+canvas",
    "location": "src/engine/buffs/fantasy/transforms.ts",
    "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -20061,24 +20063,6 @@
    "signature": "pieces|activated|effect+targets+onMove|next-turn|enemy|move,n:3,pawn,rank,square",
    "animation": "bespoke+canvas",
    "location": "src/engine/buffs/personal.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
-   "id": "blood_pact",
-   "name": "Blood Pact",
-   "kind": "buff",
-   "tier": 5,
-   "effect": "Sign in blood: promote one of your pawns to a queen at once, but another pawn of yours, you choose which, bursts and is lost.",
-   "trigger": "activated",
-   "duration": "one-shot",
-   "targets": "self",
-   "signature": "pieces|activated|effect+targets|one-shot|self|pawn,promote,queen",
-   "animation": "bespoke+canvas",
-   "location": "src/engine/buffs/funny/summons.ts",
    "tests": [
     "lab-run-all.ts"
    ],
@@ -20283,6 +20267,7 @@
    "animation": "canvas",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -20690,24 +20675,6 @@
    "signature": "attack|passive|init+aug+onMove|3-turns|enemy|capture,king,leap,move,n:3,square,time",
    "animation": "bespoke+canvas+passive",
    "location": "src/engine/buffs/pt/timefaustian.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
-   "id": "lich_phylactery",
-   "name": "Lich Phylactery",
-   "kind": "buff",
-   "tier": 5,
-   "effect": "The first time your queen is captured, a new queen appears on her home square, or on the nearest empty square of your back rank if her home is taken.",
-   "trigger": "passive",
-   "duration": "unstated",
-   "targets": "self",
-   "signature": "pieces|passive|onMove|unstated|self|capture,queen,rank,square,time",
-   "animation": "bespoke+canvas+passive",
-   "location": "src/engine/buffs/fantasy/necromancy.ts",
    "tests": [
     "lab-run-all.ts"
    ],
@@ -21400,6 +21367,25 @@
    "action": "keep (auto: no flags, harness-executed)"
   },
   {
+   "id": "promote_now",
+   "name": "Promote Now",
+   "kind": "buff",
+   "tier": 5,
+   "effect": "Choose one of your pawns on your 6th rank or beyond; it promotes to a queen after your opponent's next move, once.",
+   "trigger": "activated/lingering",
+   "duration": "next-turn",
+   "targets": "enemy",
+   "signature": "pieces|activated|effect+targets+onMove|next-turn|enemy|move,pawn,promote,queen,rank",
+   "animation": "generated",
+   "location": "src/engine/buffs/library.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep: reviewed tier ladder; higher rungs pay more (magnitude, scope, extra rider, or free-action timing)"
+  },
+  {
    "id": "purge",
    "name": "Purge",
    "kind": "buff",
@@ -21569,6 +21555,25 @@
     "dominated-candidate(higher-tier-of-duplicate-pair)"
    ],
    "action": "keep: reviewed cross-pool cluster; twins live in different draft pools (buff vs boon/hex vs opener) or scale by tier within their pool"
+  },
+  {
+   "id": "second_wind_major",
+   "name": "Second Wind Major",
+   "kind": "buff",
+   "tier": 5,
+   "effect": "Return a captured rook to any empty back-rank square, once. Using it spends your next unused reroll, if any.",
+   "trigger": "activated",
+   "duration": "one-shot",
+   "targets": "self",
+   "signature": "pieces|activated|effect+targets|one-shot|self|capture,rank,reroll,return,rook,square",
+   "animation": "generated",
+   "location": "src/engine/buffs/library.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
   },
   {
    "id": "sever",
@@ -22430,6 +22435,25 @@
    "action": "keep (auto: no flags, harness-executed)"
   },
   {
+   "id": "ww_recommission",
+   "name": "Recommission",
+   "kind": "buff",
+   "tier": 5,
+   "effect": "Return one of your captured rooks to an empty square on your back rank. For the rest of the game the refitted rook may pass through one friendly piece on each move, landing only on an empty square (it cannot capture on a phased move).",
+   "trigger": "activated/lingering",
+   "duration": "permanent",
+   "targets": "self",
+   "signature": "pieces|activated|effect+targets+aug+onMove|permanent|self|capture,move,rank,return,rook,square",
+   "animation": "canvas",
+   "location": "src/engine/buffs/wild/warfare.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
    "id": "ww_relentless_assault",
    "name": "Relentless Assault",
    "kind": "buff",
@@ -22610,6 +22634,25 @@
    ],
    "flags": [],
    "action": "keep: extra-move ladder T8 (4 moves)"
+  },
+  {
+   "id": "blood_pact",
+   "name": "Blood Pact",
+   "kind": "buff",
+   "tier": 6,
+   "effect": "Sign in blood: promote one of your pawns to a queen at once, but another pawn of yours, you choose which, bursts and is lost.",
+   "trigger": "activated",
+   "duration": "one-shot",
+   "targets": "self",
+   "signature": "pieces|activated|effect+targets|one-shot|self|pawn,promote,queen",
+   "animation": "bespoke+canvas",
+   "location": "src/engine/buffs/funny/summons.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
   },
   {
    "id": "cataclysm",
@@ -23239,6 +23282,25 @@
    "action": "keep (auto: no flags, harness-executed)"
   },
   {
+   "id": "lich_phylactery",
+   "name": "Lich Phylactery",
+   "kind": "buff",
+   "tier": 6,
+   "effect": "The first time your queen is captured, a new queen appears on her home square, or on the nearest empty square of your back rank if her home is taken.",
+   "trigger": "passive",
+   "duration": "unstated",
+   "targets": "self",
+   "signature": "pieces|passive|onMove|unstated|self|capture,queen,rank,square,time",
+   "animation": "bespoke+canvas+passive",
+   "location": "src/engine/buffs/fantasy/necromancy.ts",
+   "tests": [
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
    "id": "lightning_strike",
    "name": "Lightning Strike",
    "kind": "buff",
@@ -23687,6 +23749,8 @@
    "animation": "canvas",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -23740,24 +23804,6 @@
    "targets": "enemy",
    "signature": "attack|activated|effect+targets|next-turn|enemy|freeze,move,queen,slide,square",
    "animation": "bespoke+canvas",
-   "location": "src/engine/buffs/library.ts",
-   "tests": [
-    "lab-run-all.ts"
-   ],
-   "flags": [],
-   "action": "keep (auto: no flags, harness-executed)"
-  },
-  {
-   "id": "resurrect_queen",
-   "name": "Resurrect Queen",
-   "kind": "buff",
-   "tier": 6,
-   "effect": "Bring your captured queen back to any empty square on the board, and she cannot be captured for your opponent's next turn.",
-   "trigger": "activated",
-   "duration": "next-turn",
-   "targets": "enemy",
-   "signature": "pieces|activated|effect+targets|next-turn|enemy|capture,queen,square",
-   "animation": "canvas",
    "location": "src/engine/buffs/library.ts",
    "tests": [
     "lab-run-all.ts"
@@ -24187,6 +24233,7 @@
    "animation": "bespoke+canvas",
    "location": "src/engine/buffs/wild/elemental.ts",
    "tests": [
+    "material-model.ts",
     "lab-run-all.ts"
    ],
    "flags": [
@@ -24497,6 +24544,8 @@
    "animation": "bespoke+canvas",
    "location": "src/engine/buffs/wild/warfare.ts",
    "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -25399,6 +25448,27 @@
    "animation": "bespoke+canvas",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "test-balance-pass-2026-09.ts",
+    "lab-run-all.ts"
+   ],
+   "flags": [],
+   "action": "keep (auto: no flags, harness-executed)"
+  },
+  {
+   "id": "resurrect_queen",
+   "name": "Resurrect Queen",
+   "kind": "buff",
+   "tier": 7,
+   "effect": "Bring your captured queen back to any empty square on the board, and she cannot be captured for your opponent's next turn.",
+   "trigger": "activated",
+   "duration": "next-turn",
+   "targets": "enemy",
+   "signature": "pieces|activated|effect+targets|next-turn|enemy|capture,queen,square",
+   "animation": "canvas",
+   "location": "src/engine/buffs/library.ts",
+   "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -25435,6 +25505,7 @@
    "animation": "bespoke+canvas",
    "location": "src/engine/buffs/funny/chaos.ts",
    "tests": [
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -26740,6 +26811,7 @@
    "animation": "passive",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "sweep.spec.ts",
     "lab-run-all.ts",
     "test-hexes.cjs",
     "test-nerfs.cjs"
@@ -27931,6 +28003,7 @@
    "animation": "passive",
    "location": "src/engine/buffs/hexes/wave3.ts",
    "tests": [
+    "material-model.ts",
     "lab-run-all.ts",
     "test-hexes.cjs"
    ],
@@ -39430,6 +39503,8 @@
    "animation": "generated",
    "location": "src/engine/buffs/boons4.ts",
    "tests": [
+    "material-model.ts",
+    "test-balance-pass-2026-09.ts",
     "lab-run-all.ts"
    ],
    "flags": [],
@@ -39923,6 +39998,7 @@
     "sim-hexes-items.ts",
     "test-nerf-categories.ts",
     "validate-tv-snapshots.cjs",
+    "sweep.spec.ts",
     "test-nerfs.cjs"
    ],
    "flags": [],
@@ -42940,6 +43016,7 @@
    "animation": "passive",
    "location": "src/engine/buffs/library.ts",
    "tests": [
+    "sweep.spec.ts",
     "lab-run-all.ts",
     "test-hexes.cjs",
     "test-nerfs.cjs"

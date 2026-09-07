@@ -242,7 +242,7 @@ export const FANTASY_NECROMANCY: Buff[] = [
       name: "Lich Phylactery",
       description:
         "The first time your queen is captured, a new queen appears on her home square, or on the nearest empty square of your back rank if her home is taken.",
-      tier: 5,
+      tier: 6,
       category: "pieces",
       flavor: "You cannot kill what refuses to stay dead.",
       fx: { motif: "ward", pieces: ["q"], self: true },

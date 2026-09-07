@@ -404,7 +404,7 @@ export const FANTASY_LEGENDS: Buff[] = [
       name: "Legendary Forge",
       description:
         "The forge mends what war broke: one of your captured knights or bishops is reforged and returns to your pocket. Spend a later turn to drop it onto any empty square.",
-      tier: 3,
+      tier: 4,
       category: "pieces",
       flavor: "Iron remembers every shape it has ever worn.",
     },

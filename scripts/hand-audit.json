@@ -1529,14 +1529,14 @@
     "ov_sandbags": 2,
     "bn4_militia_call": 2,
     "emotional_support_pawn": 2,
-    "bn4_stowaway": 1,
+    "bn4_stowaway": 2,
     "supply_drop": 5,
     "bn4_letters_home": 3,
-    "bn4_small_consolation": 2,
-    "bn4_matryoshka_surprise": 2,
+    "bn4_small_consolation": 3,
+    "bn4_matryoshka_surprise": 3,
     "ov_trojan_pawn": 3,
     "wa_conjure_scout": 2,
-    "legendary_forge": 3,
+    "legendary_forge": 4,
     "bn4_florists_trick": 3,
     "bn4_night_gardener": 3,
     "bn4_second_spring": 6,
@@ -1559,7 +1559,7 @@
     "mind_control": 4,
     "mind_empire": 5,
     "bw3_pretender": 7,
-    "blood_pact": 5,
+    "blood_pact": 6,
     "wc_deal_with_the_devil": 5,
     "bn4_ascension_small": 7,
     "bw2_alchemists_trade": 5,
@@ -1844,7 +1844,20 @@
     "gm_rigged_raffle": 2,
     "hx4_toad_pond": 2,
     "hx4_leaking_boats": 2,
-    "hx4_borrowed_ladder": 2
+    "hx4_borrowed_ladder": 2,
+    "promote_now": 5,
+    "second_wind_major": 5,
+    "resurrect_queen": 7,
+    "lich_phylactery": 6,
+    "ww_recommission": 5,
+    "bw3_eleventh_hour": 4,
+    "bw2_queens_testament": 4,
+    "minor_recall": 4,
+    "wa_conjure_bishop": 4,
+    "second_wind": 2,
+    "ww_field_hospital": 2,
+    "bn4_understudy": 2,
+    "summon_intern": 2
   },
   "_comment_nerf_retiers": "2026-09 nerf severity pass: tiers follow how much of a game the nerf takes away, not how clever it sounds. Nerfs that ban a capture type or a few squares sit at 2-4; ones that remove a piece's core movement or a whole class of captures sit at 5-7; ones that make winning nearly impossible (no checks, no captures, hidden board, lose conditions the opponent can force) sit at 8.",
   "keep": {
@@ -1884,5 +1897,6 @@
     "second_army": "the two-pawn pocket anchor at 4",
     "hx4_lantern_out": "the two-turn own-half capture ban anchor at 5"
   },
-  "_comment_balance_pass_2026_09": "2026-09 full balance pass, structural lenses first (dominance ladders inside a family, twins priced apart, permanent unconditional upgrades under the temporary anchors, one-shot defensive cards with no rider), win-rate sweep second. Every move below has a CARD_HISTORY event in src/data/cardHistory.ts."
+  "_comment_balance_pass_2026_09": "2026-09 full balance pass, structural lenses first (dominance ladders inside a family, twins priced apart, permanent unconditional upgrades under the temporary anchors, one-shot defensive cards with no rider), win-rate sweep second. Every move below has a CARD_HISTORY event in src/data/cardHistory.ts.",
+  "_comment_material_ladder_2026_09": "2026-09 material pass, the last 18 entries of `retier`: every card is priced against the MATERIAL it moves, at 0.5 tiers per pawn, anchored on the two floors this pass already pinned (an extra piece-class is Tier 4, an amazon-class upgrade is Tier 7). scripts/material-model.ts scores each card and prints who sits below their floor; the ladder itself is pinned as executable assertions in scripts/test-balance-pass-2026-09.ts so a later blanket pass cannot quietly walk a permanent bishop back down to Tier 3. Rows the parser is known to read wrong are held out by name in KNOWN_MISREAD and were NOT moved."
 }

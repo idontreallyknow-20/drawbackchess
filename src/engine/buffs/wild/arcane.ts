@@ -527,7 +527,7 @@ export const WILD_ARCANE: Buff[] = [
       name: "Conjured Bishop",
       description:
         "Conjure your bishop's reflection: choose one of your bishops whose mirror square (same rank, file flipped left-to-right) is empty, and a new bishop appears there.",
-      tier: 3,
+      tier: 4,
       category: "pieces",
       requires: ["b"],
       flavor: "Faith, made solid, in the looking glass.",

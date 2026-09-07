@@ -705,7 +705,7 @@ const BOON_WAVE4A: Buff[] = [
     ),
   ),
   card(
-    { id: "bn4_understudy", name: "Understudy", tier: 1, category: "pieces", icon: "Drama",
+    { id: "bn4_understudy", name: "Understudy", tier: 2, category: "pieces", icon: "Drama",
       description: "The first time one of your pawns is captured, a fresh pawn joins your pocket, ready to drop on a later turn.",
       flavor: "Someone always knows the lines.", requires: ["p"], fx: { motif: "ward", pieces: ["p"], self: true } },
     {
@@ -1432,7 +1432,7 @@ const BOON_WAVE4A: Buff[] = [
   // --- pieces (5) ---
 
   card(
-    { id: "bn4_stowaway", name: "Stowaway", tier: 1, category: "pieces", icon: "Package",
+    { id: "bn4_stowaway", name: "Stowaway", tier: 2, category: "pieces", icon: "Package",
       description: "After your next 5 turns, a pawn is discovered aboard and joins your pocket, ready to drop on a later turn.",
       flavor: "Been in the flour barrel since move two.", fx: { motif: "rally", pieces: "all", self: true } },
     {
@@ -2192,7 +2192,7 @@ const BOON_WAVE4A: Buff[] = [
     ),
   ),
   card(
-    { id: "bn4_matryoshka_surprise", name: "Matryoshka Surprise", tier: 2, category: "pieces", icon: "Egg",
+    { id: "bn4_matryoshka_surprise", name: "Matryoshka Surprise", tier: 3, category: "pieces", icon: "Egg",
       description: "Paint one of your pawns as a nesting doll. When it is captured, two smaller pawns pop out into your pocket, ready to drop on later turns.",
       flavor: "There is always one more inside. That is the law of dolls.", requires: ["p"] },
     {
@@ -2879,7 +2879,7 @@ const BOON_WAVE4A: Buff[] = [
     ),
   ),
   card(
-    { id: "bn4_small_consolation", name: "Small Consolation", tier: 2, category: "pieces", icon: "Gift",
+    { id: "bn4_small_consolation", name: "Small Consolation", tier: 3, category: "pieces", icon: "Gift",
       description: "The next 2 times your opponent captures one of your rooks or queens, a pawn joins your pocket.",
       flavor: "It is not a rook. It is trying its best.", fx: { motif: "ward", pieces: ["r", "q"], self: true } },
     {

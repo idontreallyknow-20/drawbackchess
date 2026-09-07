@@ -94,6 +94,163 @@ check(tier("ov_pet_rock") < tier("pawn_shield"), "one turn of pawn cover sits be
 check(tier("bn4_night_watch") < tier("sidestep_king"), "one turn of king cover sits below three");
 check(tier("second_army") <= tier("bodyguard"), "two pocket pawns are not dearer than a pocket knight");
 
+// --- 1b. The material ladder ---------------------------------------------------
+//
+// A card's tier IS its price, and until the 2026-09 material pass the library
+// had a price list for movement grants, shields and durations and none at all
+// for the one thing chess has always known how to value. The ladder that grew
+// in its absence got CHEAPER per point the more it gave: `wa_conjure_bishop`
+// handed over a permanent unconditional bishop for Tier 3 while
+// `bn4_cathedral_choir` and `summon_knight` did the identical job at Tier 4,
+// and it survived several blanket retier waves because no invariant anywhere
+// covered spawn or revival material.
+//
+// scripts/material-model.ts prices every active card by the material it moves,
+// in pawns, at 0.5 TIERS PER PAWN. That rate is not fitted to the win-rate
+// sweep (the sweep cannot resolve it: the rungs are about a point apart and
+// the per-card error bar is around twelve). It is the straight line through
+// the two floors THIS pass already pinned above, and the block below is that
+// line as executable assertions.
+//
+// WHAT THIS COVERS, AND WHAT IT DOES NOT.
+//
+// Only the cards named below, each with the M the model scored it at, and each
+// of those scores read by hand against the card and against the engine. It is
+// deliberately NOT "every card must clear its model floor": the parser reads
+// about two thirds of the cards in a material effect category and refuses or
+// misses the rest, so a blanket rule would enforce the parser's blind spots as
+// design rules. It would pin `double_queen` and `bw3_pretender` at Tier 1
+// because it cannot read them, and it would pin `wc_lost_and_found` a rung too
+// high because it counts one revived piece twice. A card joins this table when
+// somebody has read both the card and the parse, and not before.
+//
+// The floors are FLOORS. A card above its floor is not endorsed here, merely
+// not accused, and there are good reasons to sit above one: `queens_rampage`
+// carries a minor's worth of material and is Tier 7 for the tempo, not the
+// pawns.
+
+/** The floor ladder from scripts/material-model.ts, as (minimum M inclusive,
+ *  floor tier), ascending. Kept here as data rather than imported so this
+ *  guard states the ladder itself, and a change to the model has to be made
+ *  in both places on purpose. */
+const MATERIAL_LADDER: readonly { m: number; tier: number }[] = [
+  { m: 0.0, tier: 1 }, // under the parser's own resolution
+  { m: 0.75, tier: 2 }, // a pawn discounted by a lease, a gate or the odds
+  { m: 1.5, tier: 3 }, // a clean permanent pawn
+  { m: 2.5, tier: 4 }, // A MINOR, and the anchor: "an extra piece-class is Tier 4"
+  { m: 4.5, tier: 5 }, // a rook, at 0.5 tiers per point from that anchor
+  { m: 6.5, tier: 6 }, // a rook and a pawn, or two minors
+  { m: 8.5, tier: 7 }, // A QUEEN, and the anchor: "amazon-class is Tier 7"
+  { m: 12.0, tier: 8 }, // a queen and a rook: the ceiling starts binding here
+  { m: 18.0, tier: 9 }, // apex, outside the normal draft
+];
+
+function materialFloor(m: number): number {
+  let t = 1;
+  for (const rung of MATERIAL_LADDER) if (m >= rung.m) t = rung.tier;
+  return t;
+}
+
+check(
+  MATERIAL_LADDER.every(
+    (r, i) => i === 0 || (r.m > MATERIAL_LADDER[i - 1].m && r.tier === MATERIAL_LADDER[i - 1].tier + 1),
+  ),
+  "the material ladder climbs one rung at a time and never doubles back",
+);
+// The ladder is anchored on the two pins above, so moving either pin without
+// moving the ladder fails here rather than silently unfitting the rate.
+check(
+  materialFloor(3) === tier("bishop_archbishop"),
+  `a minor's worth of material (M=3) prices at the extra-piece-class pin, Tier ${tier("bishop_archbishop")}`,
+);
+check(
+  materialFloor(9) === tier("god_knight"),
+  `a queen's worth of material (M=9) prices at the amazon-class pin, Tier ${tier("god_knight")}`,
+);
+check(materialFloor(0.5) === 1 && materialFloor(1) === 2, "a fraction of a pawn buys Tier 1, a whole one Tier 2");
+
+/**
+ * Cards whose M the parser scored and a human has checked. `m` is the model's
+ * number; `why` is what that number is made of, so a later reader can tell at
+ * a glance whether a text change should move the row.
+ */
+const MATERIAL_FLOORS: { id: string; m: number; why: string }[] = [
+  // The 2026-09 material pass moved these eighteen up to their floor.
+  { id: "resurrect_queen", m: 9.0, why: "a captured queen back on the board, permanently" },
+  { id: "blood_pact", m: 8.0, why: "a pawn crowned on the spot; the pawn it bursts is a point back and does not change the rung" },
+  { id: "lich_phylactery", m: 7.2, why: "a whole new queen behind the capture that sets it off" },
+  { id: "promote_now", m: 5.2, why: "a crown, discounted for the rank the pawn has to have reached" },
+  { id: "second_wind_major", m: 5.0, why: "a captured rook back, unconditional" },
+  { id: "ww_recommission", m: 5.0, why: "a captured rook back; the phasing rides on top" },
+  { id: "bw3_eleventh_hour", m: 3.25, why: "your best captured piece back, behind the three-piece gate" },
+  { id: "bw2_queens_testament", m: 3.12, why: "up to two captured minors, priced at two of the cheaper kind behind a capture gate" },
+  { id: "minor_recall", m: 3.0, why: "a captured minor back on the board" },
+  { id: "wa_conjure_bishop", m: 3.0, why: "a permanent unconditional bishop; the mirror square says where, not whether" },
+  { id: "legendary_forge", m: 2.85, why: "a minor into your pocket, which is Bodyguard's payload exactly" },
+  { id: "bn4_matryoshka_surprise", m: 1.52, why: "two pocket pawns behind a capture gate" },
+  { id: "bn4_small_consolation", m: 1.52, why: "two pocket pawns; the rooks and queens are the trigger, not the payout" },
+  { id: "second_wind", m: 1.0, why: "a captured pawn back on the board, permanently" },
+  { id: "bn4_stowaway", m: 0.95, why: "a pocket pawn, five turns late" },
+  { id: "ww_field_hospital", m: 0.8, why: "a new pawn on your back rank behind a capture gate" },
+  { id: "bn4_understudy", m: 0.76, why: "a pocket pawn behind a capture gate" },
+  { id: "summon_intern", m: 0.76, why: "a pocket pawn behind a capture gate" },
+  // The cards the ladder is priced AGAINST. They already clear their floors;
+  // they are here so a later pass cannot cut the anchor out from under it.
+  { id: "bn4_cathedral_choir", m: 3.0, why: "a permanent unconditional bishop: the minor anchor" },
+  { id: "summon_knight", m: 3.0, why: "a permanent unconditional knight: the minor anchor" },
+  { id: "bodyguard", m: 2.85, why: "a knight into your pocket" },
+  { id: "second_army", m: 1.9, why: "two pocket pawns" },
+  { id: "bn4_care_package", m: 1.9, why: "a random pocket piece: half a pawn, a quarter a knight, a quarter a bishop" },
+  { id: "bn4_militia_call", m: 1.0, why: "one permanent pawn" },
+  { id: "bn4_field_stitches", m: 1.0, why: "one captured pawn back, permanently" },
+  { id: "mass_resurrect", m: 4.0, why: "four captured pawns back" },
+  { id: "bn4_old_guard", m: 6.0, why: "an AND list: a knight and a bishop both come back" },
+  { id: "ww_last_reserves", m: 3.9, why: "up to two captured minors, priced at two of the cheaper kind" },
+  { id: "roulette", m: 7.8, why: "three enemy pieces off the board; denial counts the same as a gain" },
+  { id: "apotheosis", m: 5.7, why: "a pocket queen (8.55) less the minor it spends (2.85)" },
+  { id: "queens_rampage", m: 3.9, why: "a line swept clear; the tier is bought by the tempo, not by these points" },
+  { id: "phantom_rook", m: 2.0, why: "a rook on a four-turn lease" },
+  { id: "ww_mercenary_queen", m: 2.7, why: "a queen on a three-turn lease" },
+  { id: "promotion_storm", m: 2.6, why: "two advanced pawns to KNIGHTS, which is two points apiece and not eight" },
+  { id: "bw3_heir_apparent", m: 1.6, why: "a pawn to 'that same kind of piece', an unstated target priced at a minor" },
+  { id: "wc_pinata", m: 1.6, why: "a random enemy piece off, less the pawn of yours that bursts" },
+];
+
+/**
+ * Cards the parser is KNOWN to read wrong (they are held out of the model's
+ * violation list by name, in KNOWN_MISREAD). Their M here is read off the
+ * ENGINE by hand, not off the parse, and the floor still applies: the parser
+ * being unable to read a card is not a reason for the card to be free.
+ */
+const MATERIAL_FLOORS_HAND: { id: string; m: number; why: string }[] = [
+  { id: "seance", m: 1.3, why: "removePiece then place('r') on the same square: a rook FOR a minor is worth the difference" },
+  { id: "wc_lost_and_found", m: 3.25, why: "['r','b','n','p'].find(revivable) revives exactly ONE piece, not two" },
+];
+
+for (const row of [...MATERIAL_FLOORS, ...MATERIAL_FLOORS_HAND]) {
+  const floor = materialFloor(row.m);
+  check(
+    tier(row.id) >= floor,
+    `${row.id} is Tier ${floor} or above (M=${row.m}: ${row.why}) (got ${tier(row.id)})`,
+  );
+}
+
+// The ordering the ladder implies, stated without reference to any M at all,
+// so it still binds if every number above turns out to be wrong.
+check(tier("resurrect_queen") > tier("second_wind_major"), "a queen back costs more than a rook back");
+check(tier("second_wind_major") > tier("minor_recall"), "a rook back costs more than a minor back");
+check(tier("minor_recall") > tier("second_wind"), "a minor back costs more than a pawn back");
+check(tier("wa_conjure_bishop") === tier("bn4_cathedral_choir"), "two permanent bishops cost the same");
+check(tier("wa_conjure_bishop") === tier("summon_knight"), "a minor is a minor whichever piece it is");
+check(tier("legendary_forge") === tier("bodyguard"), "the same pocket minor is the same price twice");
+check(tier("wa_conjure_bishop") > tier("wa_conjure_scout"), "a permanent bishop costs more than a two-turn knight");
+check(tier("bn4_small_consolation") > tier("bn4_militia_call"), "two pawns cost more than one");
+check(
+  tier("lich_phylactery") >= tier("bn4_cathedral_choir") + 2,
+  "a queen is six points more than a minor, and six points is never fewer than two rungs",
+);
+check(tier("bn4_care_package") >= tier("bn4_militia_call"), "a random minor is not cheaper than a plain pawn");
+
 // --- 2. warp_home is a free action -------------------------------------------
 
 {

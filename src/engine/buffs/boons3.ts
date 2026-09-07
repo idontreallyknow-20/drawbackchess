@@ -687,7 +687,7 @@ export const BOON_WAVE3: Buff[] = [
       name: "Eleventh Hour",
       description:
         "When the last of the line is nearly spent, help arrives: the first time your non-king pieces number three or fewer, your best captured piece returns to the empty square nearest your home rank.",
-      tier: 3,
+      tier: 4,
       category: "pieces",
       icon: "Hourglass",
       flavor: "Reinforcements are always exactly this late.",

@@ -133,6 +133,53 @@ function nerfWave(n: Nerf): WaveId {
  * a card is retiered, reworked, or reworded in code, with the changelog date
  * and PR. Keep each note one sentence; the page renders them as a timeline. */
 export const CARD_HISTORY: Record<string, CardHistoryEvent[]> = {
+  // --- 2026-09-07 material pass: every card that hands over, brings back or
+  // takes away MATERIAL is now priced by how much of it, at half a tier per
+  // pawn, anchored on the two floors the structural pass already pinned (an
+  // extra piece-class is Tier 4, an amazon-class upgrade is Tier 7). The
+  // library had a price list for movement, shields and durations and none at
+  // all for pieces, so the ladder got cheaper per point the more it gave.
+  // scripts/material-model.ts scores each card; the ladder is pinned as
+  // assertions in scripts/test-balance-pass-2026-09.ts.
+  "buff:promote_now": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 3 to Tier 5 on the 2026-09 material pass: crowning a pawn is eight points of material, and Double Queen already charges Tier 5 for the same crown from anywhere on the board." },
+  ],
+  "buff:second_wind_major": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 3 to Tier 5 on the 2026-09 material pass: a rook back on the board is five points of material, two rungs above the minor that Tier 4 buys." },
+  ],
+  "buff:resurrect_queen": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 6 to Tier 7 on the 2026-09 material pass: a queen back is nine points, which is what the amazon-class anchor at Tier 7 costs for the same nine." },
+  ],
+  "buff:lich_phylactery": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 5 to Tier 6 on the 2026-09 material pass: a whole new queen on her home square, behind nothing but the capture that sets it off." },
+  ],
+  "buff:ww_recommission": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 4 to Tier 5 on the 2026-09 material pass: a captured rook returns, and the phasing it comes back with rides on top of the five points." },
+  ],
+  "buff:bw3_eleventh_hour": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 3 to Tier 4 on the 2026-09 material pass: your best captured piece returns; even discounted for the three-piece gate that clears a minor, and a minor is Tier 4." },
+  ],
+  "buff:bw2_queens_testament": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 3 to Tier 4 on the 2026-09 material pass: up to two captured minors come back, which beats a minor even priced at two of the cheaper kind behind the queen-capture gate." },
+  ],
+  "buff:minor_recall": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 3 to Tier 4 on the 2026-09 material pass: a captured minor back on the board is the same three points as Cathedral Choir and Summon Knight, which both sit at Tier 4." },
+  ],
+  "buff:wa_conjure_bishop": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 3 to Tier 4 on the 2026-09 material pass: a permanent unconditional bishop, the card Cathedral Choir already is at Tier 4. The mirror square says where the bishop lands, not whether it arrives." },
+  ],
+  "buff:second_wind": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 1 to Tier 2 on the 2026-09 material pass: a captured pawn back on the board for good, level with Militia Call." },
+  ],
+  "buff:ww_field_hospital": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 1 to Tier 2 on the 2026-09 material pass: a new pawn on your back rank the first time a knight of yours is taken." },
+  ],
+  "buff:bn4_understudy": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 1 to Tier 2 on the 2026-09 material pass: a pocket pawn, and the capture that pays for it is one you were going to suffer anyway." },
+  ],
+  "buff:summon_intern": [
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 1 to Tier 2 on the 2026-09 material pass: a pocket pawn behind a capture gate, priced with Understudy, which pays out the same pawn." },
+  ],
   // --- 2026-09-05 full balance pass, lens batch: every active card checked
   // against its family for dominance ladders, twins priced apart, permanent
   // upgrades under temporary anchors, riderless one-shot defence, and text
@@ -145,6 +192,7 @@ export const CARD_HISTORY: Record<string, CardHistoryEvent[]> = {
   ],
   "buff:bn4_stowaway": [
     { date: "2026-09-05", kind: "retier", note: "Moved from Tier 3 to Tier 1 in the 2026-09 full pass: priced against the cards in its own family that do the same job." },
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 1 to Tier 2 on the 2026-09 material pass: a pawn is a pawn even five turns late, and a pawn that arrives in your pocket is priced at Tier 2." },
   ],
   "buff:supply_drop": [
     { date: "2026-09-05", kind: "retier", note: "Moved from Tier 3 to Tier 5 in the 2026-09 full pass: priced against the cards in its own family that do the same job." },
@@ -154,9 +202,11 @@ export const CARD_HISTORY: Record<string, CardHistoryEvent[]> = {
   ],
   "buff:bn4_small_consolation": [
     { date: "2026-09-05", kind: "retier", note: "Moved from Tier 5 to Tier 2 in the 2026-09 full pass: priced against the cards in its own family that do the same job." },
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 2 to Tier 3 on the 2026-09 material pass: two pocket pawns, where one is worth Tier 2. The rooks and queens in the text are the trigger, not the payout." },
   ],
   "buff:bn4_matryoshka_surprise": [
     { date: "2026-09-05", kind: "retier", note: "Moved from Tier 4 to Tier 2 in the 2026-09 full pass: priced against the cards in its own family that do the same job." },
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 2 to Tier 3 on the 2026-09 material pass: two pocket pawns behind a capture gate, level with Small Consolation, which pays the same two." },
   ],
   "buff:ov_trojan_pawn": [
     { date: "2026-09-05", kind: "retier", note: "Moved from Tier 5 to Tier 3 in the 2026-09 full pass: priced against the cards in its own family that do the same job." },
@@ -166,6 +216,7 @@ export const CARD_HISTORY: Record<string, CardHistoryEvent[]> = {
   ],
   "buff:legendary_forge": [
     { date: "2026-09-05", kind: "retier", note: "Moved from Tier 4 to Tier 3 in the 2026-09 full pass: priced against the cards in its own family that do the same job." },
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 3 to Tier 4 on the 2026-09 material pass: a minor into your pocket is Bodyguard's payload exactly, and Bodyguard is Tier 4. The sweep measured this card at -16.7 points, but that is one standard error on twelve pairs, and the identical payload measured +15.0 on the same harness." },
   ],
   "buff:bn4_florists_trick": [
     { date: "2026-09-05", kind: "retier", note: "Moved from Tier 4 to Tier 3 in the 2026-09 full pass: priced against the cards in its own family that do the same job." },
@@ -235,6 +286,7 @@ export const CARD_HISTORY: Record<string, CardHistoryEvent[]> = {
   ],
   "buff:blood_pact": [
     { date: "2026-09-05", kind: "retier", note: "Moved from Tier 8 to Tier 5 in the 2026-09 full pass: priced against the cards in its own family that do the same job." },
+    { date: "2026-09-07", kind: "retier", note: "Moved from Tier 5 to Tier 6 on the 2026-09 material pass: a pawn crowned on the spot is eight points of material, and the second pawn it bursts pays back one of them." },
   ],
   "buff:wc_deal_with_the_devil": [
     { date: "2026-09-05", kind: "retier", note: "Moved from Tier 6 to Tier 4 in the 2026-09 full pass: priced against the cards in its own family that do the same job." },
