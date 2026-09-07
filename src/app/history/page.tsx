@@ -101,7 +101,7 @@ export default function HistoryPage() {
         </div>
 
         {games === null ? (
-          <div className="mt-8 text-parchment-300/60">Loading…</div>
+          <div className="mt-8 text-parchment-400">Loading…</div>
         ) : filtered.length === 0 ? (
           games.length === 0 ? (
             <EmptyState
@@ -166,10 +166,10 @@ function GameRow({ game, onSelect }: { game: CompletedGame; onSelect: () => void
           <span className="truncate font-display text-base text-parchment-50">
             {game.opponent}
           </span>
-          <span className="border border-[color:var(--edge)] px-1.5 py-0.5 text-[11px] text-parchment-400">
+          <span className="border border-[color:var(--edge)] px-1.5 py-0.5 text-[12px] text-parchment-400">
             {VENUE_LABEL[game.mode]}
           </span>
-          <span className="text-[11px] text-parchment-400">
+          <span className="text-[12px] text-parchment-400">
             {game.rated ? "rated" : "casual"}
           </span>
         </span>
@@ -181,7 +181,7 @@ function GameRow({ game, onSelect }: { game: CompletedGame; onSelect: () => void
         <span className="block font-mono text-sm text-parchment-100 tabular-nums">
           {timeControlLabel(game.baseSec, game.incSec)}
         </span>
-        <span className="block text-[11px] text-parchment-400">
+        <span className="block text-[12px] text-parchment-400">
           {speedLabel(game.baseSec)}
         </span>
       </span>
@@ -201,7 +201,7 @@ function GameRow({ game, onSelect }: { game: CompletedGame; onSelect: () => void
         <Link
           href={replayHref}
           title="Step through this game move by move"
-          className="shrink-0 grid place-items-center border-l border-[color:var(--edge)] px-3 text-[11px] text-parchment-400 hover:text-gold-leaf transition-colors"
+          className="shrink-0 grid place-items-center border-l border-[color:var(--edge)] px-3 text-[13px] text-parchment-400 hover:text-gold-leaf transition-colors"
         >
           Replay
         </Link>
@@ -231,7 +231,7 @@ function GameSummary({ game, onClose }: { game: CompletedGame; onClose: () => vo
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] text-parchment-400">Game summary</p>
+            <p className="text-[12px] text-parchment-400">Game summary</p>
             <h2 className={`mt-1 font-display text-3xl font-bold ${style.text}`}>
               {style.label}
             </h2>
@@ -281,7 +281,7 @@ function GameSummary({ game, onClose }: { game: CompletedGame; onClose: () => vo
           </LinkButton>
         )}
 
-        <p className="mt-5 font-mono text-[11px] text-parchment-500 break-all">
+        <p className="mt-5 font-mono text-[12px] text-parchment-500 break-all">
           id {game.id}
         </p>
       </div>
@@ -292,7 +292,7 @@ function GameSummary({ game, onClose }: { game: CompletedGame; onClose: () => vo
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
-      <dt className="shrink-0 text-[11px] text-parchment-400">{label}</dt>
+      <dt className="shrink-0 text-[12px] text-parchment-400">{label}</dt>
       <dd className="text-right text-parchment-100">{value}</dd>
     </div>
   );
@@ -308,8 +308,8 @@ function RuleLine({
   return (
     <div className={`border p-3 tier-bg-${nerf.tier}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] text-parchment-400">{label}</span>
-        <span className={`text-[11px] tier-${nerf.tier}`}>
+        <span className="text-[12px] text-parchment-400">{label}</span>
+        <span className={`text-[12px] tier-${nerf.tier}`}>
           {TIER_LABEL[nerf.tier] ?? ""}
         </span>
       </div>

@@ -207,7 +207,7 @@ export function GlossaryTerm({ term, definition }: { term: string; definition: s
             else show(true);
           }
         }}
-        className="cursor-help underline decoration-dotted decoration-parchment-400/60 underline-offset-2 outline-none hover:text-coral hover:decoration-coral/80 focus-visible:text-coral focus-visible:decoration-coral/80 motion-safe:transition-colors motion-safe:duration-150"
+        className="cursor-help underline decoration-dotted decoration-parchment-500 underline-offset-2 outline-none hover:text-coral hover:decoration-coral/80 focus-visible:text-coral focus-visible:decoration-coral/80 motion-safe:transition-colors motion-safe:duration-150"
       >
         {term}
       </span>
@@ -238,7 +238,7 @@ export function GlossaryTerm({ term, definition }: { term: string; definition: s
             )}
             <span className={entry ? "mt-1 block" : "block"}>{definition}</span>
             {entry?.detail && (
-              <span className="mt-1.5 block text-parchment-200/85">{entry.detail}</span>
+              <span className="mt-1.5 block text-parchment-200">{entry.detail}</span>
             )}
             {entry?.example && (
               <span className="mt-1.5 block italic text-parchment-400">{entry.example}</span>
@@ -247,7 +247,7 @@ export function GlossaryTerm({ term, definition }: { term: string; definition: s
               <Link
                 href={glossaryHref(entry)}
                 onClick={(e) => e.stopPropagation()}
-                className="mt-2 block text-coral/90 hover:text-coral hover:underline"
+                className="mt-2 block text-coral hover:text-coral hover:underline"
               >
                 Read more in the glossary →
               </Link>

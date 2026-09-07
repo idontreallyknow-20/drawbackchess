@@ -80,7 +80,7 @@ export function BreadcrumbJsonLd({ title, path }: { title: string; path: string 
 export function GuideFooter({ current }: { current: string }) {
   return (
     <div className="pt-4">
-      <div className="text-[11px] text-parchment-400">keep reading</div>
+      <div className="text-[12px] text-parchment-400">keep reading</div>
       <div className="mt-3 flex flex-wrap gap-3">
         {GUIDE_PAGES.filter((p) => p.href !== current).map((p) => (
           <LinkButton tone="ghost"

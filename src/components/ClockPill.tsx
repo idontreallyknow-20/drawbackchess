@@ -193,7 +193,7 @@ export function ClockPill({
           aria-label={`Free time: ${Math.ceil(graceMs / 1000)} seconds until the clock starts`}
           title="Free time before your clock starts"
           className={
-            "font-mono tabular-nums text-gold-leaf/80 " +
+            "font-mono tabular-nums text-gold-leaf " +
             (compact ? "ml-1.5 text-[12px]" : "ml-2 text-sm")
           }
         >

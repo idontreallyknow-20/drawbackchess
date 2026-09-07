@@ -208,8 +208,13 @@ export function DashboardSection({
               })}
             </ul>
 
+            {/* From sm up this table gets 600px (640 viewport, less the shell's
+                px-5), and its five columns want about 320px, so it fits without
+                scrolling. The 34rem floor it used to carry could never bind at
+                any width where the table is shown; overflow-x-auto stays as the
+                safety net for a long "Reading" verdict. */}
             <div className="mt-3 hidden overflow-x-auto sm:block">
-              <table className="w-full min-w-[34rem] text-left text-[13px]">
+              <table className="w-full text-left text-[13px]">
                 <thead className="text-[11px] text-parchment-400">
                   <tr>
                     <th className="py-1.5 pr-3">Tier</th>

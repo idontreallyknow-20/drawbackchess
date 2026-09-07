@@ -29,7 +29,7 @@ export default function FriendRedirect() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-6">
-      <div className="text-[11px] text-parchment-400">Opening the lobby…</div>
+      <div className="text-[12px] text-parchment-400">Opening the lobby…</div>
     </main>
   );
 }

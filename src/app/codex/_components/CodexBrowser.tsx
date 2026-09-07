@@ -362,7 +362,7 @@ export function CodexBrowser() {
               value={filters.search}
               onChange={(e) => patch({ search: e.target.value })}
               placeholder={`Search ${nounPlural} by name or effect`}
-              className="w-full rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-base)] py-2.5 pl-9 pr-9 text-[14px] font-body text-parchment placeholder:text-parchment-400/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]"
+              className="w-full rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-base)] py-2.5 pl-9 pr-9 text-[14px] font-body text-parchment placeholder:text-parchment-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]"
             />
             {filters.search && (
               <button
@@ -408,7 +408,7 @@ export function CodexBrowser() {
               <SlidersHorizontal size={14} aria-hidden />
               Filters
               {active && (
-                <span className="grid h-4 min-w-4 place-items-center rounded-none bg-[color:var(--accent)] px-1 text-[11px] font-bold text-ink-950">
+                <span className="grid h-[17px] min-w-[17px] place-items-center rounded-none bg-[color:var(--accent)] px-1 text-[12px] font-bold leading-none text-ink-950">
                   {activeChips.length}
                 </span>
               )}

@@ -88,7 +88,7 @@ export function MoveStrip({
           return (
             <span key={c.ply} className="inline-flex items-center">
               {c.num != null && (
-                <span className="px-1 text-parchment-400/80">{c.num}.</span>
+                <span className="px-1 text-parchment-400">{c.num}.</span>
               )}
               <button
                 ref={selected ? activeRef : undefined}

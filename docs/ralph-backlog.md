@@ -38,7 +38,8 @@ Working rules for every round, non-negotiable:
 
 | Round | What landed |
 |---|---|
-| 0 | Backlog created, route sweep harness, material model, stale rules copy fixed |
+| 0 | Backlog created, Lichess parity study, stale rules copy fixed, modal focus trap |
+| 1 | Material model, chess sound pass, board keyboard play, loading and error states, typography floor, contrast tokens, dead code |
 
 ---
 
@@ -54,13 +55,65 @@ which is why nothing caught it.
 
 | # | Item | Size | Status |
 |---|---|---|---|
-| A1 | `scripts/material-model.ts`: score every active card for effective material, fit a tier floor against measured win rate, report violations | M | WIP |
-| A2 | Full-library win-rate sweep, 3 niced shards, `--games 10`, writing `docs/card-winrate.shard{0,1,2}.json` | L | WIP (running) |
-| A3 | Apply the retiers through `hand-audit.json` + `npm run gen:retiers` + `CARD_HISTORY` | M | TODO |
-| A4 | Pin the material ladder as an invariant so a later blanket pass cannot undo it | S | TODO |
+| A1 | `scripts/material-model.ts`: score every active card for effective material, fit a tier floor against measured win rate, report violations | M | DONE (round 1) |
+| A2 | Full-library win-rate sweep, 3 niced shards, `--games 10`, writing `docs/card-winrate.shard{0,1,2}.json` | L | WIP (suspended mid-shard; resume with `pkill -CONT -f sim-card-winrate`) |
+| A3 | Apply the 28 retiers through `hand-audit.json` + `npm run gen:retiers` + `CARD_HISTORY` | M | TODO (next) |
+| A4 | Pin the material ladder as an invariant so a later blanket pass cannot undo it | S | TODO (next) |
 | A5 | Rework, not just retier, cards that are cheap AND boring (pure "+3 material, no decision") | M | TODO |
 | A6 | `amazon_army` t7 measures -25 points: a play-policy bug, not a tier problem. Root cause in `/dev/lab` | S | TODO |
 | A7 | Work the `pending-review` backlog in `docs/card-audit.md`: 266 duplicate-signature, 211 near-duplicate, 90 dominated | L | TODO |
+
+### The ladder the model settled on (round 1)
+
+`scripts/material-model.ts` scores every active card for effective material `M`
+(pieces gained plus pieces denied, discounted by permanence, conditionality and
+stated odds), then charges a tier floor for it.
+
+The honest finding is that **the measurement establishes a direction and a lower
+bound, not a rate.** One tier rung is worth about 0.93 win-rate points. Cards
+carrying no material average +0.9 points; a card granting a minor averages
++15.6, which is 15.9 rungs of excess power for something the ladder charges 3
+rungs for. Every material band measures above the no-material baseline by more
+than the ladder charges. But the buckets hold 8 to 14 cards against a median
+per-card error bar of 12.2 points, so they cannot pin the rate: the "pawn to a
+minor" bucket out-measures the "rook" bucket, which is sampling noise, not a
+fact about the game.
+
+So the ladder is anchored **structurally** on the two floors the 2026-09 pass
+already pinned in `scripts/test-balance-pass-2026-09.ts` (extra piece-class is
+tier 4, amazon-class is tier 7). The line through those two points is
+**0.5 tiers per point of material**:
+
+| M | floor | what that is |
+|---|---|---|
+| under 0.75 | t1 | under the parser's own resolution |
+| 0.75 | t2 | a pawn behind a lease, a gate, or the odds |
+| 1.5 | t3 | a clean permanent pawn |
+| 2.5 | **t4** | a minor (anchor: Cathedral Choir and Summon Knight already sit here) |
+| 4.5 | t5 | a rook |
+| 6.5 | t6 | a rook and a pawn, or two minors |
+| 8.5 | **t7** | a queen (anchor) |
+| 12 | t8 | queen and rook; the tier ceiling starts binding |
+| 18 | t9 | apex |
+
+**28 violations**, 23 one tier under and 5 two tiers under. `wa_conjure_bishop`,
+the card that started this, scores M=3.00 and moves t3 to t4, landing exactly on
+the minor anchor beside the cards that already do the same thing.
+
+Parser coverage is **67 percent** of the 284 cards in a material effect
+category, with 10 refused outright (gambling ladders whose branch odds are
+stated only in total). The gaps are work, not noise: 18 of 40 mass-removal cards
+score nothing, and three of the strongest measured cards in the library
+(`bn4_endless_militia` +35.0, `total_atomic` +33.3, `atomic_captures` +31.8) sit
+in that gap.
+
+Three model-versus-measurement conflicts to resolve before acting on those rows:
+`bn4_care_package` measures +41.7 at M=1.90 (the model says t3 is right, so its
+power comes from somewhere the model does not look), `queens_rampage` measures
+-13.6 at t7 with M=3.90, and `legendary_forge` measures -16.7 while the model
+wants to promote it. Known over-counts, recorded rather than papered over:
+`apotheosis` ignores the minor it spends, `wc_sacrificial_bishop` scores +3
+without the bishop it feeds to the volcano.
 
 ## B. Feel: the practice-games loop
 

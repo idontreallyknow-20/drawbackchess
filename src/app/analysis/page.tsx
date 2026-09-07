@@ -329,7 +329,7 @@ function AnalysisInner() {
           </div>
 
           <div className="plate min-h-[120px] p-4">
-            <div className="text-[11px] tracking-[0.14em] text-parchment-400">Moves</div>
+            <div className="text-[12px] tracking-[0.04em] text-parchment-400">Moves</div>
             {truncatedAt != null && (
               <p role="status" className="mt-2 text-[13px] leading-snug text-oxblood-glow">
                 Line truncated at move {Math.floor(truncatedAt / 2) + 1}: this game used cards the
@@ -369,7 +369,7 @@ function AnalysisInner() {
           </div>
 
           <div className="plate p-4">
-            <div className="text-[11px] tracking-[0.14em] text-parchment-400">FEN</div>
+            <div className="text-[12px] tracking-[0.04em] text-parchment-400">FEN</div>
             <input
               readOnly
               value={fen}

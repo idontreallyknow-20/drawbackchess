@@ -80,7 +80,7 @@ function KnightPreview({ theme, color, size = 20 }: { theme: PieceTheme; color: 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em]"
+      className="mb-1.5 text-[12px] font-semibold uppercase tracking-[0.08em]"
       style={{ color: "var(--text-muted)" }}
     >
       {children}
@@ -311,7 +311,7 @@ export function HeaderSettingsMenu({
           <div className="flex items-center justify-between gap-3">
             <span style={{ color: "var(--text-primary)" }}>
               Zen mode
-              <span className="ml-1.5 font-mono text-[11px]" style={{ color: "var(--text-muted)" }}>
+              <span className="ml-1.5 font-mono text-[12px]" style={{ color: "var(--text-muted)" }}>
                 z
               </span>
             </span>

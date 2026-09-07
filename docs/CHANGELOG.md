@@ -826,3 +826,43 @@ Draft:
 
 Clocks:
 - Animations switch off on their own while either clock is under 20 seconds and come back once both are above it again (increment). Works through the same html[data-anim] gate as the Settings switch, so a settings write during low time cannot turn motion back on.
+
+## 2026-09-07 02:00 EDT
+
+Route loading and error states
+
+The five system states in docs/design-system.md section 8 were only half wired
+at the route level: 62 routes had 8 loading.tsx files and one error.tsx (the
+root one), so most routes either popped in with nothing in between or dead
+ended on a render failure.
+
+Loading:
+- 21 new loading.tsx files, each a skeleton in the route's own final geometry:
+  achievements, analysis, clubs/[slug], codex/suggest, the four codex card
+  pages (buff, nerf, hex, boon), history/[id], inbox, inbox/[username],
+  leaderboard, login, mod (the console frame all four mod screens share),
+  play, profile, profile/edit, tournaments, tournaments/[id],
+  tutorial/first-game, tutorial/walkthrough.
+- Four of those existed only to stop a nested route inheriting the wrong
+  skeleton: /clubs/[slug] was getting the club directory, /history/[id] the
+  archive list, /codex/suggest and the card pages the nine-card library grid.
+  A skeleton in the wrong geometry is worse than none.
+- New SkeletonHeader (src/components/ui/Skeleton.tsx) replaces the top bar the
+  eight existing skeletons had each copied. It stands at SiteHeader's real
+  height (48px, 60px from sm), drops three inconsistent inline borderRadius
+  values that the globals.css geometry rule overrides anyway, and retires the
+  one remaining border-white/5 alpha hairline in the set.
+
+Errors:
+- 18 per-section error.tsx boundaries: achievements, analysis, clubs, codex,
+  community, game, history, inbox, leaderboard, lobby, login, mod, play,
+  profile, tournaments, tutorial, tv, u/[username]. Each names what actually
+  failed, which the generic root boundary cannot.
+- Shared body in src/components/ui/RouteError.tsx: plain-words sentence, the
+  error digest when there is one, Retry, and a way out. Retry is wired to
+  next 16.3's retry() (re-fetches the segment) rather than reset().
+- Static marketing and guide pages, the dev harnesses, and the /friend and
+  /stats redirect shims deliberately got neither.
+
+Verified with npx tsc --noEmit, npm run lint, and the emdash, rounded, and
+buttons guards.

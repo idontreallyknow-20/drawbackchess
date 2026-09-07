@@ -165,7 +165,7 @@ function LoginPage() {
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
               maxLength={tab === "login" ? 254 : 20}
-              className="w-full bg-[color:var(--bg-base)] border border-[color:var(--edge)] px-4 py-3 focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-400/40"
+              className="w-full bg-[color:var(--bg-base)] border border-[color:var(--edge)] px-4 py-3 focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-500"
               placeholder="knight_rider"
             />
             {tab === "register" && (
@@ -177,7 +177,7 @@ function LoginPage() {
           {tab === "register" && (
             <div>
               <label className="text-[12px] font-medium text-parchment-300 block mb-1.5" htmlFor="email">
-                Email <span className="normal-case text-parchment-400/60">(optional)</span>
+                Email <span className="normal-case text-parchment-500">(optional)</span>
               </label>
               <input
                 id="email"
@@ -186,7 +186,7 @@ function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 maxLength={254}
-                className="w-full bg-[color:var(--bg-base)] border border-[color:var(--edge)] px-4 py-3 focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-400/40"
+                className="w-full bg-[color:var(--bg-base)] border border-[color:var(--edge)] px-4 py-3 focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-500"
                 placeholder="you@example.com"
               />
               <p className="mt-1 text-[12px] text-parchment-400">

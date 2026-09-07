@@ -41,7 +41,7 @@ function FilterSelect({
 }) {
   return (
     <label className="flex min-w-0 flex-col gap-1">
-      <span className="text-[11px] text-parchment-400">{label}</span>
+      <span className="text-[12px] text-parchment-400">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}

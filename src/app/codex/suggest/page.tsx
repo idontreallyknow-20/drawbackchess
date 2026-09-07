@@ -204,7 +204,7 @@ export default function SuggestRulePage() {
         ) : (
           <form onSubmit={submit} className="mt-7 plate p-5 sm:p-6 space-y-5">
             <div>
-              <label className="text-[11px] text-parchment-400 mb-1 block" htmlFor="rule-name">
+              <label className="text-[12px] text-parchment-400 mb-1 block" htmlFor="rule-name">
                 {cfg.nameLabel} <span className="opacity-60">(optional)</span>
               </label>
               <input
@@ -212,12 +212,12 @@ export default function SuggestRulePage() {
                 value={name}
                 onChange={(e) => setName(e.target.value.slice(0, 80))}
                 placeholder={cfg.namePlaceholder}
-                className="bg-[color:var(--bg-base)] border border-[color:var(--edge)] rounded-none px-4 py-2 text-base font-display w-full focus:outline-none focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-400/40"
+                className="bg-[color:var(--bg-base)] border border-[color:var(--edge)] rounded-none px-4 py-2 text-base font-display w-full focus:outline-none focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-500"
               />
             </div>
 
             <div>
-              <label className="text-[11px] text-parchment-400 mb-1 block" htmlFor="rule-desc">
+              <label className="text-[12px] text-parchment-400 mb-1 block" htmlFor="rule-desc">
                 {cfg.descLabel}
               </label>
               <textarea
@@ -227,15 +227,15 @@ export default function SuggestRulePage() {
                 required
                 rows={5}
                 placeholder={cfg.descPlaceholder}
-                className="bg-[color:var(--bg-base)] border border-[color:var(--edge)] rounded-2xl px-4 py-3 text-sm w-full focus:outline-none focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-400/40 resize-y"
+                className="bg-[color:var(--bg-base)] border border-[color:var(--edge)] rounded-2xl px-4 py-3 text-sm w-full focus:outline-none focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-500 resize-y"
               />
-              <div className="mt-1 text-right font-mono text-[11px] text-parchment-400/60">
+              <div className="mt-1 text-right font-mono text-[12px] text-parchment-500">
                 {description.length}/1000
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] text-parchment-400 mb-1 block" htmlFor="rule-contact">
+              <label className="text-[12px] text-parchment-400 mb-1 block" htmlFor="rule-contact">
                 How to credit / reach you <span className="opacity-60">(optional)</span>
               </label>
               <input
@@ -243,7 +243,7 @@ export default function SuggestRulePage() {
                 value={contact}
                 onChange={(e) => setContact(e.target.value.slice(0, 120))}
                 placeholder="username, email, discord…"
-                className="bg-[color:var(--bg-base)] border border-[color:var(--edge)] rounded-none px-4 py-2 text-sm w-full focus:outline-none focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-400/40"
+                className="bg-[color:var(--bg-base)] border border-[color:var(--edge)] rounded-none px-4 py-2 text-sm w-full focus:outline-none focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-500"
               />
             </div>
 

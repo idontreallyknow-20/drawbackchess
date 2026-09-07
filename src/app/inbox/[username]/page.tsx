@@ -209,7 +209,7 @@ export default function ThreadPage() {
                         }
                       >
                         <div className="whitespace-pre-wrap break-words">{m.text}</div>
-                        <div className="mt-1 text-right font-mono text-[11px] text-parchment-400">
+                        <div className="mt-1 text-right font-mono text-[12px] text-parchment-400">
                           {new Date(m.at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
                         </div>
                       </div>
@@ -233,7 +233,7 @@ export default function ThreadPage() {
                 placeholder={`Message ${thread?.peer.username ?? username}`}
                 maxLength={1000}
                 aria-label={`Message ${thread?.peer.username ?? username}`}
-                className="min-h-[44px] min-w-0 flex-1 rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-base)] px-4 py-3 text-[13px] text-parchment placeholder:text-parchment-400/50"
+                className="min-h-[44px] min-w-0 flex-1 rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-base)] px-4 py-3 text-[13px] text-parchment placeholder:text-parchment-500"
               />
               <Button tone="leaf"
                 onClick={send}

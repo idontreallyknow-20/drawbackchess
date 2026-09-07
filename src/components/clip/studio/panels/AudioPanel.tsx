@@ -152,7 +152,7 @@ export function AudioPanel({ studio }: { studio: Studio }) {
           />
           {customMusic ? (
             <>
-              <span className="max-w-[11rem] truncate text-[11px] text-gold-leaf" data-clip-music-name>
+              <span className="max-w-[11rem] truncate text-[12px] text-gold-leaf" data-clip-music-name>
                 {customMusic.name}
               </span>
               <Button tone="ghost" size="xs" onClick={clearCustomMusic} disabled={locked} className="text-parchment-300">
@@ -164,7 +164,7 @@ export function AudioPanel({ studio }: { studio: Studio }) {
               Your own audio
             </Button>
           )}
-          <span className="text-[10px] text-parchment-400">stays on this device</span>
+          <span className="text-[12px] text-parchment-400">stays on this device</span>
         </Row>
       )}
     </div>

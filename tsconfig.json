@@ -16,6 +16,23 @@
     "plugins": [{ "name": "next" }],
     "paths": { "@/*": ["./src/*"] }
   },
+  // Next writes both type globs into `include` itself (and puts them back if
+  // they are removed), so they stay: `.next/types/**` is what `next build`
+  // emits, and it carries the typed-route helpers (PageProps, LayoutProps,
+  // RouteContext, ParamMap) plus the per-route validator that checks every
+  // page/layout/handler's exported shape. That check is worth keeping.
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  // `.next/dev/types` is the SAME thing regenerated continuously by `next dev`,
+  // and it is excluded here for the same reason Next excludes it from its own
+  // build type check (see next/dist/lib/typescript/type-paths.js and
+  // runTypeCheck.js): a plain `tsc --noEmit` otherwise compiles whatever the
+  // dev server happens to have half-written, and reports syntax errors in
+  // generated files that have nothing to do with this codebase. Excluding the
+  // directory does not fight Next: it only ever adds to `include`, and only
+  // seeds `exclude` when the key is missing. Nothing is lost in dev either: the
+  // generated next-env.d.ts imports .next/dev/types/routes.d.ts directly, so the
+  // route helper types still reach the program. What drops out is the rest of
+  // the directory, above all the per-route validator.ts, which is rewritten on
+  // every compile and points at route modules that a stale .next no longer has.
+  "exclude": ["node_modules", ".next/dev/types"]
 }

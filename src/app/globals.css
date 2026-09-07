@@ -49,7 +49,11 @@ body {
   --text-primary: #c6c6c6;
   --text-heading: #dedede;
   --text-secondary: #979797;
-  --text-muted: #7a7a7a;
+  /* The muted rung sits ON the AA floor, not under it: #7a7a7a measured 3.61:1
+     on the panel, so muted text failed WCAG AA everywhere it was used. #8c8c8c
+     is Lichess's own secondary grey (already in the palette as ink-400) and
+     measures 4.60:1 on the panel, 5.43:1 on the page. */
+  --text-muted: #8c8c8c;
   --text-primary-rgb: 198 198 198;
   --text-secondary-rgb: 151 151 151;
 
@@ -260,7 +264,9 @@ html[data-theme="midnight"] {
   --text-primary: #cad2dd;
   --text-heading: #e3e9f2;
   --text-secondary: #9aa6b8;
-  --text-muted: #7c889a;
+  /* Same AA lift as the warm dark palette: #7c889a measured 4.49:1 on the navy
+     panel, a hair under AA. #8b96a6 measures 5.39:1. */
+  --text-muted: #8b96a6;
   --text-primary-rgb: 202 210 221;
   --text-secondary-rgb: 154 166 184;
   --accent-gold: #4c9ff0;
@@ -292,7 +298,12 @@ html[data-theme="light"] {
   --text-primary: #3d3d3d;
   --text-heading: #232323;
   --text-secondary: #666666;
-  --text-muted: #8a8a8a;
+  /* Paper is the hardest ground: #8a8a8a measured 3.45:1 on white and 2.90:1 on
+     the page. #696969 measures 5.49:1 / 4.62:1. The muted and secondary rungs
+     end up close in light because the page ground leaves no room between
+     "quieter than body" and the AA floor; weight and size carry the rest of the
+     hierarchy there, per design-system section 3. */
+  --text-muted: #696969;
   --text-primary-rgb: 61 61 61;
   --text-secondary-rgb: 102 102 102;
   --board-highlight-a: 0.5;
@@ -341,6 +352,9 @@ html[data-light] .text-parchment-200 { color: var(--text-primary); }
 html[data-light] .text-parchment-300 { color: color-mix(in srgb, var(--text-primary) 55%, var(--text-secondary)); }
 html[data-light] .text-parchment-400 { color: color-mix(in srgb, var(--text-secondary) 55%, var(--text-muted)); }
 html[data-light] .text-parchment-500 { color: var(--text-muted); }
+/* Alpha variants of these utilities (text-parchment-400/60 and the like) never
+   matched the selectors above, so on paper they kept the dark hex and measured
+   as low as 1.34:1. They are retired: a dimmer tone names a lower rung. */
 
 /* The canvas fill, flat like Lichess: no gradient wash, no atmosphere layer.
    Propagated to the viewport, so the page is never white before paint. */
@@ -479,9 +493,9 @@ body {
   align-items: center;
   gap: 1.1rem;
   color: var(--paper-dim);
-  letter-spacing: 0.22em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   font-family: var(--font-body), system-ui, sans-serif;
 }
@@ -785,7 +799,7 @@ html[data-anim="off"] .rune-loader { animation: none; }
   border: 1px solid rgb(var(--badge-rgb, var(--energy-ember-rgb)) / 0.5);
   background: rgb(var(--badge-rgb, var(--energy-ember-rgb)) / 0.1);
   color: rgb(var(--badge-rgb, var(--energy-ember-rgb)));
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2576,16 +2590,17 @@ html[data-anim="off"] .btn-leaf:hover:not(:disabled) { transform: none; }
   justify-content: center;
   gap: 1px;
   height: 24%;
-  min-width: 24%;
+  min-height: 17px;
+  min-width: max(24%, 17px);
   padding: 0 4%;
   color: #14120f;
   background: var(--st);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-  font: 800 10px/1 var(--font-mono), ui-monospace, monospace;
+  font: 800 12px/1 var(--font-mono), ui-monospace, monospace;
   animation: sq-status-chip-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .sq-status-chip svg { width: auto; height: 62%; flex: none; }
-.sq-status-chip__n { font-size: 9px; line-height: 1; }
+.sq-status-chip__n { font-size: 12px; line-height: 1; }
 .sq-status-chip--tl { left: 2%; top: 2%; }
 .sq-status-chip--tr { right: 2%; top: 2%; }
 .sq-status-chip--bl { left: 2%; bottom: 2%; }

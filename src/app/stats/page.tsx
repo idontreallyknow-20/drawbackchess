@@ -27,7 +27,7 @@ export default function StatsRedirect() {
 
   return (
     <main className="min-h-screen grid place-items-center">
-      <p className="text-parchment-300/60">Redirecting…</p>
+      <p className="text-parchment-400">Redirecting…</p>
     </main>
   );
 }

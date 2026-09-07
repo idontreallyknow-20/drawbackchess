@@ -39,13 +39,13 @@ export function NerfCard({ nerf, revealed = true, compact = false, dense = false
     return (
       <div className="relative plate p-5 overflow-hidden">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full border border-gold/40 bg-gold/10 flex items-center justify-center font-display text-2xl text-gold/80 font-bold">?</div>
+          <div className="w-12 h-12 rounded-full border border-gold/40 bg-gold/10 flex items-center justify-center font-display text-2xl text-gold font-bold">?</div>
           <div>
-            <div className="text-[11px] text-parchment-400">{ownerLabel ?? "Opponent"}</div>
-            <div className="font-display text-xl text-parchment/80">Hidden rule</div>
+            <div className="text-[12px] text-parchment-400">{ownerLabel ?? "Opponent"}</div>
+            <div className="font-display text-xl text-parchment">Hidden rule</div>
           </div>
         </div>
-        <p className="mt-3 text-sm text-parchment-300/80 leading-relaxed">
+        <p className="mt-3 text-sm text-parchment-300 leading-relaxed">
           You&apos;ll see their rule when the game ends.
         </p>
       </div>
@@ -92,7 +92,7 @@ export function NerfCard({ nerf, revealed = true, compact = false, dense = false
       <div className="nerf-enter__line relative flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-parchment-400">
+            <span className="text-[12px] text-parchment-400">
               {ownerLabel ?? "Your nerf"}
             </span>
             <TurnCostBadge cost={NERF_TURN_COST} />
@@ -108,17 +108,17 @@ export function NerfCard({ nerf, revealed = true, compact = false, dense = false
           {TIER_ROMAN[nerf.tier]}
         </span>
       </div>
-      <div className={`nerf-enter__line rule-ornament text-[10px] ${dense ? "my-2.5" : "my-3"}`}>
+      <div className={`nerf-enter__line rule-ornament text-[12px] ${dense ? "my-2.5" : "my-3"}`}>
         <span className="font-display">{TIER_LABEL[nerf.tier]}</span>
       </div>
-      <p className={"nerf-enter__line " + (dense ? "flex-1 text-[13px] leading-snug text-parchment/90" : "text-[15px] leading-relaxed text-parchment/95")}>
+      <p className={"nerf-enter__line " + (dense ? "flex-1 text-[13px] leading-snug text-parchment" : "text-[15px] leading-relaxed text-parchment")}>
         <GlossaryText text={nerf.description} />
       </p>
       {progress && progress.max > 0 && (
         <div className="mt-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-parchment-400">Progress</span>
-            <span className="font-mono text-[10px] text-parchment-300">{progress.label}</span>
+            <span className="text-[12px] text-parchment-400">Progress</span>
+            <span className="font-mono text-[12px] text-parchment-300">{progress.label}</span>
           </div>
           <div className="h-1.5 bg-white/5 overflow-hidden">
             <div
@@ -136,12 +136,12 @@ export function NerfCard({ nerf, revealed = true, compact = false, dense = false
         </p>
       )}
       {!compact && nerf.flavor && (
-        <p className={`font-display border-l-2 border-white/15 pl-3 text-parchment-300/85 ${dense ? "mt-2 text-[11px] italic" : "mt-3 text-[13px]"}`}>
+        <p className={`font-display border-l-2 border-white/15 pl-3 text-parchment-300 ${dense ? "mt-2 text-[12px] italic" : "mt-3 text-[13px]"}`}>
           &ldquo;{nerf.flavor}&rdquo;
         </p>
       )}
       {!nerf.implemented && (
-        <div className="mt-3 text-[10px] text-gold/80">
+        <div className="mt-3 text-[12px] text-gold">
           Engine implementation pending
         </div>
       )}

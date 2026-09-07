@@ -54,7 +54,7 @@ export default function HistoryReplayPage() {
       </nav>
       <section className="max-w-xl mx-auto px-6 py-16 text-center">
         {state.kind === "loading" ? (
-          <div className="text-[11px] text-parchment-400">Loading…</div>
+          <div className="text-[12px] text-parchment-400">Loading…</div>
         ) : state.kind === "no-moves" ? (
           <>
             <h1 className="font-display text-3xl">No moves recorded</h1>
@@ -97,7 +97,7 @@ function Replay({ game }: { game: CompletedGame }) {
         </Link>
       </nav>
       <div className="mx-auto w-full max-w-[1100px] px-3 pb-10 sm:px-6">
-        <div className="mb-2 text-[11px] text-parchment-400">
+        <div className="mb-2 text-[12px] text-parchment-400">
           {outcomeLabel} · {game.reason} · {timeControlLabel(game.baseSec, game.incSec)} ·{" "}
           {new Date(game.endedAt).toLocaleDateString()}
         </div>
@@ -156,7 +156,7 @@ function RuleLine({
 }) {
   return (
     <div className="plate p-2 px-3">
-      <span className="text-[11px] text-parchment-400">{label} </span>
+      <span className="text-[12px] text-parchment-400">{label} </span>
       <span className={`font-display text-sm font-semibold tier-${nerf.tier}`}>{nerf.name}</span>
       <span className="text-xs leading-snug text-parchment-300">
         : {nerf.description} <span className="text-parchment-400">({TIER_LABEL[nerf.tier] ?? ""})</span>

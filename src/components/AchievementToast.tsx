@@ -166,7 +166,7 @@ export function AchievementToast() {
             <Trophy size={17} strokeWidth={2} />
           </span>
           <span className="min-w-0">
-            <span className="block text-[11px] text-parchment-400">
+            <span className="block text-[12px] text-parchment-400">
               Achievement unlocked · {current.rarity}
             </span>
             <span className="block truncate font-display text-sm font-bold" style={{ color: theme.color }}>
@@ -175,7 +175,7 @@ export function AchievementToast() {
           </span>
           <X size={13} className="ml-auto shrink-0 text-parchment-500" aria-hidden />
         </span>
-        <span className="mt-1.5 block text-[11px] leading-snug text-parchment-300">
+        <span className="mt-1.5 block text-[12px] leading-snug text-parchment-300">
           {current.description}
         </span>
       </button>

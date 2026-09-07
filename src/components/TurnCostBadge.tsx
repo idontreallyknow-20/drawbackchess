@@ -16,10 +16,14 @@ const FULL_LABEL: Record<TurnCost, string> = {
   passive: "Passive",
 };
 
-// Tight-space label for the in-game dock rows.
+// Tight-space label for the in-game dock rows. One word each: the chip used to
+// buy its room by shrinking to 8px, which is well under the design system's
+// 12px floor. At a legible 12px the two-word labels crowded the dock row out,
+// so the label sheds the words instead of the pixels. The full sentence still
+// arrives via `title`, and the tone colour already separates the four states.
 const SHORT_LABEL: Record<TurnCost, string> = {
-  turn: "Uses turn",
-  free: "Free action",
+  turn: "Turn",
+  free: "Free",
   instant: "Instant",
   passive: "Passive",
 };
@@ -54,7 +58,10 @@ export function TurnCostBadge({
     <span
       title={TITLE[cost]}
       className={
-        "inline-flex shrink-0 items-center rounded-sm border px-1 py-px text-[8px] font-semibold leading-none " +
+        // 12px type needs a box to sit in: py-px around an 8px glyph was a
+        // 10px-tall chip, and the same padding around 12px type reads as a
+        // label pressed against its own border.
+        "inline-flex shrink-0 items-center rounded-sm border px-1.5 py-0.5 text-[12px] font-semibold leading-none " +
         TONE[cost] +
         (className ? " " + className : "")
       }

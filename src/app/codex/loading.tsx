@@ -1,13 +1,12 @@
 // Branded route skeleton for /codex: search bar plus a grid of card-shaped
 // shimmer blocks, mirroring the rule library while the page chunk loads.
+
+import { SkeletonHeader } from "@/components/ui/Skeleton";
+
 export default function Loading() {
   return (
     <main className="min-h-screen pb-16">
-      <div className="flex items-center justify-between border-b border-[color:var(--edge)] px-5 py-3 sm:px-6">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.svg" alt="Loading" width={26} height={26} className="animate-pulse" />
-        <div className="skeleton h-8 w-28 rounded-none" style={{ borderRadius: 1 }} />
-      </div>
+      <SkeletonHeader />
       <section className="mx-auto max-w-6xl px-5 py-8 sm:px-6">
         <div className="skeleton h-10 w-40 rounded-none" style={{ borderRadius: 1 }} />
         <div className="skeleton mt-2 h-4 w-72 max-w-full rounded-none" style={{ borderRadius: 1 }} />

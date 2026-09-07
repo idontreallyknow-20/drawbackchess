@@ -394,8 +394,8 @@ export default function ClubPage() {
                 {/* Members, sorted by rating, doubles as the club leaderboard. */}
                 <div className="plate overflow-hidden">
                   <div className="flex items-center justify-between gap-2 border-b border-[color:var(--edge)] px-5 py-3">
-                    <span className="text-[11px] text-parchment-400">Leaderboard</span>
-                    <span className="text-[11px] text-parchment-500">
+                    <span className="text-[12px] text-parchment-400">Leaderboard</span>
+                    <span className="text-[12px] text-parchment-500">
                       {data.memberCount} member{data.memberCount === 1 ? "" : "s"}
                     </span>
                   </div>
@@ -425,7 +425,7 @@ export default function ClubPage() {
 
                 {/* Club events */}
                 <div className="plate overflow-hidden">
-                  <div className="border-b border-[color:var(--edge)] px-5 py-3 text-[11px] text-parchment-400">
+                  <div className="border-b border-[color:var(--edge)] px-5 py-3 text-[12px] text-parchment-400">
                     Events
                   </div>
                   {data.tournaments.length === 0 ? (
@@ -435,7 +435,7 @@ export default function ClubPage() {
                       {data.tournaments.map((t) => (
                         <li key={t.id} className="px-5 py-2.5">
                           <div className="truncate text-sm text-parchment-100">{t.name}</div>
-                          <div className="mt-0.5 text-[11px] text-parchment-400">
+                          <div className="mt-0.5 text-[12px] text-parchment-400">
                             {t.status === "finished" ? "finished" : tournamentPhase(t.starts_at, t.duration_min)} ·{" "}
                             {t.players}/{t.max_players} players
                             {t.starts_at ? ` · ${new Date(t.starts_at).toLocaleString()}` : ""}
@@ -449,7 +449,7 @@ export default function ClubPage() {
 
               {/* Message board */}
               <div className="plate flex h-fit flex-col overflow-hidden">
-                <div className="border-b border-[color:var(--edge)] px-5 py-3 text-[11px] text-parchment-400">
+                <div className="border-b border-[color:var(--edge)] px-5 py-3 text-[12px] text-parchment-400">
                   Club board
                 </div>
                 {isMember ? (
@@ -466,7 +466,7 @@ export default function ClubPage() {
                       {postError ? (
                         <span className="text-xs text-oxblood-glow">{postError}</span>
                       ) : (
-                        <span className="text-[11px] text-parchment-500">Visible to everyone; members can post.</span>
+                        <span className="text-[12px] text-parchment-500">Visible to everyone; members can post.</span>
                       )}
                       <Button tone="leaf"
                         type="submit"
@@ -495,7 +495,7 @@ export default function ClubPage() {
                           >
                             {p.username}
                           </Link>
-                          <span className="text-[11px] text-parchment-500">{timeAgo(p.created_at)}</span>
+                          <span className="text-[12px] text-parchment-500">{timeAgo(p.created_at)}</span>
                           {(mayModerate || p.user_id === me?.id) && (
                             <button
                               onClick={() => deletePost(p.id)}

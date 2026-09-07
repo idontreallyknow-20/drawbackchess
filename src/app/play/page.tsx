@@ -205,7 +205,7 @@ function PlayInner() {
               <Pill selected={botMode === "nerf"} onClick={() => selectMode("nerf")}>Nerf</Pill>
               <Pill selected={botMode === "plain"} onClick={() => setPlainBot(true)}>Plain chess</Pill>
             </Group>
-            <p className="mt-2 text-[11px] text-parchment-400">
+            <p className="mt-2 text-[12px] text-parchment-400">
               {botMode === "plain"
                 ? "Ordinary chess. No cards."
                 : botMode === "buff"
@@ -218,7 +218,7 @@ function PlayInner() {
             {(["easy", "medium", "hard"] as const).map((d) => (
               <Pill key={d} selected={difficulty === d} onClick={() => setDifficulty(d)}>
                 {d[0].toUpperCase() + d.slice(1)}
-                <span className="ml-1.5 font-mono text-[11px] opacity-70">~{BOT_ELO[d]}</span>
+                <span className="ml-1.5 font-mono text-[12px] opacity-70">~{BOT_ELO[d]}</span>
               </Pill>
             ))}
           </Group>
@@ -313,7 +313,7 @@ function TimeSlider({
   return (
     <div className={disabled ? "opacity-50" : ""}>
       <div className="flex items-center justify-between mb-2">
-        <div className="text-[11px] text-parchment-400">{label}</div>
+        <div className="text-[12px] text-parchment-400">{label}</div>
         <div className="font-mono text-sm text-gold-leaf tabular-nums">{display}</div>
       </div>
       <input
@@ -326,7 +326,7 @@ function TimeSlider({
         onChange={(e) => onChange(values[Number(e.target.value)])}
         className="w-full accent-gold-leaf disabled:cursor-not-allowed"
       />
-      <div className="mt-1 flex justify-between font-mono text-[11px] text-parchment-400">
+      <div className="mt-1 flex justify-between font-mono text-[12px] text-parchment-400">
         <span>{formatEdgeLabel(values[0])}</span>
         <span>{formatEdgeLabel(values[values.length - 1])}</span>
       </div>

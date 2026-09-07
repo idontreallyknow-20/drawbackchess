@@ -109,7 +109,7 @@ export default function TutorialPage() {
           <h2 className="font-display text-[1.35rem] font-medium">
             Learn in 3 minutes: play your first draft
           </h2>
-          <p className="mt-3 text-[15px] leading-relaxed text-parchment-200/90">
+          <p className="mt-3 text-[15px] leading-relaxed text-parchment-200">
             A guided real game against the easiest bot: make moves, watch the draft counter,
             pick (or bank) your first card, and read the auras it leaves on the board. The
             tour points at everything as it happens, and you can skip it any time.
@@ -147,12 +147,12 @@ export default function TutorialPage() {
               <div key={c.tag} className="plate p-5 sm:p-6">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="font-display text-2xl text-gold-leaf">{c.tag}</span>
-                  <span className="text-[11px] text-parchment-400">{c.who}</span>
+                  <span className="text-[12px] text-parchment-400">{c.who}</span>
                 </div>
-                <p className="mt-2 text-[15px] leading-relaxed text-parchment-200/90">{c.d}</p>
+                <p className="mt-2 text-[15px] leading-relaxed text-parchment-200">{c.d}</p>
                 {c.example && (
-                  <p className="mt-3 text-[14px] leading-relaxed text-parchment-200/80 border-l border-gold-leaf/40 pl-3">
-                    <span className="text-[11px] text-parchment-400">for example</span>
+                  <p className="mt-3 text-[14px] leading-relaxed text-parchment-200 border-l border-gold-leaf/40 pl-3">
+                    <span className="text-[12px] text-parchment-400">for example</span>
                     <br />
                     {c.example}
                   </p>

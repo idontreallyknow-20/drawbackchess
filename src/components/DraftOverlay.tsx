@@ -224,7 +224,7 @@ export function DraftResolvingChip() {
         <span className="font-display text-sm font-semibold text-parchment-100">
           Resolving effects
         </span>
-        <span className="text-[11px] text-parchment-400">Your draft opens next</span>
+        <span className="text-[12px] text-parchment-400">Your draft opens next</span>
       </div>
     </div>
   );
@@ -1137,7 +1137,7 @@ export function DraftOverlay({
             <span className="block font-display text-sm font-bold text-oxblood-glow">
               {timed ? "Draft pending. Your game clock is running." : "Draft pending."}
             </span>
-            <span className="block text-[11px] text-parchment-300">
+            <span className="block text-[12px] text-parchment-300">
               The draft reopens as soon as you finish this move.
             </span>
           </div>
@@ -1173,7 +1173,7 @@ export function DraftOverlay({
               </span>
               <span
                 className={
-                  "block text-[11px] " +
+                  "block text-[12px] " +
                   (timed ? "text-oxblood-glow" : "text-parchment-400")
                 }
               >
@@ -1271,7 +1271,7 @@ export function DraftOverlay({
           >
             {timed ? "Draft pending. Your game clock is running." : "Draft pending."}
           </p>
-          <p className="mt-0.5 text-[11px] leading-snug text-parchment-400">
+          <p className="mt-0.5 text-[12px] leading-snug text-parchment-400">
             {timed
               ? "Your draft moved here; further thinking costs your own time."
               : "No clock in this game; resolve it whenever you are ready."}
@@ -1477,7 +1477,7 @@ export function DraftOverlay({
                 three lines on a phone, sat across the masthead and the player
                 row, and was the hardest thing on the screen to read. Sentence
                 case on its own row costs nothing and reads at a glance. */}
-            <span className="w-full text-center text-[11px] leading-snug text-parchment-400">
+            <span className="w-full text-center text-[12px] leading-snug text-parchment-400">
               Clocks are paused while you choose. Past the countdown, drafting runs on your clock.
             </span>
           </div>

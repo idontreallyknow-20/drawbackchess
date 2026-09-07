@@ -207,6 +207,9 @@ function PersonaRow({
           disabled={!canEdit || saving}
           onClick={() => setPicking((v) => !v)}
           title={canEdit ? "Change avatar" : undefined}
+          // The only child is the avatar, and a preset avatar is aria-hidden,
+          // so without this the control announces as an unnamed button.
+          aria-label={`Change ${persona.effective.username}'s avatar`}
           className={"shrink-0 " + (canEdit ? "press" : "cursor-default")}
         >
           <PlayerAvatar name={persona.effective.username} avatar={persona.effective.avatar} size={36} />
@@ -299,6 +302,7 @@ function PersonaRow({
               disabled={saving}
               onClick={() => post({ avatar: id })}
               title={id}
+              aria-label={`Use avatar ${id}`}
               className={
                 "rounded-none border p-0.5 transition " +
                 (id === persona.effective.avatar

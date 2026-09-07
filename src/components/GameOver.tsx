@@ -230,7 +230,7 @@ function DraftedCardRow({
     <li className={"py-1.5" + (buff.nullified ? " opacity-60" : "")}>
       <div className="flex items-center gap-2">
         <span
-          className={`shrink-0 border px-1 font-display text-[11px] font-bold leading-none tier-bg-${buff.tier} tier-${buff.tier}`}
+          className={`shrink-0 border px-1 font-display text-[12px] font-bold leading-none tier-bg-${buff.tier} tier-${buff.tier}`}
           // title stays as the desktop hover gloss; the aria-label carries the
           // same meaning for screen readers (title alone is unreliable there,
           // and never appears on touch — where the roman numeral plus the full
@@ -243,14 +243,14 @@ function DraftedCardRow({
         <span
           className={
             "min-w-0 flex-1 truncate text-[13px] text-parchment-100" +
-            (buff.nullified ? " line-through decoration-parchment-400/60" : "")
+            (buff.nullified ? " line-through decoration-parchment-500" : "")
           }
           title={def.name}
         >
           {def.name}
         </span>
         {state.tag && (
-          <span className={`shrink-0 border px-1.5 py-px text-[11px] leading-none ${tagClass}`}>
+          <span className={`shrink-0 border px-1.5 py-px text-[12px] leading-none ${tagClass}`}>
             {state.tag}
           </span>
         )}
@@ -329,7 +329,7 @@ function RuleReveal({ label, nerf, children }: { label: string; nerf: Nerf; chil
       <div className="flex items-center justify-between gap-2">
         <span>{label}</span>
         <span
-          className={`inline-flex items-center gap-1 border px-1.5 py-0.5 font-display text-[11px] font-bold leading-none tier-bg-${nerf.tier} tier-${nerf.tier}`}
+          className={`inline-flex items-center gap-1 border px-1.5 py-0.5 font-display text-[12px] font-bold leading-none tier-bg-${nerf.tier} tier-${nerf.tier}`}
           title={`Difficulty ${nerf.tier}: ${TIER_LABEL[nerf.tier]}`}
         >
           <span aria-hidden>{TIER_ROMAN[nerf.tier]}</span>
@@ -372,7 +372,7 @@ function SummaryFold({
         <span className="flex min-w-0 items-baseline gap-2">
           <span>{label}</span>
           {count != null && (
-            <span className="font-mono text-[11px] tabular-nums text-parchment-400">{count}</span>
+            <span className="font-mono text-[12px] tabular-nums text-parchment-400">{count}</span>
           )}
         </span>
         <span className="flex shrink-0 items-center gap-2">
@@ -461,7 +461,7 @@ function MatchTimeline({
           />
         ))}
       </div>
-      <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-parchment-400">
+      <div className="mt-1 flex items-center justify-between gap-2 text-[12px] text-parchment-400">
         <span>Opening</span>
         <span>Endgame</span>
       </div>
@@ -583,6 +583,7 @@ export function GameOver({
   // screen instantly (Board.tsx documents the same hazard for its promotion
   // picker).
   const chrome = useModalChrome(!dismissed, dismiss);
+  const { attachDialog } = chrome;
   const [shared, setShared] = useState(false);
   const [pgnCopied, setPgnCopied] = useState(false);
   // The "Shared" / "Copied" flashes reset on a timer; cleared on unmount so a
@@ -769,7 +770,12 @@ export function GameOver({
       if (playedGameOverKeys.has(key)) return;
       playedGameOverKeys.add(key);
     }
-    playGameOver();
+    // The result screen is the one place that knows how the game ended from
+    // THIS seat, so it voices the outcome rather than the neutral dong: a
+    // rising fanfare for a win, a soft fall for a loss, an unresolved pair for
+    // a draw. A spectator holds no seat and an abort has no winner, so both
+    // keep the neutral voice (passing "loss" to a watcher would be a lie).
+    playGameOver(spectator || aborted ? undefined : won ? "win" : draw ? "draw" : "loss");
     // Victory earns a short success pulse on devices that support haptics.
     if (won && !spectator) haptic("success");
     // Mount-only by design: the key identifies the game, not a render.
@@ -795,6 +801,7 @@ export function GameOver({
 
   return (
     <motion.div
+      ref={attachDialog}
       role="dialog"
       aria-modal="true"
       aria-labelledby="game-over-title"
@@ -864,7 +871,7 @@ export function GameOver({
           {modeChip && (
             <span
               className={
-                "inline-flex items-center rounded-[1px] border px-2 py-0.5 text-[11px] leading-none " +
+                "inline-flex items-center rounded-[1px] border px-2 py-0.5 text-[12px] leading-none " +
                 (mode === "nerf"
                   ? "border-mode-nerf/40 bg-mode-nerf/10 text-mode-nerfGlow"
                   : "border-mode-buff/40 bg-mode-buff/10 text-mode-buffGlow")
@@ -952,7 +959,7 @@ export function GameOver({
                 >
                   <span
                     aria-hidden
-                    className="grid h-8 w-8 place-items-center rounded-full border border-gold/40 bg-gold/10 font-display text-lg font-bold text-gold/80"
+                    className="grid h-8 w-8 place-items-center rounded-full border border-gold/40 bg-gold/10 font-display text-lg font-bold text-gold"
                   >
                     ?
                   </span>

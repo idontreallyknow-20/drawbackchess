@@ -214,7 +214,7 @@ export function AdminGodPanel({
         type="button"
         onClick={() => setCollapsed(false)}
         className={
-          "fixed right-0 top-1/2 z-30 hidden -translate-y-1/2 items-center gap-1.5 rounded-l-[1px] border bg-ink-950 px-1.5 py-3 text-[10px] font-semibold [writing-mode:vertical-rl] xl:flex " +
+          "fixed right-0 top-1/2 z-30 hidden -translate-y-1/2 items-center gap-1.5 rounded-l-[1px] border bg-ink-950 px-1.5 py-3 text-[13px] font-semibold [writing-mode:vertical-rl] xl:flex " +
           (recording ? "border-coral/70 text-coral-glow" : "border-coral/40 text-coral-glow")
         }
         title={recording ? "Recording. Open god panel to stop" : "Open god panel"}
@@ -234,14 +234,14 @@ export function AdminGodPanel({
   return (
     <aside className="fixed right-0 top-0 z-30 hidden h-dvh w-[248px] flex-col border-l border-white/10 bg-ink-950 xl:flex">
       <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
-        <span className="text-[11px] font-semibold text-coral-glow">god panel</span>
-        <span className="ml-auto text-[9px] text-parchment-400" title={`${TOTAL_CARDS} cards total`}>
+        <span className="text-[12px] font-semibold text-coral-glow">god panel</span>
+        <span className="ml-auto text-[12px] text-parchment-400" title={`${TOTAL_CARDS} cards total`}>
           {shownCount}
         </span>
         <button
           type="button"
           onClick={() => setCollapsed(true)}
-          className="rounded-[1px] border border-white/12 px-1 text-[11px] leading-none text-parchment-400 hover:border-coral/45 hover:text-coral-glow"
+          className="rounded-[1px] border border-white/12 px-1 text-[13px] leading-none text-parchment-400 hover:border-coral/45 hover:text-coral-glow"
           title="Hide god panel"
           aria-label="Hide god panel"
         >
@@ -261,7 +261,7 @@ export function AdminGodPanel({
             aria-pressed={recordingMode}
             title="Reflow the board into a 9:16 vertical frame for Shorts/Reels (visual only)"
             className={
-              "flex-1 rounded-[1px] border px-2 py-1 text-[10px] font-semibold transition-colors " +
+              "flex-1 rounded-[1px] border px-2 py-1 text-[13px] font-semibold transition-colors " +
               (recordingMode
                 ? "border-sun/60 bg-sun/15 text-sun-glow"
                 : "border-white/12 text-parchment-400 hover:border-sun/45 hover:text-sun-glow")
@@ -274,7 +274,7 @@ export function AdminGodPanel({
               type="button"
               onClick={recorder.stop}
               title="Stop recording"
-              className="flex items-center gap-1.5 rounded-[1px] border border-coral/60 bg-coral/20 px-2 py-1 text-[10px] font-semibold text-coral-glow transition-colors hover:bg-coral/30"
+              className="flex items-center gap-1.5 rounded-[1px] border border-coral/60 bg-coral/20 px-2 py-1 text-[13px] font-semibold text-coral-glow transition-colors hover:bg-coral/30"
             >
               <span aria-hidden className="h-2 w-2 rounded-[1px] bg-coral-glow" />
               stop · {fmtElapsed(recorder.elapsedMs)}
@@ -289,7 +289,7 @@ export function AdminGodPanel({
                   ? "Record the screen; pick this tab in the share prompt"
                   : "Screen recording isn't supported in this browser"
               }
-              className="flex items-center gap-1.5 rounded-[1px] border border-coral/40 bg-coral/10 px-2 py-1 text-[10px] font-semibold text-coral-glow transition-colors hover:bg-coral/20 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex items-center gap-1.5 rounded-[1px] border border-coral/40 bg-coral/10 px-2 py-1 text-[13px] font-semibold text-coral-glow transition-colors hover:bg-coral/20 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <span aria-hidden className="h-2 w-2 rounded-full bg-coral-glow" />
               record
@@ -306,7 +306,7 @@ export function AdminGodPanel({
             aria-pressed={cleanFrame}
             title="Hide the clock and player names beneath the board for a board-only capture"
             className={
-              "w-full rounded-[1px] border px-2 py-1 text-[10px] font-semibold transition-colors " +
+              "w-full rounded-[1px] border px-2 py-1 text-[13px] font-semibold transition-colors " +
               (cleanFrame
                 ? "border-sun/60 bg-sun/15 text-sun-glow"
                 : "border-white/12 text-parchment-400 hover:border-sun/45 hover:text-sun-glow")
@@ -320,7 +320,7 @@ export function AdminGodPanel({
             <button
               type="button"
               onClick={recorder.download}
-              className="flex-1 rounded-[1px] border border-mint/60 bg-mint/15 px-2 py-1 text-[10px] font-semibold text-mint-glow transition-colors hover:bg-mint/25"
+              className="flex-1 rounded-[1px] border border-mint/60 bg-mint/15 px-2 py-1 text-[13px] font-semibold text-mint-glow transition-colors hover:bg-mint/25"
             >
               download clip
             </button>
@@ -328,17 +328,17 @@ export function AdminGodPanel({
               type="button"
               onClick={recorder.reset}
               title="Discard this clip"
-              className="rounded-[1px] border border-white/12 px-2 py-1 text-[10px] font-semibold text-parchment-400 transition-colors hover:border-coral/45 hover:text-coral-glow"
+              className="rounded-[1px] border border-white/12 px-2 py-1 text-[13px] font-semibold text-parchment-400 transition-colors hover:border-coral/45 hover:text-coral-glow"
             >
               discard
             </button>
           </div>
         )}
         {recorder.error && (
-          <p className="text-[10px] leading-snug text-coral-glow">{recorder.error}</p>
+          <p className="text-[12px] leading-snug text-coral-glow">{recorder.error}</p>
         )}
         {recordingMode && recorder.state !== "recording" && (
-          <p className="text-[9px] leading-snug text-parchment-500">
+          <p className="text-[12px] leading-snug text-parchment-500">
             board is framed 9:16; hit record, then crop to the frame.
           </p>
         )}
@@ -354,7 +354,7 @@ export function AdminGodPanel({
             aria-pressed={seeOpp}
             title="Reveal the opponent's hidden cards to you only"
             className={
-              "flex-1 rounded-[1px] border px-2 py-1 text-[10px] font-semibold transition-colors " +
+              "flex-1 rounded-[1px] border px-2 py-1 text-[13px] font-semibold transition-colors " +
               (seeOpp
                 ? "border-mint/60 bg-mint/15 text-mint-glow"
                 : "border-white/12 text-parchment-400 hover:border-mint/45 hover:text-mint-glow")
@@ -366,7 +366,7 @@ export function AdminGodPanel({
             type="button"
             onClick={() => session.adjustOppClock(true)}
             title="Take 15 seconds from your opponent's clock"
-            className="flex-1 rounded-[1px] border border-coral/40 bg-coral/10 px-2 py-1 text-[10px] font-semibold text-coral-glow transition-colors hover:bg-coral/20"
+            className="flex-1 rounded-[1px] border border-coral/40 bg-coral/10 px-2 py-1 text-[13px] font-semibold text-coral-glow transition-colors hover:bg-coral/20"
           >
             -15s clock
           </button>
@@ -377,7 +377,7 @@ export function AdminGodPanel({
           aria-pressed={infRerolls}
           title="Reroll your draft offer as many times as you like (keeps the Reroll button lit)"
           className={
-            "w-full rounded-[1px] border px-2 py-1 text-[10px] font-semibold transition-colors " +
+            "w-full rounded-[1px] border px-2 py-1 text-[13px] font-semibold transition-colors " +
             (infRerolls
               ? "border-sun/60 bg-sun/15 text-sun-glow"
               : "border-white/12 text-parchment-400 hover:border-sun/45 hover:text-sun-glow")
@@ -388,17 +388,17 @@ export function AdminGodPanel({
         {seeOpp && (
           <div className="space-y-1 pt-0.5">
             {revealedOpp.length === 0 ? (
-              <p className="text-[10px] text-parchment-500">opponent holds no revealed cards yet.</p>
+              <p className="text-[12px] text-parchment-500">opponent holds no revealed cards yet.</p>
             ) : (
               revealedOpp.map((b, i) => (
                 <div
                   key={`${b.id}-${i}`}
                   className="flex items-center gap-2 rounded-[1px] border border-mint/25 bg-mint/[0.06] px-2 py-1"
                 >
-                  <span className="min-w-0 flex-1 truncate text-[11px] text-parchment">
+                  <span className="min-w-0 flex-1 truncate text-[12px] text-parchment">
                     {BUFF_NAME.get(b.id) ?? b.id}
                   </span>
-                  <span className="shrink-0 rounded-[1px] border border-sun/40 px-1 text-[9px] font-semibold tabular-nums text-sun-glow">
+                  <span className="shrink-0 rounded-[1px] border border-sun/40 px-1 text-[12px] font-semibold tabular-nums text-sun-glow">
                     T{b.tier}
                   </span>
                 </div>
@@ -421,8 +421,8 @@ export function AdminGodPanel({
         {groups.map((g) => (
           <div key={g.label} className="mb-2">
             <div className="sticky top-0 z-10 flex items-baseline gap-2 bg-ink-950 px-1 py-1">
-              <span className="text-[9px] font-semibold text-sun-glow">{g.label}</span>
-              <span className="text-[9px] text-parchment-500">{g.cards.length}</span>
+              <span className="text-[12px] font-semibold text-sun-glow">{g.label}</span>
+              <span className="text-[12px] text-parchment-500">{g.cards.length}</span>
             </div>
             <div className="space-y-1">
               {g.cards.map((c) =>
@@ -435,7 +435,7 @@ export function AdminGodPanel({
                     className="flex w-full items-center gap-2 rounded-[1px] border border-white/10 bg-white/[0.02] px-2 py-1 text-left transition-colors hover:border-mint/45 hover:bg-mint/10"
                   >
                     <span className="min-w-0 flex-1 truncate text-xs text-parchment">{c.name}</span>
-                    <span className="shrink-0 rounded-[1px] border border-sun/40 px-1 text-[9px] font-semibold tabular-nums text-sun-glow">
+                    <span className="shrink-0 rounded-[1px] border border-sun/40 px-1 text-[12px] font-semibold tabular-nums text-sun-glow">
                       T{c.tier}
                     </span>
                   </button>
@@ -449,7 +449,7 @@ export function AdminGodPanel({
                     className="flex w-full cursor-not-allowed items-center gap-2 rounded-[1px] border border-white/5 bg-white/[0.01] px-2 py-1 text-left opacity-50"
                   >
                     <span className="min-w-0 flex-1 truncate text-xs text-parchment-400">{c.name}</span>
-                    <span className="shrink-0 rounded-[1px] border border-white/15 px-1 text-[9px] font-semibold tabular-nums text-parchment-500">
+                    <span className="shrink-0 rounded-[1px] border border-white/15 px-1 text-[12px] font-semibold tabular-nums text-parchment-500">
                       T{c.tier}
                     </span>
                   </div>
@@ -459,17 +459,17 @@ export function AdminGodPanel({
           </div>
         ))}
         {shownCount === 0 && (
-          <p className="px-1 py-2 text-[11px] text-parchment-400">no cards match.</p>
+          <p className="px-1 py-2 text-[12px] text-parchment-400">no cards match.</p>
         )}
       </div>
 
       <div className="border-t border-white/10 px-3 py-2">
         {lastGranted ? (
-          <p className="truncate text-[10px] text-mint-glow" role="status" aria-live="polite">
+          <p className="truncate text-[12px] text-mint-glow" role="status" aria-live="polite">
             summoned: {lastGranted}
           </p>
         ) : (
-          <p className="text-[10px] text-parchment-500">click a card to summon it to your hand.</p>
+          <p className="text-[12px] text-parchment-500">click a card to summon it to your hand.</p>
         )}
       </div>
     </aside>

@@ -186,16 +186,16 @@ function Cell({ row, mode }: { row: Row; mode: Mode }) {
             <div key={p.label}>
               <BoardProbe row={row} sq={p.sq} runKey={runKey} />
               {mode === "anchors" && (
-                <div className="text-center text-[9px] text-parchment-400">{p.label}</div>
+                <div className="text-center text-[12px] text-parchment-400">{p.label}</div>
               )}
             </div>
           ))}
         </div>
       </button>
-      <div className="max-w-full truncate text-center text-[11px] text-parchment-200" title={row.name}>
+      <div className="max-w-full truncate text-center text-[12px] text-parchment-200" title={row.name}>
         {row.name}
       </div>
-      <div className="text-[10px] text-parchment-400">
+      <div className="text-[12px] text-parchment-400">
         {TIER_ROMAN[row.tier]} · {row.kind} · {row.category} · anchor {row.anchor}
       </div>
     </div>

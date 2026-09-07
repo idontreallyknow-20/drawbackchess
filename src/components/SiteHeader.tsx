@@ -125,7 +125,7 @@ function timeAgo(at: number): string {
 function Badge({ n }: { n: number }) {
   if (n <= 0) return null;
   return (
-    <span className="absolute -right-1 -top-1 grid min-w-[17px] place-items-center bg-oxblood-glow px-1 font-mono text-[11px] leading-[17px] text-white tabular-nums">
+    <span className="absolute -right-1 -top-1 grid min-w-[18px] place-items-center bg-oxblood-glow px-1 font-mono text-[12px] leading-[18px] text-white tabular-nums">
       {n > 9 ? "9+" : n}
     </span>
   );
@@ -377,7 +377,7 @@ export function SiteHeader({ active }: { active?: string }) {
             </button>
             {menu === "challenges" && (
               <div className="absolute right-0 top-full z-40 mt-2 w-80 max-w-[calc(100vw-1.5rem)] site-nav-pop shadow-xl">
-                <div className="border-b border-[color:var(--edge)] px-4 py-2.5 text-[11px] text-parchment-400">
+                <div className="border-b border-[color:var(--edge)] px-4 py-2.5 text-[12px] text-parchment-400">
                   Challenges
                 </div>
                 {challenges.length === 0 ? (
@@ -391,7 +391,7 @@ export function SiteHeader({ active }: { active?: string }) {
                             name={challenge.from}
                             className="text-sm text-parchment-100 hover:text-gold-leaf"
                           />
-                          <div className="text-[11px] text-parchment-400">
+                          <div className="text-[12px] text-parchment-400">
                             {challenge.rated ? "Rated" : "Casual"} · {clockLabel(challenge.timeSec, challenge.incrementSec)} · {timeAgo(challenge.at)}
                           </div>
                         </div>
@@ -433,7 +433,7 @@ export function SiteHeader({ active }: { active?: string }) {
             {menu === "bell" && (
               <div className="absolute right-0 top-full z-40 mt-2 w-80 max-w-[calc(100vw-1.5rem)] site-nav-pop shadow-xl">
                 <div className="flex items-center justify-between border-b border-[color:var(--edge)] px-4 py-2.5">
-                  <span className="text-[11px] text-parchment-400">Notifications</span>
+                  <span className="text-[12px] text-parchment-400">Notifications</span>
                   {unread > 0 && (
                     <button onClick={markAllRead} className="text-xs text-parchment-400 hover:text-parchment-100">
                       Mark all read
@@ -469,7 +469,7 @@ export function SiteHeader({ active }: { active?: string }) {
                           <div className="text-sm leading-snug text-parchment-100">
                             <NotificationText text={n.text} actorName={n.actorName} />
                           </div>
-                          <div className="mt-0.5 text-[11px] text-parchment-400">{timeAgo(n.at)}</div>
+                          <div className="mt-0.5 text-[12px] text-parchment-400">{timeAgo(n.at)}</div>
                         </div>
                       </li>
                     ))}
@@ -514,7 +514,7 @@ export function SiteHeader({ active }: { active?: string }) {
                     header reads as signed-out, never as a registered account. */}
                 <span className="hidden items-center gap-1.5 sm:inline-flex">
                   {user.isGuest && (
-                    <span className="text-[11px] text-parchment-400">Guest</span>
+                    <span className="text-[12px] text-parchment-400">Guest</span>
                   )}
                   <span className={user.isGuest ? "text-parchment-200" : undefined}>{user.username}</span>
                 </span>
@@ -540,7 +540,7 @@ export function SiteHeader({ active }: { active?: string }) {
               <div className="absolute right-0 top-full z-40 mt-2 w-56 site-nav-pop py-1 shadow-xl">
                 {user.isGuest && (
                   <>
-                    <div className="px-4 pb-1 pt-2 text-[11px] leading-snug text-parchment-400">
+                    <div className="px-4 pb-1 pt-2 text-[12px] leading-snug text-parchment-400">
                       You are playing as a guest. Register to keep this name and rating on any
                       device.
                     </div>

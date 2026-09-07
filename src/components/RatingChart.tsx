@@ -346,7 +346,7 @@ export function RatingChart({
       {!bare && (
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-3">
-          <h3 className="text-[10px] text-parchment-400">Rating history</h3>
+          <h3 className="text-[12px] text-parchment-400">Rating history</h3>
           {/* Per-mode legend chips double as series toggles. Suppressed when
               the caller supplies its own mode chips (hideLegend). */}
           {!hideLegend &&
@@ -360,7 +360,7 @@ export function RatingChart({
                   onClick={() => toggle(s.id)}
                   aria-pressed={!off}
                   className={
-                    "flex items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-[11px] font-medium transition " +
+                    "flex items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-[13px] font-medium transition " +
                     (off ? "opacity-40 hover:opacity-70" : "hover:bg-white/[0.04]")
                   }
                 >
@@ -394,7 +394,7 @@ export function RatingChart({
                     onClick={() => setRange(r.key)}
                     aria-pressed={on}
                     className={
-                      "px-2 py-0.5 text-[10px] font-medium tabular-nums transition " +
+                      "px-2 py-0.5 text-[13px] font-medium tabular-nums transition " +
                       (on
                         ? "bg-gold/15 text-gold-leaf"
                         : "text-parchment-400 hover:bg-white/[0.04] hover:text-parchment-200")
@@ -451,7 +451,7 @@ export function RatingChart({
                   x={t.x}
                   y={H - 8}
                   textAnchor={i === 0 ? "start" : i === drawn.xTicks.length - 1 ? "end" : "middle"}
-                  fontSize={11}
+                  fontSize={12}
                   fill="var(--paper-dim)"
                 >
                   {t.label}
@@ -472,7 +472,7 @@ export function RatingChart({
                   strokeWidth={1}
                   vectorEffect="non-scaling-stroke"
                 />
-                <text x={W - PAD.right} y={t.y - 4} textAnchor="end" fontSize={11} fill="var(--paper-dim)">
+                <text x={W - PAD.right} y={t.y - 4} textAnchor="end" fontSize={12} fill="var(--paper-dim)">
                   {t.label}
                 </text>
               </g>

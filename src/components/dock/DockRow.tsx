@@ -157,7 +157,7 @@ export function DockRow({
             // what threatens you is the thing worth seeing clearly at a glance.
             (owner === "opp" ? "text-[13px] " : "text-[12px] ") +
             (dead
-              ? "text-parchment-200 line-through decoration-1 decoration-parchment-400/70"
+              ? "text-parchment-200 line-through decoration-1 decoration-parchment-500"
               : `tier-${inst.tier}`)
           }
         >
@@ -166,7 +166,7 @@ export function DockRow({
         {count > 1 && (
           <span
             title={`${count} copies, same state`}
-            className="shrink-0 rounded-[1px] border border-[color:var(--edge-strong)] bg-white/[0.08] px-1 py-px font-mono text-[11px] tabular-nums text-parchment-200"
+            className="shrink-0 rounded-[1px] border border-[color:var(--edge-strong)] bg-white/[0.08] px-1 py-px font-mono text-[12px] tabular-nums text-parchment-200"
           >
             ×{count}
           </span>
@@ -176,7 +176,10 @@ export function DockRow({
             one-liner; the detail body repeats it in full. */}
         {inEffect && <span aria-hidden className={`dock-live-dot tier-bg-${inst.tier}`} title="In effect" />}
         {!open && status && <StatusChip status={status} />}
-        <TurnCostBadge cost={turnCost(def)} short />
+        {/* A passive card already wears PassiveChip; its turn cost IS "passive",
+            so both chips used to say the same word in the same row. One says
+            it. */}
+        {def.kind !== "passive" && <TurnCostBadge cost={turnCost(def)} short />}
         {dead && <UsedBadge nullified={!!inst.nullified} />}
         <span
           className={`shrink-0 rounded-[1px] border px-1.5 py-px font-display text-[12px] font-bold tier-bg-${inst.tier} tier-${inst.tier}`}
@@ -223,12 +226,12 @@ export function DockRow({
       {open && (
         <div className="px-2 pb-1.5">
           {count > 1 && (
-            <div className="mb-1 text-[11px] text-parchment-400">
+            <div className="mb-1 text-[12px] text-parchment-400">
               {count} identical copies{owner === "mine" ? " · Use plays one at a time" : ""}
             </div>
           )}
           {status && (
-            <div title={pliesTitle(status)} className="mb-1 truncate text-[12px] text-gold/80">
+            <div title={pliesTitle(status)} className="mb-1 truncate text-[12px] text-gold">
               {status}
             </div>
           )}

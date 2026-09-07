@@ -320,8 +320,14 @@ function HouseStrengthEditor({
         })}
       </div>
 
+      {/* From sm up the console gives this table 568px (640 viewport, less the
+          shell's px-5 and this section's p-4), and the eight columns want about
+          390px, so it fits without scrolling. It used to carry a 420px floor,
+          which could never bind at any width where the table is shown and so
+          only implied a scroll that never happened. The wrapper keeps
+          overflow-x-auto as the safety net for a stray wide value. */}
       <div className="mt-2 hidden overflow-x-auto sm:block">
-        <table className="w-full min-w-[420px] border-collapse text-[11px]">
+        <table className="w-full border-collapse text-[11px]">
           <thead>
             <tr className="text-parchment-400">
               <th className="py-1 pr-2 text-left font-normal">Tier</th>

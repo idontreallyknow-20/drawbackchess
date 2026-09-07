@@ -1426,7 +1426,7 @@ export function ClipModal({
           </div>
           <div className="flex items-center gap-2">
             <span
-              className="hidden font-mono text-[10px] uppercase tracking-[0.14em] text-parchment-400 sm:inline"
+              className="hidden font-mono text-[12px] uppercase tracking-[0.06em] text-parchment-400 sm:inline"
               data-clip-tier={support?.tier ?? 0}
             >
               {support ? support.detail : "Probing encoder"}
@@ -1535,7 +1535,7 @@ export function ClipModal({
                   />
                 </div>
                 {reduced && (
-                  <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.14em] text-parchment-500">
+                  <p className="mt-1 font-mono text-[12px] uppercase tracking-[0.06em] text-parchment-400">
                     Reduced motion: chrome still; transport live
                   </p>
                 )}
@@ -1604,7 +1604,7 @@ export function ClipModal({
                     )}
                   </>
                 ) : support?.tier === 1 ? (
-                  <span className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 border border-white/10 bg-white/[0.02] px-4 font-mono text-[11px] uppercase tracking-[0.14em] text-parchment-300">
+                  <span className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 border border-white/10 bg-white/[0.02] px-4 font-mono text-[13px] uppercase tracking-[0.06em] text-parchment-300">
                     {progress !== null
                       ? `Render ${Math.round(progress * 100)}%`
                       : images

@@ -66,7 +66,7 @@ export function InfoSection({
   return (
     <section id={id ?? slugify(title)} className="plate scroll-mt-20 p-6 sm:p-7">
       <h2 className="font-display text-[1.25rem] font-medium text-parchment-50">{title}</h2>
-      <div className="mt-3 max-w-3xl space-y-3 text-[15px] leading-relaxed text-parchment-200/90">
+      <div className="mt-3 max-w-3xl space-y-3 text-[15px] leading-relaxed text-parchment-200">
         {children}
       </div>
     </section>

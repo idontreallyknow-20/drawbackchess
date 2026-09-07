@@ -40,7 +40,7 @@ export function GodPanelNotice({ notices }: { notices: GodPanelNoticeItem[] }) {
           {/* No glyph/emoji per the design law; a small coral tick marks it. */}
           <span aria-hidden className="inline-block h-1.5 w-1.5 shrink-0 bg-coral-glow" />
           <span className="font-display text-xs font-semibold text-coral-glow">
-            <span className="mr-1 text-[10px] tracking-wide text-coral-glow/90">God panel used</span>
+            <span className="mr-1 text-[12px] tracking-wide text-coral-glow">God panel used</span>
             <span className="text-parchment">
               {n.by} {n.action}
             </span>

@@ -18,6 +18,7 @@ const ClipModal = dynamic(() => import("@/components/clip/ClipModal").then((m) =
   ssr: false,
 });
 import { MobileMatchStack } from "@/components/MobileMatchStack";
+import { BoardTools } from "@/components/board/BoardTools";
 import { FxToggleButton } from "@/components/FxToggleButton";
 import { MoveList } from "@/components/MoveList";
 import { PlayerNerfCard } from "@/components/PlayerNerfCard";
@@ -76,7 +77,7 @@ import { useZenHotkey } from "@/lib/useZenMode";
 import { ensureAccount } from "@/lib/authClient";
 import type { QueuedPremove } from "@/components/Board";
 import { buildCustomNerf, CustomNerf } from "@/engine/nerfs/custom";
-import { playCapture, playCheck, playNerf, playMove as playMoveSfx } from "@/lib/sounds";
+import { playCheck, playMoveCue, playNerf } from "@/lib/sounds";
 import { nerfSummary, outcomeFor, recordCompletedGame } from "@/lib/gameHistory";
 import { applyResult, loadRatingFor, saveRatingFor } from "@/lib/rating";
 import { loadRatings } from "@/lib/ratings";
@@ -975,20 +976,28 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
     if (hist.length === lastSeenMoveCount.current) return;
     const last = hist[hist.length - 1];
     if (last) {
-      if (last.captured) playCapture();
-      else playMoveSfx();
+      // One call, five possible voices: quiet click, capture, the castle
+      // double-knock, a pocket drop, plus the promotion flourish on top. The
+      // bot's moves land a semitone darker and a shade quieter than yours, so
+      // "the board changed and it was not me" is audible without looking.
+      playMoveCue(last, { opponent: last.color !== myColor });
       // gameInCheck also sees buff-granted movement, so a king attacked only
       // by an empowered "weird" piece (an amazon, a camel knight...) still
-      // rings the check bell.
+      // rings the check bell. Being checked keeps the full two-ring alarm;
+      // a check you just delivered gets the single opening toll.
       if (gameInCheck(game, game.board.turn)) {
-        setTimeout(playCheck, 80);
+        const onMe = game.board.turn === myColor;
+        setTimeout(() => playCheck({ onMe }), 80);
       }
     }
     // Plain ref bookkeeping; flagged only as collateral of the mutable-replica
     // bailout elsewhere in this component (isolated, this pattern is clean).
     // eslint-disable-next-line react-hooks/immutability
     lastSeenMoveCount.current = hist.length;
-  }, [game]);
+    // myColor only changes when a new game is set up, and the history-length
+    // guard above already swallows a re-run that plays no new move, so naming
+    // it here cannot double-sound anything.
+  }, [game, myColor]);
 
   // Board-mutating self-buffs (the bot's summon/transform/revive/removal that
   // reacts to a move) mutate the board with no draft frame to hang a play on.
@@ -2259,7 +2268,24 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
                   draftRunning={myDraftCharging}
                 />
               )}
-              <div className="zen-hide flex justify-end pt-1">
+              <div className="zen-hide flex items-center justify-end gap-2 pt-1">
+                {/* Flip and the shortcut sheet, plus the keymap binding for
+                    this surface (f, ?, k/j, 0/$, Home/End, c). The ply jump
+                    reuses the same state the wheel-over-board scrub reads. */}
+                <BoardTools
+                  onPlyNav={(to) => {
+                    const st = wheelNavRef.current;
+                    if (st.blocked || st.max === 0) return;
+                    const cur = st.ply ?? st.max;
+                    const next =
+                      to === "first"
+                        ? st.min
+                        : to === "last"
+                        ? st.max
+                        : cur + (to === "prev" ? -1 : 1);
+                    st.nav(Math.max(st.min, Math.min(next, st.max)));
+                  }}
+                />
                 <FxToggleButton />
               </div>
             </div>

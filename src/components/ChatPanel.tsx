@@ -112,7 +112,7 @@ export function ChatPanel({
         )}
         <span className="min-w-0 flex-1 truncate text-[12px] text-parchment-300">
           {muted ? (
-            <span className="text-parchment-400/60">Chat is muted.</span>
+            <span className="text-parchment-500">Chat is muted.</span>
           ) : lastMsg ? (
             <>
               <span
@@ -126,7 +126,7 @@ export function ChatPanel({
               <span className="text-parchment-300"> {lastMsg.text}</span>
             </>
           ) : (
-            <span className="text-parchment-400/60">Say hello…</span>
+            <span className="text-parchment-500">Say hello…</span>
           )}
         </span>
         {/* Expand chevron (inline SVG, no glyph). */}
@@ -179,14 +179,14 @@ export function ChatPanel({
         </span>
       </div>
       {muted ? (
-        <div className="shrink-0 px-1 pb-1 text-[12px] text-parchment-400/60">
+        <div className="shrink-0 px-1 pb-1 text-[12px] text-parchment-500">
           Chat is muted.
         </div>
       ) : (
         <>
           <div ref={listRef} className="min-h-0 flex-1 space-y-1 overflow-y-auto px-1 text-[12px] leading-snug">
             {messages.length === 0 && (
-              <div className="text-parchment-400/60">Say hello. Your opponent can read this.</div>
+              <div className="text-parchment-500">Say hello. Your opponent can read this.</div>
             )}
             {messages.map((m, i) => (
               <div key={`${m.at}-${i}`} className="break-words">
@@ -217,7 +217,7 @@ export function ChatPanel({
               aria-label="Chat message"
               // 16px on phones: anything smaller makes iOS Safari zoom the
               // page on focus, which is what used to box the input off-screen.
-              className="min-w-0 flex-1 rounded-sm border border-white/15 bg-ink-900/60 px-2 py-1.5 text-base sm:text-[12px] text-parchment placeholder:text-parchment-400/40 focus:border-gold/60 focus:outline-none"
+              className="min-w-0 flex-1 rounded-sm border border-white/15 bg-ink-900/60 px-2 py-1.5 text-base sm:text-[12px] text-parchment placeholder:text-parchment-500 focus:border-gold/60 focus:outline-none"
             />
             <Button tone="ghost"
               type="submit"

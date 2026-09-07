@@ -153,7 +153,7 @@ export function MoveList({
         </p>
       )}
       {rows.length === 0 && (
-        <div className="min-h-0 text-parchment-300/60 text-sm">No moves yet.</div>
+        <div className="min-h-0 text-parchment-400 text-sm">No moves yet.</div>
       )}
       <div
         className={
@@ -169,7 +169,7 @@ export function MoveList({
               (compact ? "grid-cols-[1.6rem_minmax(0,1fr)_minmax(0,1fr)]" : "grid-cols-[2.2rem_1fr_1fr]")
             }
           >
-            <span className="text-parchment-400/70">{row.num}.</span>
+            <span className="text-parchment-400">{row.num}.</span>
             {row.w ? (
               <MoveCell
                 ply={row.w.ply}
@@ -180,7 +180,7 @@ export function MoveList({
                 {row.w.san}
               </MoveCell>
             ) : (
-              <span className="px-1 py-0.5 text-parchment-400/50 select-none">...</span>
+              <span className="px-1 py-0.5 text-parchment-500 select-none">...</span>
             )}
             {row.b ? (
               <MoveCell

@@ -180,7 +180,7 @@ export function HeroTv() {
           {/* LIVE while streaming, "Just finished" while the result lingers. */}
           <span
             className={
-              "flex items-center gap-1.5 border px-2 py-1 text-[11px] " +
+              "flex items-center gap-1.5 border px-2 py-1 text-[12px] " +
               (!over
                 ? "border-[rgb(var(--accent-positive-rgb)_/_0.4)] bg-[rgb(var(--accent-positive-rgb)_/_0.1)] text-[rgb(var(--accent-positive-rgb))]"
                 : "border-[color:var(--edge)] bg-[color:var(--bg-zebra)] text-parchment-300")
@@ -192,7 +192,7 @@ export function HeroTv() {
           {shownMode ? (
             <span
               className={
-                "border px-2 py-1 text-[11px] " +
+                "border px-2 py-1 text-[12px] " +
                 (shownMode === "nerf"
                   ? "border-mode-nerf/40 bg-mode-nerf/10 text-mode-nerfGlow"
                   : "border-mode-buff/40 bg-mode-buff/10 text-mode-buffGlow")
@@ -202,7 +202,7 @@ export function HeroTv() {
             </span>
           ) : null}
           {timeControl ? (
-            <span className="hidden border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-2 py-1 font-mono text-[11px] tabular-nums text-parchment-300 sm:inline">
+            <span className="hidden border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-2 py-1 font-mono text-[12px] tabular-nums text-parchment-300 sm:inline">
               {timeControl}
             </span>
           ) : null}

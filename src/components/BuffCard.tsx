@@ -140,7 +140,7 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
             {buff.name}
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 text-[10px] text-parchment-400">
+            <span className="inline-flex items-center gap-1 text-[12px] text-parchment-400">
               {/* Chip icon: parchment tone at rest; card hover tints it in the
                   tier color via --tier-rgb (set by the root's tier-bg class). */}
               {createElement(catIcon, {
@@ -155,7 +155,7 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           </div>
         </div>
         <span
-          className={`shrink-0 font-display font-bold px-2 py-0.5 rounded-[1px] tier-bg-${t} tier-${t} ${compact ? "border text-[10px]" : "border-[1.5px] text-[13px]"}`}
+          className={`shrink-0 font-display font-bold px-2 py-0.5 rounded-[1px] tier-bg-${t} tier-${t} ${compact ? "border text-[12px]" : "border-[1.5px] text-[13px]"}`}
           title={`Buff power tier ${TIER_ROMAN[t]} (${t} of 8): ${TIER_LABEL[t]}`}
         >
           {TIER_ROMAN[t]}
@@ -165,7 +165,7 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           severity treatment nerf cards wear, so both libraries read alike.
           Dropped in the compact draft/dock cards where space is tight. */}
       {!compact && (
-        <div className="rule-ornament my-2.5 text-[10px]">
+        <div className="rule-ornament my-2.5 text-[12px]">
           <span className="font-display">{TIER_LABEL[t]}</span>
         </div>
       )}
@@ -210,18 +210,18 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
       {/* Flavor line: the card's voice, quoted and dim, TCG-style. Full cards
           only; dock rows and compact picks stay all-business. */}
       {!compact && buff.flavor && (
-        <p className="relative mt-2 text-[11px] italic leading-snug text-parchment-400">
+        <p className="relative mt-2 text-[12px] italic leading-snug text-parchment-400">
           &ldquo;{buff.flavor}&rdquo;
         </p>
       )}
       {status && !dead && (
-        <div className="mt-1.5 text-[10px] text-gold/80">{status}</div>
+        <div className="mt-1.5 text-[12px] text-gold">{status}</div>
       )}
       {nullified && (
-        <div className="mt-1.5 text-[10px] text-oxblood-glow">Nullified</div>
+        <div className="mt-1.5 text-[12px] text-oxblood-glow">Nullified</div>
       )}
       {spent && !nullified && (
-        <div className="mt-1.5 text-[10px] text-parchment-400">Used</div>
+        <div className="mt-1.5 text-[12px] text-parchment-400">Used</div>
       )}
     </div>
   );

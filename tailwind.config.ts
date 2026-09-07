@@ -14,6 +14,18 @@ export default {
       // call sites in line without touching them one by one.
       minHeight: { screen: "100dvh" },
       height: { screen: "100dvh" },
+      // The interface root is 14px (globals.css `html`), not the 16px Tailwind
+      // assumes, so the shipped rem ramp resolved BELOW the design system's
+      // floors: `text-xs` (0.75rem) rendered at 10.5px across ~244 call sites
+      // and `text-sm` (0.875rem) at 12.25px. Pinning the two small steps to
+      // absolute pixels puts them exactly on section 3's two floors, 12px for
+      // captions and labels and 13px for body and interactive text, without
+      // touching a single call site. Everything from `base` up is unchanged
+      // (1rem = 14px = the intended base).
+      fontSize: {
+        xs: ["12px", "16px"],
+        sm: ["13px", "18px"],
+      },
       fontFamily: {
         display: ["var(--font-display)", "system-ui", "sans-serif"],
         body: ["var(--font-body)", "system-ui", "sans-serif"],
@@ -42,7 +54,12 @@ export default {
           200: "#c6c6c6",
           300: "#ababab",
           400: "#979797",
-          500: "#7a7a7a",
+          // 500 is the muted floor. It was #7a7a7a, which measured 3.61:1 on
+          // the panel and 2.68:1 on a raised row: below WCAG AA in every
+          // palette. #8c8c8c is Lichess's own secondary grey (the same value as
+          // ink-400) and measures 4.60:1 on the panel, 5.43:1 on the page.
+          // Light resolves this class through --text-muted instead.
+          500: "#8c8c8c",
         },
         // gold = the accent (links / primary). Historical name, Lichess blue:
         // the rgb triples are set on :root and pushed by applyUiPrefs.

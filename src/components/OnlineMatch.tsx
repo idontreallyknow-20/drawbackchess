@@ -39,6 +39,7 @@ import { MobileBuffDrawer } from "@/components/MobileBuffDrawer";
 import { cardFaceIcon } from "@/lib/cardIcon";
 import { bottomChromePadClass } from "@/components/mobileChrome";
 import { MobileMatchStack } from "@/components/MobileMatchStack";
+import { BoardTools } from "@/components/board/BoardTools";
 import { FxToggleButton } from "@/components/FxToggleButton";
 import { MoveList } from "@/components/MoveList";
 import { NerfCard } from "@/components/NerfCard";
@@ -53,7 +54,7 @@ import { cloneBoard, findKing, isInCheck, makeMove, moveFromUCI, moveToUCI, posi
 import { activeRuleIds, fnv1a } from "@/engine/desync";
 import { draftCardNoun, turnCost } from "@/engine/buff";
 import { useDeferredMoveRisks } from "@/lib/useDeferredMoveRisks";
-import { loadSettings } from "@/lib/settings";
+import { SETTINGS_CHANGED_EVENT, loadSettings } from "@/lib/settings";
 import type { GameContext, Nerf } from "@/engine/nerf";
 import { IMPLEMENTED_BY_ID, openingNerfPool } from "@/engine/nerfs/library";
 import {
@@ -345,6 +346,16 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
   // scripted-video aid). Purely visual and owner-only, like recording mode.
   const [recCleanFrame, setRecCleanFrame] = useState(false);
   const [uiSettings, setUiSettings] = useState(() => loadSettings());
+  // Follow settings written from anywhere, not only from this page's own
+  // settings panel closing. The board flip control and its `f` key write
+  // `flipBoard` through the normal settings path, and without this listener the
+  // board would not turn until the panel was next opened and shut. Mirrors
+  // /game's own sync (src/app/game/page.tsx).
+  useEffect(() => {
+    const sync = () => setUiSettings(loadSettings());
+    window.addEventListener(SETTINGS_CHANGED_EVENT, sync);
+    return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, sync);
+  }, []);
   const [confirmingResign, setConfirmingResign] = useState(false);
   const [confirmingDraw, setConfirmingDraw] = useState(false);
   // A move held for confirmation (Settings > Gameplay > Move confirmation).
@@ -2853,7 +2864,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           // two can never render on top of each other.
           className="fixed right-3 top-16 z-40 w-[min(80vw,20rem)] border border-gold/40 bg-ink-700/95 p-3 shadow-plate"
         >
-          <div className="text-[10px] text-parchment-400">
+          <div className="text-[12px] text-parchment-400">
             {abortNotice.level === "timeout" ? "New games paused" : "Abort warning"}
           </div>
           <p className="mt-1 text-xs leading-snug text-parchment-300">
@@ -2863,7 +2874,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           </p>
           <Button tone="ghost"
             onClick={() => setAbortNotice(null)}
-            className="mt-2 px-2 py-1 text-[11px] tracking-wide">
+            className="mt-2 px-2 py-1 text-[13px] tracking-wide">
             Dismiss
           </Button>
         </div>
@@ -3409,7 +3420,24 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
               />
               {/* The effects control keeps clear inset from the rail edge so
                   its slider and labels are never clipped at any width. */}
-              <div className="flex justify-end px-1 pt-1">
+              <div className="flex items-center justify-end gap-2 px-1 pt-1">
+                {/* Flip and the shortcut sheet, plus the keymap binding for
+                    this surface (f, ?, k/j, 0/$, Home/End, c). The ply jump
+                    reuses the same state the wheel-over-board scrub reads. */}
+                <BoardTools
+                  onPlyNav={(to) => {
+                    const st = wheelNavRef.current;
+                    if (st.blocked || st.max === 0) return;
+                    const cur = st.ply ?? st.max;
+                    const next =
+                      to === "first"
+                        ? st.min
+                        : to === "last"
+                        ? st.max
+                        : cur + (to === "prev" ? -1 : 1);
+                    st.nav(Math.max(st.min, Math.min(next, st.max)));
+                  }}
+                />
                 <FxToggleButton />
               </div>
             </div>

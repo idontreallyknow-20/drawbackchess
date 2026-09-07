@@ -47,13 +47,13 @@ function RelatedTerms({ entry }: { entry: GlossaryEntry }) {
   if (related.length === 0) return null;
   return (
     <p className="text-sm text-parchment-300">
-      <span className="text-[11px] text-parchment-400">related&nbsp;&nbsp;</span>
+      <span className="text-[12px] text-parchment-400">related&nbsp;&nbsp;</span>
       {related.map((r, i) => (
         <Fragment key={r.slug}>
           {i > 0 && ", "}
           <a
             href={`#${r.slug}`}
-            className="underline decoration-dotted decoration-parchment-400/60 underline-offset-2 hover:text-coral hover:decoration-coral/80"
+            className="underline decoration-dotted decoration-parchment-500 underline-offset-2 hover:text-coral hover:decoration-coral/80"
           >
             {r.term}
           </a>
@@ -71,7 +71,7 @@ function Entry({ entry }: { entry: GlossaryEntry }) {
   const heading = (
     <>
       <span className="font-display text-lg text-parchment">{entry.term}</span>
-      <span className="mt-0.5 block text-parchment-200/90">{entry.def}</span>
+      <span className="mt-0.5 block text-parchment-200">{entry.def}</span>
     </>
   );
   if (!hasBody) {

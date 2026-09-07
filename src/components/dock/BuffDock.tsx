@@ -228,14 +228,14 @@ export function BuffDock({ game, myColor, canAct, onStartUse, hideOpponentCards,
               {/* Hotkey hint, pointer devices only: a phone has no key. */}
               <kbd
                 aria-hidden
-                className="hidden rounded-[1px] border border-[color:var(--edge)] px-1 font-mono text-[11px] leading-4 text-parchment-400 [@media(hover:hover)]:inline"
+                className="hidden rounded-[1px] border border-[color:var(--edge)] px-1 font-mono text-[12px] leading-4 text-parchment-400 [@media(hover:hover)]:inline"
               >
                 {t.key}
               </kbd>
               {t.badge > 0 && (
                 <span
                   title={`${t.badge} card${t.badge === 1 ? "" : "s"} you could use now`}
-                  className="grid h-4 min-w-[1rem] place-items-center rounded-[1px] bg-gold px-1 font-mono text-[11px] font-bold text-ink-950"
+                  className="grid h-[17px] min-w-[17px] place-items-center rounded-[1px] bg-gold px-1 font-mono text-[12px] font-bold leading-none text-ink-950"
                 >
                   {t.badge}
                 </span>

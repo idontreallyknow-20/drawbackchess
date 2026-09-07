@@ -164,7 +164,7 @@ export default function TournamentDetailPage() {
             {/* Header */}
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="flex items-center gap-2 text-[11px] text-parchment-400">
+                <div className="flex items-center gap-2 text-[12px] text-parchment-400">
                   <Trophy size={13} className="text-gold-leaf" />
                   <Link href="/tournaments" className="hover:text-gold-leaf">
                     Tournaments
@@ -176,12 +176,12 @@ export default function TournamentDetailPage() {
                   <span className="border border-[color:var(--edge)] px-2 py-0.5 font-mono text-xs text-parchment-200">
                     {clockLabel(t.clock_time_sec, t.clock_increment_sec)}
                   </span>
-                  <span className="border border-[color:var(--edge)] px-2 py-0.5 text-[11px] text-parchment-300">
+                  <span className="border border-[color:var(--edge)] px-2 py-0.5 text-[12px] text-parchment-300">
                     {formatLabel(t.format)}
                   </span>
                   <span
                     className={
-                      "border px-2 py-0.5 text-[11px] " +
+                      "border px-2 py-0.5 text-[12px] " +
                       (t.rated ? "border-[color:var(--edge-strong)] text-gold-leaf" : "border-[color:var(--edge)] text-parchment-400")
                     }
                   >
@@ -190,7 +190,7 @@ export default function TournamentDetailPage() {
                   {t.club_name && t.club_id && (
                     <Link
                       href={`/clubs`}
-                      className="border border-[color:var(--edge)] px-2 py-0.5 text-[11px] text-parchment-300 hover:text-gold-leaf"
+                      className="border border-[color:var(--edge)] px-2 py-0.5 text-[13px] text-parchment-300 hover:text-gold-leaf"
                     >
                       {t.club_name}
                     </Link>
@@ -201,7 +201,7 @@ export default function TournamentDetailPage() {
               {/* Join / withdraw */}
               <div className="flex flex-col items-end gap-1">
                 {me === undefined ? null : phase === "finished" ? (
-                  <span className="text-[11px] text-parchment-500">Event over</span>
+                  <span className="text-[12px] text-parchment-500">Event over</span>
                 ) : !me ? (
                   <LinkButton tone="leaf"
                     href={`/login?next=/tournaments/${encodeURIComponent(id)}`}
@@ -224,7 +224,7 @@ export default function TournamentDetailPage() {
                   </Button>
                 )}
                 {entered && phase !== "finished" && (
-                  <span className="text-[11px] text-verdigris-glow">You are in</span>
+                  <span className="text-[12px] text-verdigris-glow">You are in</span>
                 )}
               </div>
             </div>
@@ -244,7 +244,7 @@ export default function TournamentDetailPage() {
                 <div className="flex items-center gap-3">
                   <Swords size={20} className="shrink-0 text-verdigris-glow" aria-hidden />
                   <div>
-                    <div className="text-[11px] text-parchment-400">Round {data.myGame.round}</div>
+                    <div className="text-[12px] text-parchment-400">Round {data.myGame.round}</div>
                     <div className="text-sm text-parchment-100">
                       Your game is ready. You play {data.myGame.color === "w" ? "white" : "black"}.
                     </div>
@@ -269,8 +269,8 @@ export default function TournamentDetailPage() {
 
                 <div className="plate overflow-hidden">
                   <div className="flex items-center justify-between gap-2 border-b border-[color:var(--edge)] px-5 py-3">
-                    <span className="text-[11px] text-parchment-400">Standings</span>
-                    <span className="flex items-center gap-1.5 text-[11px] text-parchment-500">
+                    <span className="text-[12px] text-parchment-400">Standings</span>
+                    <span className="flex items-center gap-1.5 text-[12px] text-parchment-500">
                       <Users size={12} /> {standings.length}/{t.max_players}
                     </span>
                   </div>
@@ -282,7 +282,7 @@ export default function TournamentDetailPage() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="border-b border-[color:var(--edge)] text-left text-[11px] text-parchment-500">
+                          <tr className="border-b border-[color:var(--edge)] text-left text-[12px] text-parchment-500">
                             <th scope="col" className="px-3 py-2 text-right font-medium">
                               #
                             </th>
@@ -337,7 +337,7 @@ export default function TournamentDetailPage() {
                       </table>
                     </div>
                   )}
-                  <p className="border-t border-[color:var(--edge)] px-5 py-2.5 text-[11px] text-parchment-500">
+                  <p className="border-t border-[color:var(--edge)] px-5 py-2.5 text-[12px] text-parchment-500">
                     Swiss pairing by score, then rating. Win 1 point, draw 0.5, bye 1. Rounds pair
                     automatically while the event runs.
                   </p>
@@ -347,7 +347,7 @@ export default function TournamentDetailPage() {
               {/* Info sidebar */}
               <aside className="space-y-4">
                 <div className="plate overflow-hidden">
-                  <div className="border-b border-[color:var(--edge)] px-5 py-3 text-[11px] text-parchment-400">
+                  <div className="border-b border-[color:var(--edge)] px-5 py-3 text-[12px] text-parchment-400">
                     Details
                   </div>
                   <dl className="divide-y divide-[color:var(--edge)]">
@@ -365,14 +365,14 @@ export default function TournamentDetailPage() {
                 </div>
 
                 <div className="plate px-5 py-4">
-                  <div className="text-[11px] text-parchment-400">Host</div>
+                  <div className="text-[12px] text-parchment-400">Host</div>
                   <Link
                     href={`/u/${encodeURIComponent(t.creator_name)}`}
                     className="mt-1.5 flex items-center gap-1.5 text-sm text-parchment-100 hover:text-gold-leaf"
                   >
                     <Crown size={13} className="text-gold-leaf" /> {t.creator_name}
                   </Link>
-                  <div className="mt-2 flex items-center gap-1.5 text-[11px] text-parchment-500">
+                  <div className="mt-2 flex items-center gap-1.5 text-[12px] text-parchment-500">
                     <CalendarDays size={12} /> Created {new Date(t.created_at).toLocaleDateString()}
                   </div>
                 </div>
@@ -412,7 +412,7 @@ function Countdown({ t, phase, now }: { t: TournamentDetail; phase: string; now:
     <div className="mt-5 plate flex items-center gap-4 px-5 py-4">
       <Timer size={22} className="shrink-0 text-parchment-400" aria-hidden />
       <div>
-        <div className="text-[11px] text-parchment-400">{kicker}</div>
+        <div className="text-[12px] text-parchment-400">{kicker}</div>
         <div className={"font-display text-2xl tabular-nums sm:text-3xl " + tone} aria-live="polite">
           {big}
         </div>
@@ -427,7 +427,7 @@ function Podium({ podium }: { podium: StandingRow[] }) {
   const rankOf = (s: StandingRow) => podium.indexOf(s);
   return (
     <div className="plate px-5 py-6">
-      <div className="mb-4 flex items-center gap-2 text-[11px] text-parchment-400">
+      <div className="mb-4 flex items-center gap-2 text-[12px] text-parchment-400">
         <Trophy size={13} className="text-gold-leaf" /> Podium
       </div>
       <div className="flex items-end justify-center gap-4 sm:gap-8">
@@ -482,17 +482,17 @@ function Rounds({
   return (
     <div className="plate overflow-hidden">
       <div className="flex items-center justify-between gap-2 border-b border-[color:var(--edge)] px-5 py-3">
-        <span className="flex items-center gap-1.5 text-[11px] text-parchment-400">
+        <span className="flex items-center gap-1.5 text-[12px] text-parchment-400">
           <Swords size={12} /> Pairings
         </span>
-        <span className="text-[11px] text-parchment-500">
+        <span className="text-[12px] text-parchment-500">
           Round {currentRound}
           {phase === "ongoing" ? " in progress" : ""}
         </span>
       </div>
       {byRound.map(([round, games]) => (
         <div key={round}>
-          <div className="border-b border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-5 py-2 text-[11px] text-parchment-500">
+          <div className="border-b border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-5 py-2 text-[12px] text-parchment-500">
             Round {round}
           </div>
           <ul className="divide-y divide-[color:var(--edge)]">
@@ -544,14 +544,14 @@ function ResultBadge({ result }: { result: string | null }) {
               ? ["+1", "border-[color:var(--edge-strong)] text-gold-leaf"]
               : ["Void", "border-[color:var(--edge)] text-parchment-500"];
   return (
-    <span className={"shrink-0 border px-1.5 py-0.5 font-mono text-[11px] " + cls}>{label}</span>
+    <span className={"shrink-0 border px-1.5 py-0.5 font-mono text-[12px] " + cls}>{label}</span>
   );
 }
 
 function InfoRow({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-3 px-5 py-2.5">
-      <dt className="text-[11px] text-parchment-500">{label}</dt>
+      <dt className="text-[12px] text-parchment-500">{label}</dt>
       <dd className={"text-sm text-parchment-100 " + (mono ? "font-mono" : "")}>{value}</dd>
     </div>
   );
@@ -559,5 +559,5 @@ function InfoRow({ label, value, mono = false }: { label: string; value: string;
 
 function ModeTag({ mode }: { mode: string }) {
   const cls = mode === "buff" ? "border-mode-buff/40 text-mode-buffGlow" : "border-mode-nerf/40 text-mode-nerfGlow";
-  return <span className={"border px-2 py-0.5 text-[11px] " + cls}>{modeLabel(mode)}</span>;
+  return <span className={"border px-2 py-0.5 text-[12px] " + cls}>{modeLabel(mode)}</span>;
 }

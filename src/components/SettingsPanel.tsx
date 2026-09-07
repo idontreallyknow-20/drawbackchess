@@ -77,6 +77,7 @@ export function SettingsPanel({ open, onClose, liveGame }: Props) {
   // existed, so a touch drag scrolled the page behind the panel and Tab walked
   // straight out of it. Called BEFORE the early return so hook order is stable.
   const chrome = useModalChrome(open, onClose);
+  const { attachDialog } = chrome;
 
   if (!open) return null;
 
@@ -229,6 +230,7 @@ export function SettingsPanel({ open, onClose, liveGame }: Props) {
       onPointerDown={chrome.onBackdropPointerDown}
     >
       <div
+        ref={attachDialog}
         role="dialog"
         aria-modal="true"
         aria-label="Settings"
@@ -249,7 +251,7 @@ export function SettingsPanel({ open, onClose, liveGame }: Props) {
 
         {/* Gentle reminder for players who open Settings mid-game. */}
         {inLiveGame && (
-          <p className="shrink-0 border-b border-[color:var(--edge)] px-5 py-1.5 text-[12px] text-gold-leaf/80">
+          <p className="shrink-0 border-b border-[color:var(--edge)] px-5 py-1.5 text-[12px] text-gold-leaf">
             Heads up: the game clock keeps running while Settings is open.
           </p>
         )}

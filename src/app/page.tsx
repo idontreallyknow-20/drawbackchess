@@ -302,7 +302,7 @@ function HomeFeed() {
                 <span className="text-parchment-50">{g.blackName}</span>
                 <span className="ml-1.5 font-mono tabular-nums text-parchment-300">{resultLabel(g.winner)}</span>
               </Link>
-              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-parchment-400">
+              <div className="mt-0.5 flex items-center gap-2 text-[12px] text-parchment-400">
                 <ModeBadge mode={modeOf(g.category)} compact />
                 <span>{g.rated ? "Rated" : "Casual"}</span>
                 <span>{timeAgo(g.completedAt)}</span>
@@ -468,7 +468,7 @@ function SiteFooter() {
         </nav>
         <SocialsRow label="" className="" variant="quiet" />
       </div>
-      <div className="mt-2 flex items-center justify-between text-[11px] text-parchment-500">
+      <div className="mt-2 flex items-center justify-between text-[12px] text-parchment-500">
         <span>Nerf Chess</span>
         <BuildVersionLabel />
       </div>
@@ -492,7 +492,7 @@ function BuildVersionLabel() {
   const version = process.env.NEXT_PUBLIC_BUILD_VERSION ?? "";
   if (!isModerator || !version) return null;
   return (
-    <span className="font-mono text-[11px] opacity-70" title="Deployed version">
+    <span className="font-mono text-[12px] opacity-70" title="Deployed version">
       {version}
     </span>
   );

@@ -79,8 +79,8 @@ function StatTile({ label, value, sub }: { label: string; value: string; sub?: s
   return (
     <div className="rounded-none border border-[color:var(--edge)] px-3 py-2">
       <div className="font-mono text-xl text-parchment-50 tabular-nums">{value}</div>
-      <div className="mt-0.5 text-[11px] text-parchment-400">{label}</div>
-      {sub && <div className="mt-0.5 text-[11px] text-parchment-400">{sub}</div>}
+      <div className="mt-0.5 text-[12px] text-parchment-400">{label}</div>
+      {sub && <div className="mt-0.5 text-[12px] text-parchment-400">{sub}</div>}
     </div>
   );
 }
@@ -142,7 +142,7 @@ export function CardInsights({
           <span className="flex items-center gap-2.5">
             <span className="display-3 text-parchment">In play</span>
             {noteChip && (
-              <span className="rounded-none border border-sun/30 bg-sun/5 px-1.5 py-px text-[11px] text-parchment-200">
+              <span className="rounded-none border border-sun/30 bg-sun/5 px-1.5 py-px text-[12px] text-parchment-200">
                 {noteChip}
               </span>
             )}
@@ -155,7 +155,7 @@ export function CardInsights({
           </span>
         </span>
       </summary>
-      <div className="space-y-3 px-6 pb-6 text-[15px] leading-relaxed text-parchment-200/90 sm:px-7 sm:pb-7">
+      <div className="space-y-3 px-6 pb-6 text-[15px] leading-relaxed text-parchment-200 sm:px-7 sm:pb-7">
         {!effective.enabled && (
           <p className="rounded-none border border-sun/30 bg-sun/5 px-4 py-2 text-sm text-parchment-200">
             Currently disabled by the moderators: it is not being dealt.
@@ -217,11 +217,11 @@ export function CardInsights({
 
         {events.length > 0 && (
           <div className="pt-2">
-            <div className="text-[11px] text-parchment-400">Moderator changes</div>
+            <div className="text-[12px] text-parchment-400">Moderator changes</div>
             <ol className="mt-2 space-y-2">
               {events.map((e, i) => (
                 <li key={i} className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
-                  <span className="text-[11px] text-parchment-400 sm:w-32 sm:shrink-0 sm:pt-0.5">
+                  <span className="text-[12px] text-parchment-400 sm:w-32 sm:shrink-0 sm:pt-0.5">
                     {formatDate(e.at)}
                   </span>
                   <span className="text-sm text-parchment-100">{eventText(e)}</span>

@@ -103,7 +103,7 @@ export function HeroBoard({ board, lastMove }: HeroBoardProps = {}) {
               {col === 0 && (
                 <span
                   className={
-                    "absolute top-0.5 left-1 text-[10px] font-mono font-semibold pointer-events-none " +
+                    "absolute top-0.5 left-1 text-[12px] font-mono font-semibold pointer-events-none " +
                     // Coord tint = the OPPOSITE square colour (board tokens via
                     // --sq-light/--sq-dark), so labels always contrast with the
                     // active board theme instead of using fixed hexes.
@@ -116,7 +116,7 @@ export function HeroBoard({ board, lastMove }: HeroBoardProps = {}) {
               {row === 7 && (
                 <span
                   className={
-                    "absolute bottom-0.5 right-1 text-[10px] font-mono font-semibold pointer-events-none " +
+                    "absolute bottom-0.5 right-1 text-[12px] font-mono font-semibold pointer-events-none " +
                     // Coord tint = the OPPOSITE square colour (board tokens via
                     // --sq-light/--sq-dark), so labels always contrast with the
                     // active board theme instead of using fixed hexes.

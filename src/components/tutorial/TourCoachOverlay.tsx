@@ -241,11 +241,11 @@ export function TourCoachOverlay({
         style={cardStyle}
       >
         <div className="flex items-baseline justify-between gap-3">
-          <div className="text-[10px] text-gold-leaf/90">{step.kicker}</div>
+          <div className="text-[12px] text-gold-leaf">{step.kicker}</div>
           <button
             type="button"
             onClick={onSkip}
-            className="shrink-0 text-[10px] text-parchment-400 underline decoration-parchment-400/40 underline-offset-2 transition-colors hover:text-parchment-200"
+            className="shrink-0 text-[13px] text-parchment-400 underline decoration-parchment-500 underline-offset-2 transition-colors hover:text-parchment-200"
           >
             Skip tour
           </button>
@@ -291,7 +291,7 @@ export function TourCoachOverlay({
               step.waitLabel && (
                 <span
                   role="status"
-                  className="font-display text-[12px] text-gold-leaf/90 animate-flicker"
+                  className="font-display text-[12px] text-gold-leaf animate-flicker"
                 >
                   {step.waitLabel}
                 </span>

@@ -202,7 +202,7 @@ export function TargetingBanner({
           onClick={onCancel}
           className="shrink-0 touch-manipulation inline-flex items-center justify-center min-h-[44px] sm:min-h-0 rounded-[1px] border border-coral/40 bg-coral/10 px-3 py-1 font-display text-[14px] sm:text-[13px] font-semibold tracking-wide text-coral-glow transition hover:bg-coral/20"
         >
-          Cancel <span className="text-coral-glow/60">Esc</span>
+          Cancel <span className="text-coral-glow">Esc</span>
         </button>
       </div>
       {/* Invalid-tap hint: one line naming what IS targetable, flashed after
@@ -238,15 +238,25 @@ export function EnemyBuffModal({
 }) {
   const { target } = targeting;
   // Hooks must run before any early return.
-  useModalChrome(true, onCancel);
+  const { attachDialog } = useModalChrome(true, onCancel);
   if (target.kind !== "enemy-buff") return null;
   const inst = game.buffs?.players[myColor].buffs[targeting.buffIndex];
   const buffName = (inst && BUFF_BY_ID[inst.id]?.name) ?? "Buff";
   return (
     // Scroll-locked while the target picker is up (see useModalChrome); it has
-    // no backdrop dismissal of its own, so only the lock and Escape apply.
+    // no backdrop dismissal of its own, so the lock, Escape and the focus trap
+    // apply. The trap matters more here than on most overlays: every option is
+    // a button, and without it Tab walks straight past Cancel into the board
+    // behind, which is covered and not meant to be reachable while a pick is
+    // pending.
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/80 px-4 py-6">
-      <div className="plate w-full max-w-md p-5 max-h-[90dvh] overflow-y-auto">
+      <div
+        ref={attachDialog}
+        role="dialog"
+        aria-modal="true"
+        aria-label={target.label}
+        className="plate w-full max-w-md p-5 max-h-[90dvh] overflow-y-auto"
+      >
         <div className="text-[12px] text-parchment-400">{buffName}</div>
         <div className="font-display text-lg text-parchment mt-0.5">{target.label}</div>
 

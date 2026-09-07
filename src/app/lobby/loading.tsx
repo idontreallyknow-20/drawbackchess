@@ -2,14 +2,12 @@
 // boxes and rows, sticky player column) so the page chunk swaps in without
 // anything jumping.
 
+import { SkeletonHeader } from "@/components/ui/Skeleton";
+
 export default function Loading() {
   return (
     <main className="min-h-screen pb-16">
-      <div className="flex items-center justify-between border-b border-[color:var(--edge)] px-5 py-3 sm:px-6">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.svg" alt="Loading" width={26} height={26} className="animate-pulse" />
-        <div className="skeleton h-8 w-28" />
-      </div>
+      <SkeletonHeader />
       <section className="mx-auto max-w-7xl px-5 sm:px-6">
         {/* Header: one compact row, the page name beside the status pills. */}
         <div className="mt-3 sm:mt-4">

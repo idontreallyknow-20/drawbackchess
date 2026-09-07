@@ -189,11 +189,11 @@ export default function LeaderboardPage() {
                 so rank, name, and rating carry the hierarchy on their own. */}
             <div className="mt-6 overflow-hidden border-y border-[color:var(--edge)]">
               <div className="grid grid-cols-[2.25rem_1fr_4.5rem] items-center border-b border-[color:var(--edge)] px-3 py-3 text-xs text-parchment-400 sm:grid-cols-[3rem_1fr_6rem_5rem_7rem] sm:px-4">
-                <span className="text-[11px]">#</span>
-                <span className="text-[11px]">Player</span>
-                <span className="text-right text-[11px]">{active.label}</span>
-                <span className="hidden text-right text-[11px] sm:block">Games</span>
-                <span className="hidden text-right text-[11px] sm:block">W / L / D</span>
+                <span className="text-[12px]">#</span>
+                <span className="text-[12px]">Player</span>
+                <span className="text-right text-[12px]">{active.label}</span>
+                <span className="hidden text-right text-[12px] sm:block">Games</span>
+                <span className="hidden text-right text-[12px] sm:block">W / L / D</span>
               </div>
 
               {pageRows.length === 0 ? (
@@ -216,7 +216,7 @@ export default function LeaderboardPage() {
                   true rank is always in reach. */}
               {meRow && !meVisible && (
                 <>
-                  <div className="border-t border-[color:var(--edge)] px-4 py-1 text-center font-mono text-[11px] text-parchment-500">
+                  <div className="border-t border-[color:var(--edge)] px-4 py-1 text-center font-mono text-[12px] text-parchment-500">
                     ···
                   </div>
                   <LeaderboardRow row={meRow} rank={meRow.rank} label={active.label} mine />

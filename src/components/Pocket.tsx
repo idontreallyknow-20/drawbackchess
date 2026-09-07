@@ -68,7 +68,7 @@ export function Pocket({ entries, color, activeType, canDrop, onSelect, label = 
   if (shown.length === 0) return null;
   return (
     <div className="plate flex items-center gap-3 rounded-[1px] px-3 py-2.5">
-      <span className="shrink-0 text-[11px] text-parchment-400">{label}</span>
+      <span className="shrink-0 text-[12px] text-parchment-400">{label}</span>
       <div className="flex min-w-0 flex-wrap items-center gap-2.5">
         {shown.map(({ type, count }) => {
           const active = activeType === type;
@@ -106,7 +106,7 @@ export function Pocket({ entries, color, activeType, canDrop, onSelect, label = 
               <Piece type={type} color={color} size={44} />
               <span
                 className={
-                  "absolute -bottom-1.5 -right-1.5 min-w-[18px] rounded-[1px] border px-1 py-px text-center font-mono text-[11px] font-bold tabular-nums " +
+                  "absolute -bottom-1.5 -right-1.5 min-w-[18px] rounded-[1px] border px-1 py-px text-center font-mono text-[12px] font-bold tabular-nums " +
                   (active
                     ? "border-mint/60 bg-ink-950 text-mint-glow"
                     : "border-coral/45 bg-ink-950 text-coral-glow")
@@ -119,7 +119,7 @@ export function Pocket({ entries, color, activeType, canDrop, onSelect, label = 
         })}
       </div>
       {activeType && (
-        <span className="ml-auto hidden shrink-0 text-[10px] text-mint-glow sm:block">
+        <span className="ml-auto hidden shrink-0 text-[12px] text-mint-glow sm:block">
           Pick a square · Esc
         </span>
       )}

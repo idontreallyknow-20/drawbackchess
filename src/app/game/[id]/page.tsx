@@ -1043,7 +1043,7 @@ function SpectatorBuffsPanel({ game, players }: { game: NerfGame; players: MPPla
                       className={
                         "min-w-0 flex-1 truncate font-display text-[13px] font-semibold " +
                         (dead
-                          ? "text-parchment-200 line-through decoration-1 decoration-parchment-400/70"
+                          ? "text-parchment-200 line-through decoration-1 decoration-parchment-500"
                           : `tier-${inst.tier}`)
                       }
                     >
@@ -1242,7 +1242,7 @@ function SpectatorChat({
           maxLength={200}
           placeholder="Message…"
           aria-label="Spectator chat message"
-          className="min-w-0 flex-1 rounded-sm border border-[color:var(--edge)] bg-ink-900/60 px-2 py-1.5 text-base text-parchment placeholder:text-parchment-400/60 focus-visible:border-gold/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent-rgb))] sm:text-[13px]"
+          className="min-w-0 flex-1 rounded-sm border border-[color:var(--edge)] bg-ink-900/60 px-2 py-1.5 text-base text-parchment placeholder:text-parchment-500 focus-visible:border-gold/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent-rgb))] sm:text-[13px]"
         />
         <Button tone="ghost"
           type="submit"

@@ -129,7 +129,7 @@ export default function InboxPage() {
                           <span className={"truncate text-[13px] " + (c.unread ? "font-semibold text-parchment-50" : "text-parchment-100")}>
                             {c.username}
                           </span>
-                          <span className="shrink-0 text-[11px] text-parchment-400">{formatWhen(c.lastAt)}</span>
+                          <span className="shrink-0 text-[12px] text-parchment-400">{formatWhen(c.lastAt)}</span>
                         </div>
                         <div className={"mt-0.5 truncate text-[13px] " + (c.unread ? "text-parchment-100" : "text-parchment-400")}>
                           {c.fromMe ? "You: " : ""}
@@ -137,7 +137,7 @@ export default function InboxPage() {
                         </div>
                       </div>
                       {c.unread > 0 && (
-                        <span className="grid min-w-[18px] shrink-0 place-items-center rounded-none bg-oxblood-glow px-1.5 font-mono text-[11px] leading-[18px] text-white">
+                        <span className="grid min-w-[18px] shrink-0 place-items-center rounded-none bg-oxblood-glow px-1.5 font-mono text-[12px] leading-[18px] text-white">
                           {c.unread}
                         </span>
                       )}

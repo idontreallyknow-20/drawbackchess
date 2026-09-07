@@ -1284,14 +1284,14 @@ function RailWatchRow({ game }: { game: MPLobbyGame }) {
           <span className="min-w-0 truncate">
             {game.players.w.name}
             {game.players.w.rating != null && (
-              <span className="font-mono text-[11px] tabular-nums text-parchment-400"> {game.players.w.rating}</span>
+              <span className="font-mono text-[12px] tabular-nums text-parchment-400"> {game.players.w.rating}</span>
             )}
           </span>
           <span className="shrink-0 text-parchment-400">vs</span>
           <span className="min-w-0 truncate">
             {game.players.b.name}
             {game.players.b.rating != null && (
-              <span className="font-mono text-[11px] tabular-nums text-parchment-400"> {game.players.b.rating}</span>
+              <span className="font-mono text-[12px] tabular-nums text-parchment-400"> {game.players.b.rating}</span>
             )}
           </span>
         </div>

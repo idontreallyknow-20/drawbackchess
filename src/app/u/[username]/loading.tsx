@@ -1,13 +1,12 @@
 // Branded route skeleton for /u/[username]: avatar, name, rating cards, and
 // the game history panel as shimmer blocks while the profile chunk loads.
+
+import { SkeletonHeader } from "@/components/ui/Skeleton";
+
 export default function Loading() {
   return (
     <main className="min-h-screen pb-16">
-      <div className="flex items-center justify-between border-b border-[color:var(--edge)] px-5 py-3 sm:px-6">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.svg" alt="Loading" width={26} height={26} className="animate-pulse" />
-        <div className="skeleton h-8 w-28 rounded-none" style={{ borderRadius: 2 }} />
-      </div>
+      <SkeletonHeader />
       <section className="mx-auto max-w-6xl px-5 py-8 sm:px-6">
         <div className="flex items-center gap-4">
           <div className="skeleton h-16 w-16 shrink-0 rounded-full" style={{ borderRadius: "50%" }} />

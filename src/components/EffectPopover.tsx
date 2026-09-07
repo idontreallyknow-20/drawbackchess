@@ -135,7 +135,7 @@ export function EffectPopover({
             {content.title}
           </span>
           <span
-            className="shrink-0 text-[9px] font-bold uppercase tracking-wide"
+            className="shrink-0 text-[12px] font-bold uppercase tracking-wide"
             style={{ color: accent, opacity: 0.75 }}
           >
             {TONE_LABEL[tone]}
@@ -143,12 +143,12 @@ export function EffectPopover({
         </div>
         <p className="mt-1 text-xs leading-snug text-parchment-300">{content.body}</p>
         {content.status && (
-          <p className="mt-1 text-[11px] leading-snug" style={{ color: accent, opacity: 0.9 }}>
+          <p className="mt-1 text-[12px] leading-snug" style={{ color: accent, opacity: 0.9 }}>
             {content.status}
           </p>
         )}
         {content.flavor && (
-          <p className="mt-1 text-[11px] italic leading-snug text-parchment-300/70">
+          <p className="mt-1 text-[12px] italic leading-snug text-parchment-400">
             &ldquo;{content.flavor}&rdquo;
           </p>
         )}

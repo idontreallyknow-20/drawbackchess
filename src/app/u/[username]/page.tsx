@@ -2066,7 +2066,7 @@ function HouseBotEditor({
           className="px-3 text-gold-leaf">
           {saving ? "Saving..." : "Set rating"}
         </Button>
-        <span className="text-[11px] text-parchment-500">Both modes, engine-safe.</span>
+        <span className="text-[12px] text-parchment-500">Both modes, engine-safe.</span>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -2075,6 +2075,9 @@ function HouseBotEditor({
           type="button"
           onClick={() => setPicking((v) => !v)}
           title="Change picture"
+          // The only child is the avatar, and a preset avatar is aria-hidden,
+          // so without this the control announces as an unnamed button.
+          aria-label={`Change ${username}'s picture`}
           className="shrink-0"
         >
           <PlayerAvatar name={username} avatar={avatar} size={40} />
@@ -2133,7 +2136,7 @@ function HouseBotEditor({
                 className="px-3 text-gold-leaf">
                 {preparing ? "Preparing..." : "Upload image..."}
               </Button>
-              <span className="text-[11px] text-parchment-500">
+              <span className="text-[12px] text-parchment-500">
                 PNG, JPEG, WebP, or GIF. Cropped to a square; max 1 MB after compression.
               </span>
             </div>
@@ -2147,6 +2150,7 @@ function HouseBotEditor({
                   disabled={saving}
                   onClick={() => pickAvatar(id)}
                   title={id}
+                  aria-label={`Use avatar ${id}`}
                   className={
                     "rounded-none border p-0.5 transition " +
                     (id === avatar ? "border-[color:var(--edge-strong)]" : "border-transparent hover:border-[color:var(--edge-strong)]")
