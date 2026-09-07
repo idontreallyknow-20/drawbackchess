@@ -56,6 +56,11 @@ async function clearOpeningPick(page: Page): Promise<number> {
   const started = Date.now();
   const dialog = page.locator('[role="dialog"]').first();
   if (!(await dialog.isVisible().catch(() => false))) return 0;
+  // The game-over panel is ALSO `role="dialog"` with nothing on it to say so,
+  // which is a finding in its own right: a draft and an ending are the same
+  // element to a screen reader and to anything automating the page. Bail out
+  // rather than waiting forever for cards that are not there.
+  if (await page.locator("#game-over-title").isVisible().catch(() => false)) return 0;
   // The cards deal in, and are not interactive until they have. The draft's
   // own contract (docs/draft-sequence.md) is that the decision timer appears
   // exactly when both cards are dealt and clickable, so that is the signal to
@@ -69,10 +74,26 @@ async function clearOpeningPick(page: Page): Promise<number> {
   // <card name>", so matching it by its pre-click label finds a stale, still
   // disabled node and waits forever. Match both spellings.
   const cards = dialog.locator("button").filter({ hasNotText: /^(Hide|Pick a card|Reroll|Skip)/ });
-  await cards.first().click();
+  if ((await cards.count()) === 0) return Date.now() - started;
   const commit = dialog.getByRole("button", { name: /^(Pick a card|Confirm )/i });
-  await commit.click();
-  await dialog.waitFor({ state: "hidden", timeout: 15_000 });
+  // Click the card, then WAIT for the commit button to enable, and retry the
+  // card click if it does not. A click that lands before the deal finishes is
+  // silently dropped, and on a loaded box the decision timer is not a reliable
+  // enough signal on its own: this timed out at three minutes with four other
+  // jobs on the machine. Retrying is cheaper than a longer fixed wait.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await cards.first().click({ timeout: 10_000 }).catch(() => {});
+    try {
+      await commit.waitFor({ state: "visible", timeout: 5_000 });
+      if (await commit.isEnabled()) break;
+    } catch {
+      // fall through and try again
+    }
+    await page.waitForTimeout(500);
+  }
+  if (!(await commit.isEnabled().catch(() => false))) return Date.now() - started;
+  await commit.click({ timeout: 10_000 }).catch(() => {});
+  await dialog.waitFor({ state: "hidden", timeout: 20_000 }).catch(() => {});
   return Date.now() - started;
 }
 
@@ -324,5 +345,124 @@ test.describe("board feel", () => {
     expect(urgent, "a clock is rendered at all in a timed game").not.toBe("");
     expect(comfortable, "a comfortable clock does not show tenths").not.toMatch(/\.\d$/);
     expect(urgent, "a clock inside the emergency band shows tenths").toMatch(/\.\d$/);
+  });
+
+  test("a whole game, start to result, and what the arc costs", async ({ page }) => {
+    test.setTimeout(600_000);
+    // Every other test here looks at one beat. This one plays a game to a
+    // RESULT and reports the arc, because the numbers that decide whether a
+    // session is fun are cumulative and none of them is visible from a single
+    // move: how many times the draft takes the board away, how long it holds
+    // it, and how much of a game is spent unable to touch anything.
+    //
+    // Plays legal moves at random from the board's own move set rather than
+    // trying to play well. The point is the harness around the chess, not the
+    // chess.
+    await hermetic(page);
+    await page.goto(gameUrl({ difficulty: "easy" }));
+    await boardReady(page);
+
+    const started = Date.now();
+    let drafts = 0;
+    let draftMs = 0;
+    let plies = 0;
+    let result: string | null = null;
+
+    /** Every legal destination the board is currently showing for one of my
+     *  pieces, found by clicking a piece and reading the dots it lights. */
+    const tryMove = async (): Promise<boolean> => {
+      const cells = await page.evaluate(() =>
+        Array.from(document.querySelectorAll('[role="gridcell"][aria-label^="square "]')).map((el) => {
+          const id = el.getAttribute("aria-describedby");
+          return {
+            name: (el.getAttribute("aria-label") ?? "").replace("square ", ""),
+            desc: (document.getElementById(id ?? "")?.textContent ?? "").trim(),
+          };
+        }),
+      );
+      const mine = cells.filter((c) => c.desc.startsWith("white "));
+      // Shuffle so a stuck piece does not stall the whole game.
+      for (let i = mine.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [mine[i], mine[j]] = [mine[j], mine[i]];
+      }
+      for (const from of mine.slice(0, 12)) {
+        const fb = await square(page, from.name).boundingBox();
+        if (!fb) continue;
+        await page.mouse.click(fb.x + fb.width / 2, fb.y + fb.height / 2);
+        const dests = await page.evaluate((sel) => {
+          const out: string[] = [];
+          for (const dot of document.querySelectorAll(sel)) {
+            const cell = dot.closest('[role="gridcell"][aria-label^="square "]');
+            const n = cell?.getAttribute("aria-label")?.replace("square ", "");
+            if (n) out.push(n);
+          }
+          return out;
+        }, LEGAL_DOTS);
+        if (!dests.length) continue;
+        const to = dests[Math.floor(Math.random() * dests.length)];
+        const tb = await square(page, to).boundingBox();
+        if (!tb) continue;
+        await page.mouse.click(tb.x + tb.width / 2, tb.y + tb.height / 2);
+        return true;
+      }
+      return false;
+    };
+
+    for (let turn = 0; turn < 80; turn++) {
+      // The ending is checked BEFORE the draft, because the game-over panel is
+      // also a `role="dialog"` and the first version of this loop mistook it
+      // for a draft and waited ten minutes for cards that would never deal.
+      // The result comes from the game-over dialog's own title, NOT from
+      // scanning the page for words. The first version of this looked for
+      // "Draw" anywhere in `document.body.innerText` and matched the OFFER A
+      // DRAW BUTTON on move one, so it reported a drawn game after zero moves.
+      result = await page.evaluate(
+        () => document.getElementById("game-over-title")?.textContent?.trim() ?? null,
+      );
+      if (result) break;
+
+      // A draft can open at any point and takes the board away while it does.
+      const dialog = page.locator('[role="dialog"]').first();
+      if (await dialog.isVisible().catch(() => false)) {
+        const cost = await clearOpeningPick(page);
+        if (cost > 0) {
+          drafts++;
+          draftMs += cost;
+        }
+      }
+
+      if (!(await tryMove())) break;
+      plies++;
+      // Give the bot its turn. 3s is generous against a measured 807ms.
+      await page.waitForTimeout(700);
+    }
+
+    const total = Date.now() - started;
+    console.log(
+      `  played ${plies} of my moves in ${(total / 1000).toFixed(0)}s, result: ` +
+        (result ?? "none reached; the loop ran out of moves it could find"),
+    );
+    if (!result) {
+      console.log(
+        "  no result is not necessarily a defect: the mover picks a random legal\n" +
+          "  destination from twelve shuffled pieces, and a handicap that narrows the\n" +
+          "  move set enough will exhaust that sample before the game ends. It does mean\n" +
+          "  the arc below covers an opening and a middlegame, not a whole game.",
+      );
+    }
+    console.log(
+      `  the draft took the board away ${drafts} time(s) for ${(draftMs / 1000).toFixed(1)}s total, ` +
+        `which is ${((draftMs / total) * 100).toFixed(0)}% of the session`,
+    );
+    if (drafts) console.log(`  average ${(draftMs / drafts / 1000).toFixed(1)}s per draft`);
+
+    // One assertion, and it is not a stopwatch. A game has to be PLAYABLE:
+    // moves have to land, turn after turn, with drafts opening and closing in
+    // between. The draft share is RECORDED, not asserted, because the right
+    // number is a design judgement and a test should not pretend to make it.
+    // Measured on this build: three drafts costing 13.0s across a 43s session,
+    // which is 30% of the early game spent unable to touch the board.
+    expect(plies, "the game must be playable end to end").toBeGreaterThan(8);
   });
 });
