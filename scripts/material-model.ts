@@ -87,6 +87,44 @@
 // their own ESTIMATED bucket, separate from the terms read straight off the
 // page.
 //
+// DELAYED AND CONDITIONAL REMOVAL, AND WHY IT NEEDED FOUR FIXES (round 9).
+//
+// The largest hole this model had was cards whose piece nouns sit in one
+// clause and whose removing verb sits in a later one, with an anaphor in
+// between: "Mark up to three enemy knights, bishops, or pawns; after your
+// opponent's next move, lightning falls and removes EACH MARKED PIECE that
+// still stands." Eighteen cards measured above +30 win-rate points at M = 0,
+// and fourteen of them were material this parser could not read.
+//
+// They did not fail for one reason, and the `pending` / `carried` machinery
+// already covered more of them than it looked. The four things actually wrong
+// were small and separate, and each is named at its definition:
+//
+//   1. A QUALIFIER COUNTED AS AN ANTECEDENT. "Mark two enemy pieces of any
+//      type below queen" has one noun group and one phantom one, the
+//      two-candidate guard fired on the phantom, and the sentence parked
+//      nothing (`qualifier`, in the mention loop).
+//   2. AN ANAPHOR WEARING A NOUN. "each marked piece" is "it" spelled out, but
+//      the pronoun rule tested `!hasNoun` and threw the clause away
+//      (ANAPHOR_NOUN).
+//   3. A CLASS UPGRADE WITH ITS SUBJECT A SENTENCE BACK. "it becomes a queen
+//      where it stands" is a TRANSFORM, worth the difference, and the
+//      antecedent had to survive one more sentence to reach it
+//      (ANAPHOR_UPGRADE, and the pending-forwarding branch).
+//   4. MISSING WORDS. "destroying", "crush", "dragged off", "drops in",
+//      "become" as a bridge in TRANSFORM, "adjacent" as a modifier, and "your
+//      next N captures" as both a gate and a repeat count.
+//
+// One shape stays unreadable and is NOT guessed at. Where the passive verb
+// sits more than 45 characters past its subject, behind an exclusion and a
+// locative ("every enemy piece EXCEPT THE KING STANDING ON OR NEXT TO THAT
+// SQUARE is blown off the board", `hw3_time_bomb`), the after-window never
+// reaches the verb. Widening that window to 60 was tried and measured: it does
+// not reach these two cards anyway, it moves six unrelated cards, and it
+// pushes `blood_pact` above its own tier on a verb it should not have bound.
+// So the window stands and those cards stay in the UNPARSED list, which is
+// where a card the parser cannot read honestly belongs.
+//
 // AND A CARD THE PARSER READS WRONG IS HELD OUT BY NAME. KNOWN_MISREAD lists
 // the cards whose M has been checked against the engine and found wrong, with
 // the line of the buff that settles it and the parser fix that would retire
@@ -327,6 +365,64 @@ const COPY_MENTION = /\b(?:copy|copies|twin|twins|duplicate|double)\b/g;
 /** The pronoun a follow-on clause uses for a piece the previous clause named. */
 const PRONOUN_SUBJECT = /\b(?:it|they|them|both|that piece|the piece|the marked piece)\b/;
 
+/**
+ * A piece-class UPGRADE IN PLACE whose subject is that pronoun: "it becomes a
+ * queen where it stands", "they become queens". The piece is already on the
+ * board, so the card is worth the DIFFERENCE and not the target.
+ *
+ * Anchored at the pronoun rather than allowed to float, and the gap to the
+ * verb is short, because the whole point is that this clause names no source
+ * of its own. Where the source IS named in the same breath, TRANSFORM has
+ * already taken it.
+ */
+const ANAPHOR_UPGRADE = new RegExp(
+  `\\b(?:it|they|them|both|that piece|the piece|each|every)\\b[^.]{0,20}?` +
+    `\\b(?:becomes?|become|turns? into|is now|are now)\\s+(?:a |an )?(${NOUN_SRC})\\b`,
+);
+
+/**
+ * Changing sides, as opposed to arriving or leaving.
+ *
+ * Every other term in this model is one-sided, and the header says a gain and
+ * a denial are worth the same. A defection is BOTH at once on the same piece,
+ * so it moves twice the material: their army is one piece lighter and yours is
+ * one piece heavier. Used only where the card also says whose side the piece
+ * ends up on (see the `loaned` test), because "the winner steals a random
+ * enemy pawn, which walks across and defects" (`gm_river_card`) can defect to
+ * either player.
+ *
+ * A bare "to your side" is deliberately NOT enough. `hw3_exiles_mark` says
+ * "every move it makes must carry it CLOSER TO YOUR SIDE", which is a movement
+ * rule about a piece that then crumbles to dust, and reading that as a
+ * defection paid the holder twice for a piece he never owns. Only a verb of
+ * changing allegiance counts.
+ */
+const DEFECTION =
+  /\b(?:defects?|defected|defection|turns? its coat|changes? sides?|joins? your (?:side|army|colou?rs?)|comes? over to your (?:side|colou?rs?))\b/;
+
+/**
+ * An explicit BACK-REFERENCE: a noun phrase whose modifier says an earlier
+ * clause already named this piece.
+ *
+ * "Mark up to three enemy knights, bishops, or pawns; after your opponent's
+ * next move, lightning falls and removes EACH MARKED PIECE that still stands"
+ * (`lightning_strike`) is the same anaphor as "it is removed", but it wears a
+ * noun, so the `!hasNoun` test in the pronoun rule threw the clause out and the
+ * card scored nothing at all.
+ *
+ * Only markers that can ONLY be back-references are listed. A piece is
+ * "marked", "chosen" or "condemned" because some earlier clause marked, chose
+ * or condemned it. "the enemy pawn" is deliberately NOT here: a card may
+ * introduce an enemy pawn it has never mentioned before, and binding that to a
+ * previous sentence would be a guess.
+ */
+const ANAPHOR_NOUN = new RegExp(
+  `\\b(?:each|every|the|those|these|both|any|all)\\s+(?:of\\s+(?:the|those|them)\\s+)?` +
+    `(?:still\\s+|remaining\\s+|surviving\\s+)?(?:marked|chosen|condemned|named|selected|targeted)\\s+` +
+    `(?:${NOUN_SRC})\\b`,
+  "g",
+);
+
 /** Comma-separated clauses of a sentence, blanks dropped. Blanked-out trigger
  *  clauses (see effectText) survive as whitespace and fall out here. */
 const clausesOf = (text: string): string[] => text.split(/,\s+/).filter((c) => c.trim());
@@ -337,6 +433,19 @@ function hasNoun(text: string): boolean {
   MENTION.lastIndex = 0;
   COPY_MENTION.lastIndex = 0;
   return MENTION.test(text) || COPY_MENTION.test(text);
+}
+
+/**
+ * A clause that names no piece of its own: every noun in it is a
+ * back-reference to one an earlier clause already named. This is the same
+ * statement as `!hasNoun(c) && PRONOUN_SUBJECT.test(c)`, made about a clause
+ * that says "each marked piece" instead of "it".
+ */
+function isAnaphoricClause(text: string): boolean {
+  ANAPHOR_NOUN.lastIndex = 0;
+  if (!ANAPHOR_NOUN.test(text)) return false;
+  ANAPHOR_NOUN.lastIndex = 0;
+  return !hasNoun(text.replace(ANAPHOR_NOUN, " "));
 }
 
 function nounKey(word: string): string {
@@ -399,6 +508,11 @@ const GAIN: RegExp[] = [
   /\btake control of\b/,
   /\bdefects?\b|\bturns its coat\b/,
   /\b(?:hires?|conscripts?|recruits?)\b/,
+  // "a fresh rook DROPS IN there" (`smurf_account`). Bare "drop" is banned
+  // above because it is also what a piece does when it lands on a square; the
+  // phrasal "drops in" only ever means arrival, and is the anchored form the
+  // note above asks for.
+  /\bdrops? in\b/,
   /\b(?:is|are|was|were) raised\b/,
   /\braises?\s+(?:a|an)\b/,
   /\btakes? (?:the|an?|over) (?:nearest|empty|open|free|vacated)\b/,
@@ -414,11 +528,23 @@ const GAIN: RegExp[] = [
  *  adjective in "one of your captured pawns", and GAIN wins any tie. */
 const DENY: RegExp[] = [
   /\bremoves?\b|\bremoved\b|\bremoving\b|\bremove\b/,
-  /\bdestroys?\b|\bdestroyed\b|\bdestroy\b/,
+  // "destroying" was missing while "removing" was present, and a participle is
+  // how half the blast cards say it: "detonate one square in every direction,
+  // DESTROYING up to two adjacent enemy pieces" (`total_atomic`).
+  /\bdestroys?\b|\bdestroyed\b|\bdestroy\b|\bdestroying\b/,
   /\berased?\b|\bobliterated?\b/,
   /\bbanish(?:es|ed)?\b/,
   /\bbanned\b/,
   /\bblown off\b|\bswept off\b|\btaken? off the board\b/,
+  // ANCHORED, because bare "dragged" is the library's usual word for a SHOVE:
+  // `we_riptide` drags a piece "one square back toward its home rank" and
+  // `magnetism` drags one "up to two squares toward that knight". Only
+  // "dragged off" and "dragged below" take it away (`hw3_doomed_vow`,
+  // `ov_leviathan_below`).
+  /\bdragged (?:off|below)\b/,
+  // `giants_maul` and `ov_cloud_serpent` are the only two cards that crush
+  // anything, and both mean the piece is gone.
+  /\bcrush(?:es|ed)?\b/,
   // "it leaves the board for a higher plane" (Apotheosis) is a removal, and
   // the only five cards in the library that say "leaves the board" all mean
   // it literally. The EXPIRY table above reads the LEASE form of the same
@@ -490,8 +616,11 @@ const COUNT_WORDS: Record<string, number> = {
 };
 
 /** Words that may sit between a quantifier and its noun. */
+/** "adjacent" is a SCOPE adjective, not a gate: "destroying up to two ADJACENT
+ *  enemy pieces" says where the two are, not whether they are there, and
+ *  leaving it off this list cost the whole blast family its count. */
 const MODIFIER =
-  "(?:new|fresh|spare|extra|second|smaller|larger|random|captured|fallen|lost|dead|slain|enemy|surviving|remaining|other|chosen|clockwork|golden|best|strongest|finest|highest-value|heaviest|weakest|own|more|additional|small|big|good|exact|identical|tiny|little|of|your|their|its|his|her|them|the|opponent's|opponents)";
+  "(?:new|fresh|spare|extra|second|smaller|larger|random|captured|fallen|lost|dead|slain|enemy|surviving|remaining|other|chosen|clockwork|golden|best|strongest|finest|highest-value|heaviest|weakest|own|more|additional|small|big|good|exact|identical|tiny|little|adjacent|neighbouring|neighboring|of|your|their|its|his|her|them|the|opponent's|opponents)";
 
 const QUANT = new RegExp(
   `\\b(up to (?:\\d+|one|two|three|four|five)|\\d+|a|an|any|one|another|two|three|four|five|six|seven|eight|nine|ten|both|every|each|all)\\s+(?:${MODIFIER}\\s+){0,3}$`,
@@ -528,7 +657,7 @@ const QUALIFIER_LEAD =
  * the shorter and safer of the two lists.
  */
 const GAP_ALLOWED =
-  /^(?:\s|,|\(|\)|-|\d+|\b(?:a|an|the|any|one|another|two|three|four|five|six|seven|eight|nine|ten|both|every|each|all|up|to|of|in|on|at|into|onto|and|or|but|back|new|fresh|spare|extra|second|smaller|larger|random|captured|fallen|lost|dead|slain|enemy|surviving|remaining|other|chosen|clockwork|golden|tiny|best|strongest|finest|highest-value|heaviest|weakest|own|more|additional|small|big|good|exact|identical|your|their|its|his|her|them|it|opponent's|opponents)\b)*$/;
+  /^(?:\s|,|\(|\)|-|\d+|\b(?:a|an|the|any|one|another|two|three|four|five|six|seven|eight|nine|ten|both|every|each|all|up|to|of|in|on|at|into|onto|and|or|but|back|most|new|fresh|spare|extra|second|smaller|larger|random|captured|fallen|lost|dead|slain|enemy|surviving|remaining|other|chosen|clockwork|golden|tiny|adjacent|neighbouring|neighboring|best|strongest|finest|highest-value|heaviest|weakest|own|more|additional|small|big|good|exact|identical|your|their|its|his|her|them|it|opponent's|opponents)\b)*$/;
 
 /**
  * A verb standing AFTER its noun takes it as the subject ("a pawn joins your
@@ -589,6 +718,29 @@ interface Term {
   estimated: boolean;
   note: string;
 }
+
+/** An unscored noun group parked for the next sentence's anaphor to bind to.
+ *  Named rather than inlined because it is now both read from and written back
+ *  into `pending`, and an anonymous shape makes that circular to infer. */
+interface Pending {
+  value: number;
+  count: number;
+  side: "self" | "opp";
+  estimated: boolean;
+  /** The group was introduced by an "up to N", so the cap has to survive the
+   *  hop to the next sentence. */
+  upTo: boolean;
+}
+
+/**
+ * Hand a parked antecedent on to the next sentence unchanged.
+ *
+ * A copy through a function with a DECLARED return type, rather than the
+ * obvious `pending = carried`: assigning the carried value straight back makes
+ * the parked type depend on itself around the sentence loop, and the compiler
+ * resolves that circle by narrowing both ends to `never`.
+ */
+const forwarded = (p: Pending): Pending => ({ ...p });
 
 interface Parse {
   terms: Term[];
@@ -740,6 +892,10 @@ const CAPTURE_GATE = [
   /\bwhen(?:ever)?\b[^.]{0,60}(?:is|are) captured\b/,
   /\bwhen(?:ever)?\b[^.]{0,40}captur\w+\b/,
   /\byour next capture\b/,
+  // "YOUR NEXT THREE CAPTURES each detonate..." (`total_atomic`,
+  // `detonation_field`, `we_ball_lightning`): the whole payout waits on the
+  // holder making a capture, which is the same gate the singular form names.
+  /\b(?:each of )?your next (?:\d+|one|two|three|four|five) captures\b/,
   /\beach time (?:you|they|your opponent)\b[^.]{0,40}captur/,
   /\bthe next \d+ (?:enemy )?\w+ you capture\b/,
   /\bif you capture\b/,
@@ -772,12 +928,44 @@ function conditionalityFor(whole: string): { v: number; note: string } {
   return { v: 1, note: "unconditional" };
 }
 
-/** "the next 3 of your pieces that are captured each return" pays out 3 times. */
-function repeatFor(whole: string): number {
-  const m = /\bthe (?:next|first) (\d+|two|three|four|five)\s+(?:times|of your|of their)\b/.exec(whole);
-  if (!m) return 1;
-  const n = /^\d+$/.test(m[1]) ? Number(m[1]) : COUNT_WORDS[m[1]];
+/**
+ * How many pieces a quantifier in `before` definitely names.
+ *
+ * Only a stated number counts: "up to three", "every", "all" and "each" all
+ * return 1, because a transform priced off a hedge or a board-wide sweep would
+ * be a guess, and this model's rule is to take the low reading where the text
+ * does not force one.
+ */
+function definiteCount(before: string): number {
+  const q = QUANT.exec(before);
+  if (!q) return 1;
+  const token = q[1];
+  if (/^up to /.test(token)) return 1;
+  const n = /^\d+$/.test(token) ? Number(token) : COUNT_WORDS[token];
   return Number.isFinite(n) && n > 1 ? n : 1;
+}
+
+/**
+ * "the next 3 of your pieces that are captured each return" pays out 3 times.
+ *
+ * "Your next three captures EACH detonate" is the same claim in the second
+ * person, and the engines agree: `total_atomic` and `detonation_field` both
+ * open with `inst.state.charges = 3` and spend one per capture. Scoring one
+ * blast for a card that buys three was a third of the card.
+ */
+const REPEAT = [
+  /\bthe (?:next|first) (\d+|two|three|four|five)\s+(?:times|of your|of their)\b/,
+  /\b(?:each of )?your next (\d+|two|three|four|five) captures\b/,
+];
+
+function repeatFor(whole: string): number {
+  for (const re of REPEAT) {
+    const m = re.exec(whole);
+    if (!m) continue;
+    const n = /^\d+$/.test(m[1]) ? Number(m[1]) : COUNT_WORDS[m[1]];
+    if (Number.isFinite(n) && n > 1) return n;
+  }
+  return 1;
 }
 
 /**
@@ -786,10 +974,16 @@ function repeatFor(whole: string): number {
  * A transform is a NET change, not two events. Scoring the source and the
  * target separately turned Ironwright's Bargain (a minor becomes a rook, for
  * the price of a pawn) into eight points of new material instead of two.
+ *
+ * "become" joins "into", "as" and "to" as a bridge, because half the library
+ * writes the same event with no preposition at all: "any two of your pieces,
+ * king aside, BECOME QUEENS" (`reality_warp`) and "one of your knights,
+ * bishops or rooks BECOMES A QUEEN" (`bw2_alchemists_trade`) are the identical
+ * shape to "is reforged into a rook", and both scored nothing.
  */
 const TRANSFORM = new RegExp(
   `\\b(${NOUN_SRC})\\b[^.]{0,24}?\\b(?:is|are|becomes?|turns?|grows?|reshapes?|sheds? its \\w+ and becomes?)?\\s*` +
-    `(?:reforged|remade|transformed|reborn|refit|upgraded|promoted|knighted)?\\s*(?:into|as|to)\\s+` +
+    `(?:reforged|remade|transformed|reborn|refit|upgraded|promoted|knighted)?\\s*(?:into|as|to|becomes?|become)\\s+` +
     `(?:a |an )?(${NOUN_SRC})\\b`,
   "g",
 );
@@ -908,14 +1102,23 @@ function parseCard(description: string, kind: string): Parse {
    * DIFFERENT piece a sentence later that "it is lost", and a pending that
    * survived the gap bound the wrong pronoun to the right noun and scored the
    * card off a coincidence. Better to leave the card in the UNPARSED list.
+   *
+   * `upTo` travels with it for the same reason the collapsed or-list carries
+   * its cap into `emit`: "Mark UP TO three enemy knights, bishops, or pawns"
+   * and "Mark two enemy pieces" are not the same claim, and a pending that
+   * dropped the cap charged `lightning_strike` for three certain pawns.
    */
-  let pending: { value: number; count: number; side: "self" | "opp"; estimated: boolean } | null = null;
+  let pending: Pending | null = null;
 
   for (const s of sentences(description)) {
     // Whatever the PREVIOUS sentence parked; anything parked below is for the
     // next one round only.
-    const carried = pending;
+    const carried: Pending | null = pending;
     pending = null;
+    /** How many terms stood before this sentence, so "this sentence scored
+     *  nothing" can be asked of the clause-level branches below as well as of
+     *  the group loop. */
+    const termsBefore = terms.length;
     const raw = s.text.toLowerCase();
     const eff = effectText(raw);
     effWhole += `${eff} `;
@@ -978,14 +1181,24 @@ function parseCard(description: string, kind: string): Parse {
       consumed.add(to.at);
       sawTransform = true;
       const net = nounValue(to.word) - nounValue(from.word);
+      // A transform can run more than once. "Promote TWO pawns to queens"
+      // (`twin_queens`, engine `promotePawns(2, 5, "q")`) and "any TWO of your
+      // pieces, king aside, become queens" (`reality_warp`) each change two
+      // pieces, and pricing the pair at one was half the card. The quantifier
+      // is read off the source noun by the same QUANT the mention loop uses
+      // (which has not run yet at this point, so it is run here), and only a
+      // DEFINITE count raises it: "up to three", "every" and "all" are exactly
+      // the readings this parser is least sure of, and a floor should take the
+      // low one.
+      const count = definiteCount(dePlace(eff.slice(Math.max(0, from.at - 45), from.at)));
       // A net of zero is still a PARSE. Recording it keeps a knight-for-bishop
       // swap out of the unparsed list, where it would read as a coverage hole
       // instead of as the honest answer that the card moves no material.
-      const m = bias * net * perm.v * cond.v;
+      const m = bias * net * count * perm.v * cond.v;
       terms.push({
         noun: `${from.word} -> ${to.word}`,
         value: net,
-        count: 1,
+        count,
         sign: Math.sign(net) || 1,
         permanence: perm.v,
         conditionality: cond.v,
@@ -995,12 +1208,29 @@ function parseCard(description: string, kind: string): Parse {
       });
     }
 
+    /**
+     * Mentions that turned out to be QUALIFIERS on some other noun rather than
+     * pieces the card moves ("any type BELOW QUEEN", "moves like A QUEEN").
+     *
+     * They are tracked instead of merely skipped because a qualifier must not
+     * count as a candidate ANTECEDENT either. `mass_mind_control` ("Mark two
+     * enemy pieces of any type below queen. After your opponent's next move,
+     * any of them still in place defect to your side") had its one real noun
+     * group joined by a phantom "queen" group, the two-candidate guard fired,
+     * and the sentence parked nothing for the next sentence's "them" to bind
+     * to. The guard is right and stays; the second candidate was never real.
+     */
+    const qualifier = new Set<number>();
+
     for (const men of mentions) {
       if (consumed.has(men.at)) continue;
       const rawBefore = eff.slice(Math.max(0, men.at - 45), men.at);
       const before = dePlace(rawBefore);
       const after = dePlace(eff.slice(men.at + men.word.length, men.at + men.word.length + 45));
-      if (QUALIFIER_LEAD.test(before) || MOVEMENT_SIMILE.test(before)) continue;
+      if (QUALIFIER_LEAD.test(before) || MOVEMENT_SIMILE.test(before)) {
+        qualifier.add(men.at);
+        continue;
+      }
 
       // A verb BEFORE the noun must govern it directly ("place a new pawn"),
       // so only quantifiers and adjectives may sit between the two.
@@ -1128,6 +1358,40 @@ function parseCard(description: string, kind: string): Parse {
       }
     }
 
+    // A PIECE-CLASS UPGRADE IN PLACE, with its subject a sentence back.
+    //
+    // "Choose one of your knights or bishops. After your opponent's next move,
+    // it ascends: it becomes a queen where it stands." (`bn4_ascension_small`,
+    // and the engine agrees: `api.setPieceType(sq, "q")`.) No body arrives —
+    // the one already standing there changes class — so this is a TRANSFORM
+    // whose source sits in an earlier sentence, and it is worth the DIFFERENCE
+    // exactly as "one of your knights is reforged into a rook" is. Scoring the
+    // queen instead would charge the card nine points for six points of work.
+    //
+    // The target mention is marked consumed so the group loop below cannot
+    // bill for the same queen a second time.
+    const upgrade = carried ? ANAPHOR_UPGRADE.exec(eff) : null;
+    if (upgrade && carried) {
+      const target = upgrade[1];
+      const at = upgrade.index + upgrade[0].length - target.length;
+      for (const men of mentions) if (men.at === at) consumed.add(men.at);
+      const net = nounValue(target) - carried.value;
+      const sign = carried.side === "opp" ? -1 : 1;
+      const m = bias * sign * net * carried.count * perm.v * cond.v;
+      if (carried.estimated) estimated = true;
+      terms.push({
+        noun: `(anaphor) -> ${target}`,
+        value: net,
+        count: carried.count,
+        sign,
+        permanence: perm.v,
+        conditionality: cond.v,
+        m,
+        estimated: carried.estimated,
+        note: `class upgrade in place, bound to the previous sentence / ${perm.note} / ${cond.note}`,
+      });
+    }
+
     // A CLAUSE with no noun of its own, a verb, and a pronoun subject is
     // finishing the previous sentence's thought.
     //
@@ -1139,9 +1403,17 @@ function parseCard(description: string, kind: string): Parse {
     // test saw the queen, refused the sentence outright, and scored the card
     // at a free queen with no cost at all. A sentence with no nouns anywhere
     // is still one clause with no nouns, so the older reading is unchanged.
-    const pronounClause = carried
-      ? clausesOf(eff).find((c) => !hasNoun(c) && PRONOUN_SUBJECT.test(c))
-      : null;
+    //
+    // A clause whose only nouns are BACK-REFERENCES ("removes each marked
+    // piece that still stands") is the same clause with the pronoun spelled
+    // out, and counts too. See ANAPHOR_NOUN for why only unambiguous markers
+    // qualify.
+    const pronounClause =
+      carried && !upgrade
+        ? clausesOf(eff).find(
+            (c) => (!hasNoun(c) && PRONOUN_SUBJECT.test(c)) || isAnaphoricClause(c),
+          )
+        : null;
     if (pronounClause && carried) {
       const cleaned = dePlace(pronounClause);
       const verb = hits(GAIN, cleaned) ? 1 : hits(DENY, cleaned) ? -1 : 0;
@@ -1158,18 +1430,41 @@ function parseCard(description: string, kind: string): Parse {
             : carried.side === "opp"
               ? 1
               : -1;
-        const m = bias * sign * carried.value * carried.count * perm.v * cond.v;
+        // A DEFECTION is worth TWICE the piece. Every other term in this model
+        // is one-sided: a spawn adds to your army, a removal subtracts from
+        // theirs, and the header says both count the same POSITIVE amount.
+        // "any of them still in place defect to your side for the game"
+        // (`mass_mind_control`; the engine is `api.setPieceColor(sq, api.me)`)
+        // does BOTH to the same piece, so it moves two pieces' worth of
+        // material across the gap between the armies.
+        //
+        // Confined to a piece that was the OPPONENT'S and that the card says
+        // changes sides. `bw2_spoils_of_war` also says "defects", but of a
+        // piece already in your own graveyard, so its `carried.side` is self
+        // and it stays priced at one body.
+        const defection = verb === 1 && carried.side === "opp" && loaned && DEFECTION.test(cleaned);
+        const cap = carried.upTo ? 0.65 : 1;
+        const c = cond.v * cap;
+        const m = bias * sign * carried.value * carried.count * (defection ? 2 : 1) * perm.v * c;
         if (carried.estimated) estimated = true;
         terms.push({
           noun: "(pronoun)",
           value: carried.value,
-          count: carried.count,
+          count: carried.count * (defection ? 2 : 1),
           sign,
           permanence: perm.v,
-          conditionality: cond.v,
+          conditionality: c,
           m,
           estimated: carried.estimated,
-          note: `bound to the previous sentence / ${perm.note} / ${cond.note}`,
+          note: [
+            "bound to the previous sentence",
+            carried.upTo ? "up to" : "",
+            defection ? "defection, worth double" : "",
+            perm.note,
+            cond.note,
+          ]
+            .filter(Boolean)
+            .join(" / "),
         });
       }
     }
@@ -1262,17 +1557,43 @@ function parseCard(description: string, kind: string): Parse {
     // Park an unscored noun group for the NEXT sentence's pronoun, and for
     // that sentence only (pending was cleared at the top of this loop). Only
     // when the sentence has exactly one group and scored nothing, so a card
-    // with two candidate antecedents never guesses between them.
-    const unscored = [...new Set(mentions.filter((x) => !consumed.has(x.at)).map((x) => x.group))];
+    // with two candidate antecedents never guesses between them. Qualifiers
+    // ("of any type below queen") are not candidates and are left out of the
+    // count, or the guard fires on a group that names no piece.
+    const live = mentions.filter((x) => !consumed.has(x.at) && !qualifier.has(x.at));
+    const unscored = [...new Set(live.map((x) => x.group))];
     if (!scoredHere && unscored.length === 1) {
-      const members = mentions.filter((x) => x.group === unscored[0]);
+      const members = live.filter((x) => x.group === unscored[0]);
       const head = members.reduce((a, b) => (a.value <= b.value ? a : b));
       pending = {
         value: head.value,
         count: Math.max(...members.map((x) => x.count)),
         side: head.side,
         estimated: head.estimated,
+        upTo: members.some((x) => x.note.startsWith("up to")),
       };
+    } else if (
+      // A sentence that does nothing but RE-NAME the antecedent hands it on.
+      // `bn4_ascension_small` reads "Choose one of your knights or bishops.
+      // After your opponent's next move, it ascends: it becomes a queen where
+      // it stands." The middle sentence resolves the pronoun and scores
+      // nothing, because "ascends" is not a verb this model bills for, and
+      // dropping the antecedent there left the upgrade in the third sentence
+      // with nothing to subtract.
+      //
+      // The one-sentence expiry is otherwise untouched, and this is why Golden
+      // Touch still refuses: forwarding needs a sentence with NO noun of its
+      // own, nothing scored, and a pronoun standing in the antecedent's place.
+      // "The price of greed" names no piece but has no pronoun either, so it
+      // still consumes the pending and the "it is lost" a sentence later still
+      // has nothing to bind to.
+      carried &&
+      !scoredHere &&
+      !live.length &&
+      terms.length === termsBefore &&
+      PRONOUN_SUBJECT.test(eff)
+    ) {
+      pending = forwarded(carried);
     }
   }
 
@@ -1631,6 +1952,23 @@ const PARSE_EXPECTATIONS: { id: string; m: number; why: string }[] = [
   { id: "wc_pinata", m: 1.6, why: "the enemy piece knocked off, less the pawn that bursts and is lost" },
   { id: "queens_apocalypse", m: 6.76, why: "the queen is the subject of 'choose', not of the 'and remove' that follows" },
   { id: "cs_roulette", m: 0.0, why: "red / black / green zero is a branch list with no odds on any branch: refused" },
+  // The round-9 pass on DELAYED AND CONDITIONAL REMOVAL (backlog A14). Every
+  // row below was read off the card AND out of the buff before it was pinned.
+  { id: "lightning_strike", m: 1.95, why: "'each marked piece' is the anaphor 'it' wearing a noun: up to 3 marked n/b/p, priced at the pawn, 3 x 1 x 0.65" },
+  { id: "mass_mind_control", m: 10.4, why: "a DEFECTION (api.setPieceColor(sq, api.me)) moves the piece across, so two enemy pieces are worth 2 x 2.6 x 2" },
+  { id: "hw3_doomed_vow", m: 2.6, why: "'it is dragged off the board' a sentence after 'condemn one enemy piece': one generic piece" },
+  { id: "bn4_ascension_small", m: 6.0, why: "'it becomes a queen where it stands' upgrades the minor already there (api.setPieceType(sq,'q')): 9 - 3, not 9" },
+  { id: "fm_sunforge", m: 1.3, why: "the same upgrade one class down (setPieceType 'n'): (3 - 1) x 0.65 for the 5th-rank gate" },
+  { id: "reality_warp", m: 12.8, why: "'any two of your pieces, king aside, become queens' is a transform written without a preposition, twice over" },
+  { id: "philosophers_stone", m: 24.0, why: "transformOwn(3, ['p'], 'q'): three pawns, so three times 9 - 1" },
+  { id: "twin_queens", m: 10.4, why: "promotePawns(2, 5, 'q') promotes TWO pawns; the transform count was pinned at one and lost half the card" },
+  { id: "smurf_account", m: 5.0, why: "'a fresh rook drops in there' is an arrival; a permanent rook" },
+  { id: "giants_maul", m: 3.0, why: "the maul removes exactly one enemy n/b/r (one api.removePiece), priced at the cheapest; the freeze is not material" },
+  { id: "ov_cloud_serpent", m: 1.0, why: "'it may crush one enemy pawn' is one removePiece; the barred rank is not material" },
+  { id: "ov_thunderstorm", m: 1.0, why: "3 strikes at a random square, each removing an enemy pawn if one stands there" },
+  { id: "total_atomic", m: 8.11, why: "charges = 3, each blast up to two adjacent: 2.6 x 2 x 3 x 0.65 up-to x 0.8 capture gate" },
+  { id: "detonation_field", m: 6.24, why: "charges = 3, one adjacent piece each: 2.6 x 3 x 0.8 capture gate" },
+  { id: "we_ball_lightning", m: 4.16, why: "captureExplosion({ beside: true, charges: 2 }): the repeat has to survive, 2.6 x 2 x 0.8" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -1681,6 +2019,19 @@ const KNOWN_MISREAD: Record<string, { real: number; why: string }> = {
   // Empty is the goal state, not an oversight. A card belongs here only while
   // its M has been checked against the engine and found wrong, with the line
   // of the buff that settles it and the parser fix that would retire it.
+  //
+  // One row came back in round 9. Teaching TRANSFORM the bare "becomes" bridge
+  // (for `reality_warp`) also let this card parse, and it parses HIGH.
+  bw2_alchemists_trade: {
+    real: 4,
+    why:
+      "The card is a TRADE and the parser can only read half of it. `api.setPieceType(up, \"q\")` raises a " +
+      "knight, bishop or rook to a queen, and `api.setPieceType(down, \"p\")` drops a second officer to a pawn: " +
+      "cheapest reading +6 then -2, so +4, and the parser scores the +6 alone. The price is invisible because " +
+      "the second sentence spends 'another of your OFFICERS', and 'officer' is not a piece noun. Retired by " +
+      "teaching NOUN_SRC the collective nouns (officer, minor already there, major already there), at which " +
+      "point the REPLACEMENT post-pass should also be able to see it.",
+  },
 };
 
 interface Scored {

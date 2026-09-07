@@ -57,41 +57,41 @@
  "fit": {
   "sources": [
    "card-winrate.gambling-2026-09-05.json (10)",
-   "card-winrate.shard0.json (110)",
-   "card-winrate.shard1.json (110)",
+   "card-winrate.shard0.json (90)",
+   "card-winrate.shard1.json (90)",
    "card-winrate.shard2.json (110)",
    "card-winrate.targeted-2026-09-06.json (336)"
   ],
   "tierOnly": {
-   "a": -2.9099805132659826,
-   "b": 2.084509491239556,
-   "r2": 0.0942196833994191,
-   "n": 617
+   "a": -1.7834594738667313,
+   "b": 1.726821301394139,
+   "r2": 0.05995921864917446,
+   "n": 526
   },
   "materialOnly": {
-   "a": 8.096169140811494,
-   "b": 1.7818890194969692,
-   "r2": 0.04445309504736626,
-   "n": 84
+   "a": 5.053248861461254,
+   "b": 2.7737103019457616,
+   "r2": 0.10886601701562891,
+   "n": 81
   },
   "joint": {
-   "a": -0.9548756327199223,
-   "bTier": 0.573718304380417,
-   "bM": 1.2012097505251766,
-   "r2": 0.0597767013626741,
-   "n": 617
+   "a": -0.1692590969382255,
+   "bTier": 0.2468071407595303,
+   "bM": 2.9264327393220473,
+   "r2": 0.1402125425893711,
+   "n": 526
   },
   "rungPower": [
    null,
-   -0.07384995096100488,
-   0.167189730349034,
-   0.907639469575637,
-   1.2611054782857571,
-   2.3009073834637634,
-   2.5079680203410106,
-   4.206706340587624,
-   5.4503562491593405,
-   9.27460161619213,
+   -0.09322969075983988,
+   0.11512278392662963,
+   0.9496123130727747,
+   1.4003685132429984,
+   2.663286414264348,
+   2.663286414264348,
+   2.8450594932848308,
+   5.202798732820219,
+   null,
    null
   ],
   "materialBuckets": [
@@ -99,50 +99,50 @@
     "lo": 0,
     "hi": 0.0001,
     "label": "no material",
-    "n": 533,
-    "mean": 0.9795376460535995
+    "n": 445,
+    "mean": 0.7113804353202376
    },
    {
     "lo": 0.0001,
     "hi": 1.5,
     "label": "up to a pawn",
-    "n": 21,
-    "mean": 8.20929607979727
+    "n": 19,
+    "mean": 3.9867986452661657
    },
    {
     "lo": 1.5,
     "hi": 2.5,
     "label": "a pawn to a minor",
     "n": 18,
-    "mean": 3.483275170703085
+    "mean": 4.728042757365217
    },
    {
     "lo": 2.5,
     "hi": 4.5,
     "label": "a minor",
-    "n": 23,
-    "mean": 8.611901198221235
+    "n": 24,
+    "mean": 9.555869702541886
    },
    {
     "lo": 4.5,
     "hi": 6.5,
     "label": "a rook",
-    "n": 17,
-    "mean": 13.7124688269625
+    "n": 15,
+    "mean": 19.30219506720111
    },
    {
     "lo": 6.5,
     "hi": 8.5,
     "label": "a rook and a minor",
     "n": 2,
-    "mean": 31.403648552118245
+    "mean": 30.55431878895815
    },
    {
     "lo": 8.5,
     "hi": 1000000000,
     "label": "a queen or more",
     "n": 3,
-    "mean": 3.911859228407961
+    "mean": 24.295276321685368
    }
   ]
  },
@@ -721,8 +721,8 @@
    "effectCategory": "capture-denial",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's queen cannot capture for their next 2 turns."
@@ -775,8 +775,8 @@
    "effectCategory": "capture-denial",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Starting after your opponent's next move, their pawns cannot capture for their following 3 turns."
@@ -865,8 +865,8 @@
    "effectCategory": "movement-phase-jump",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent cannot castle for their next 6 turns, though their first castling attempt slips through as one escape."
@@ -991,8 +991,8 @@
    "effectCategory": "movement-phase-jump",
    "mechanic": "passive",
    "refused": null,
-   "delta": -10,
-   "stderr": 10,
+   "delta": -15,
+   "stderr": 10.671873729054747,
    "terms": [],
    "notes": [],
    "description": "One pawn may advance two squares by passing through a single enemy piece directly ahead of it, landing on the empty square beyond without capturing, once."
@@ -1124,7 +1124,7 @@
    "mechanic": "passive",
    "refused": null,
    "delta": -5,
-   "stderr": 15.723301886761003,
+   "stderr": 17.40051084818425,
    "terms": [],
    "notes": [],
    "description": "One pawn moves diagonally forward without capturing, twice."
@@ -1141,8 +1141,8 @@
    "effectCategory": "special-rule-denial",
    "mechanic": "passive",
    "refused": null,
-   "delta": -20,
-   "stderr": 13.333333333333334,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's pawns cannot double-step for their next 3 turns."
@@ -1610,7 +1610,7 @@
    "mechanic": "passive",
    "refused": null,
    "delta": 0,
-   "stderr": 10.540925533894598,
+   "stderr": 12.909944487358056,
    "terms": [],
    "notes": [],
    "description": "One pawn jumps a single blocking piece directly ahead, twice."
@@ -1627,8 +1627,8 @@
    "effectCategory": "delayed-contract",
    "mechanic": "passive",
    "refused": null,
-   "delta": -10,
-   "stderr": 14.52966314513558,
+   "delta": 15,
+   "stderr": 15,
    "terms": [],
    "notes": [],
    "description": "One knight makes two knight-leaps in a single move, once."
@@ -1645,8 +1645,8 @@
    "effectCategory": "move-budget-change",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's queen slides at most 3 squares for their next 3 turns, though it may make one longer move to escape."
@@ -2864,8 +2864,8 @@
    "effectCategory": "movement-upgrade",
    "mechanic": "passive",
    "refused": null,
-   "delta": 10,
-   "stderr": 14.52966314513558,
+   "delta": -5,
+   "stderr": 8.975274678557508,
    "terms": [],
    "notes": [],
    "description": "One rook moves one square diagonally, twice."
@@ -2882,8 +2882,8 @@
    "effectCategory": "capture-denial",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's king cannot capture for their next 4 turns, though it may make one capture to escape."
@@ -2901,7 +2901,7 @@
    "mechanic": "passive",
    "refused": null,
    "delta": 10,
-   "stderr": 12.472191289246473,
+   "stderr": 17.950549357115015,
    "terms": [],
    "notes": [],
    "description": "One pawn may capture an enemy piece two squares diagonally ahead, twice."
@@ -2918,8 +2918,8 @@
    "effectCategory": "move-budget-change",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Starting after your opponent's next move, their rooks slide at most 3 squares for their following 4 turns."
@@ -2990,8 +2990,8 @@
    "effectCategory": "direction-geometry-lock",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's queen cannot move diagonally for their next 3 turns, though it may make one diagonal move to escape."
@@ -3026,8 +3026,8 @@
    "effectCategory": "teleport-relocate",
    "mechanic": "passive",
    "refused": null,
-   "delta": 20,
-   "stderr": 18.55921454276674,
+   "delta": 10,
+   "stderr": 17.950549357115015,
    "terms": [],
    "notes": [],
    "description": "Move one knight to any empty square within the 3x3 box around it, once. It cannot capture with this move."
@@ -3044,8 +3044,8 @@
    "effectCategory": "draft-advantage",
    "mechanic": "passive",
    "refused": null,
-   "delta": 5,
-   "stderr": 13.844373104863458,
+   "delta": 10,
+   "stderr": 14.52966314513558,
    "terms": [],
    "notes": [],
    "description": "Move one pawn sideways one square, once. Gain one draft reroll when it resolves."
@@ -3062,8 +3062,8 @@
    "effectCategory": "special-rule-grant",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent cannot capture en passant for their next 5 turns."
@@ -3080,7 +3080,7 @@
    "effectCategory": "movement-phase-jump",
    "mechanic": "passive",
    "refused": null,
-   "delta": 5,
+   "delta": -5,
    "stderr": 13.844373104863458,
    "terms": [],
    "notes": [],
@@ -3254,8 +3254,8 @@
    "effectCategory": "zone-denial",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's knights cannot land on any square defended by one of your pawns, for their next 4 turns."
@@ -4485,8 +4485,8 @@
    "effectCategory": "capture-punishment",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [
     "board-state gate"
@@ -4505,8 +4505,8 @@
    "effectCategory": "piece-revival",
    "mechanic": "activated",
    "refused": null,
-   "delta": 5,
-   "stderr": 13.844373104863456,
+   "delta": null,
+   "stderr": null,
    "terms": [
     {
      "noun": "(pronoun)",
@@ -4553,8 +4553,8 @@
    "effectCategory": "forced-move",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "For your opponent's next 3 turns, any piece that captures is seized by frenzy and must capture again on their very next turn if any capture is open to it. If it has none, the frenzy passes and they move freely."
@@ -4571,8 +4571,8 @@
    "effectCategory": "move-budget-change",
    "mechanic": "activated",
    "refused": null,
-   "delta": 0,
-   "stderr": 14.907119849998596,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "For your opponent's next 5 turns one enemy piece is hobbled to at most 2 squares a move. Capturing the bearer does not end it: the curse leaps to whichever of their pieces is nearest. Kings never take it."
@@ -4589,8 +4589,8 @@
    "effectCategory": "direction-geometry-lock",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 7.453559924999298,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "For your opponent's next 4 turns, every piece they move must land on the opposite colour square to their last landing: light, then dark, then light. Their king is exempt, and if no legal move fits the pattern they move freely that turn."
@@ -5287,8 +5287,8 @@
    "effectCategory": "piece-class-lockdown",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's knights cannot move backward for their next 4 turns, except the first knight to retreat may do so once before the lameness sets in."
@@ -5305,8 +5305,8 @@
    "effectCategory": "capture-condition",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's queen can only capture at arm's length: for their next 3 turns her captures must be exactly one square away. The first capture the curse would deny is allowed once."
@@ -5380,7 +5380,10 @@
    "delta": 0,
    "stderr": 0,
    "terms": [],
-   "notes": [],
+   "notes": [
+    "repeats 3x",
+    "capture gate"
+   ],
    "description": "Each of your next 3 captures loosens the leash: after your opponent's next move, your nerf is suspended for one of your turns."
   },
   {
@@ -6032,7 +6035,10 @@
    "delta": 0,
    "stderr": 0,
    "terms": [],
-   "notes": [],
+   "notes": [
+    "repeats 3x",
+    "capture gate"
+   ],
    "description": "Your next 3 captures each gain you 10 seconds, and the capturing piece is gilded for the trophy cabinet."
   },
   {
@@ -6377,8 +6383,8 @@
    "effectCategory": "movement-upgrade",
    "mechanic": "passive",
    "refused": null,
-   "delta": -5,
-   "stderr": 8.975274678557508,
+   "delta": -10,
+   "stderr": 12.472191289246473,
    "terms": [],
    "notes": [],
    "description": "On any turn, one of your pawns with two empty squares ahead may advance two squares in a single move, even after it has left its starting square, for the game. It cannot capture."
@@ -6449,8 +6455,8 @@
    "effectCategory": "single-piece-freeze",
    "mechanic": "activated",
    "refused": null,
-   "delta": 0,
-   "stderr": 14.907119849998596,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Choose one enemy piece, never the king. Starting after your opponent's next move it freezes for 2 of their turns, then stays a heavy walnut for 1 more turn, able only to shuffle a single square."
@@ -6577,8 +6583,8 @@
    "effectCategory": "capture-denial",
    "mechanic": "passive",
    "refused": null,
-   "delta": 20,
-   "stderr": 15.275252316519467,
+   "delta": 10,
+   "stderr": 12.472191289246473,
    "terms": [],
    "notes": [],
    "description": "Move one piece, your king included, one square in any direction to an empty square, once. It cannot capture."
@@ -6613,8 +6619,8 @@
    "effectCategory": "capture-denial",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "The roads along the edge are under truce: for their next 4 turns your opponent cannot capture anything standing on the outer rim of the board. The first capture the truce would deny is allowed once."
@@ -6649,8 +6655,8 @@
    "effectCategory": "draft-advantage",
    "mechanic": "instant",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's next draft offer contains no draft-manipulation cards, and you take a draft reroll."
@@ -6715,8 +6721,8 @@
    "effectCategory": "piece-class-lockdown",
    "mechanic": "passive",
    "refused": null,
-   "delta": 5,
-   "stderr": 5,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's bishops cannot cross into your half of the board for their next 4 turns."
@@ -6894,8 +6900,8 @@
    "effectCategory": "zone-denial",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's king cannot end a move beside any of your pieces, for their next 2 turns."
@@ -7366,8 +7372,8 @@
    "effectCategory": "enemy-movement-restriction",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent cannot move their bishops for their next 2 turns."
@@ -7701,7 +7707,10 @@
    "delta": null,
    "stderr": null,
    "terms": [],
-   "notes": [],
+   "notes": [
+    "repeats 2x",
+    "capture gate"
+   ],
    "description": "Your next 2 captures each suspend your nerf for your next turn."
   },
   {
@@ -8032,7 +8041,30 @@
    "refused": null,
    "delta": 25,
    "stderr": 15.691147861521197,
-   "terms": [],
+   "terms": [
+    {
+     "noun": "knights -> bishop",
+     "value": 0,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 0,
+     "estimated": false,
+     "note": "transform / permanent / unconditional"
+    },
+    {
+     "noun": "bishops -> knight",
+     "value": 0,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 0,
+     "estimated": false,
+     "note": "transform / permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "One of your knights becomes a bishop, or one of your bishops becomes a knight, where it stands. Your next draft is then skipped."
   },
@@ -9072,8 +9104,8 @@
    "effectCategory": "single-piece-freeze",
    "mechanic": "activated",
    "refused": null,
-   "delta": 0,
-   "stderr": 14.907119849998596,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Target one enemy piece, kings excluded. The frost bites after your opponent's next move, following the piece if they move it, then freezes it for 3 of their turns."
@@ -9090,8 +9122,8 @@
    "effectCategory": "single-piece-freeze",
    "mechanic": "activated",
    "refused": null,
-   "delta": 0,
-   "stderr": 14.907119849998596,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Petrify one of your opponent's bishops for 3 of their turns: it can only shuffle one square at a time."
@@ -9330,8 +9362,8 @@
    "effectCategory": "movement-upgrade",
    "mechanic": "activated",
    "refused": null,
-   "delta": 0,
-   "stderr": 10.540925533894598,
+   "delta": 5,
+   "stderr": 11.666666666666666,
    "terms": [],
    "notes": [],
    "description": "Choose one non-king piece. For the game it may also move along any rank, file, or diagonal and land on the empty square immediately beyond the first piece in its path. It cannot capture."
@@ -9366,8 +9398,8 @@
    "effectCategory": "piece-downgrade-transform",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "After your opponent's next move, their knights turn to walnuts for their following 2 turns: a walnut can only shuffle one square at a time."
@@ -9384,8 +9416,8 @@
    "effectCategory": "direction-geometry-lock",
    "mechanic": "passive",
    "refused": null,
-   "delta": -10,
-   "stderr": 10,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Their next move keeps its footing, then for their following 4 turns every bishop, rook or queen slide must run as far as the line allows: to the edge, into a capture, or up against one of their own pieces. Knights, pawns and the king are unaffected."
@@ -10262,8 +10294,8 @@
    "effectCategory": "zone-denial",
    "mechanic": "passive",
    "refused": null,
-   "delta": 5,
-   "stderr": 5,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "The crown is too heavy to march: after your opponent's next move, for their following 4 turns their queen cannot move toward your side of the board. Sideways and homeward slides are free."
@@ -10736,9 +10768,9 @@
    "id": "ov_thunderstorm",
    "name": "Thunderstorm",
    "tier": 3,
-   "floor": 1,
-   "gap": -2,
-   "m": 0,
+   "floor": 2,
+   "gap": -1,
+   "m": 1,
    "estimated": false,
    "category": "attack",
    "effectCategory": "randomness-gamble",
@@ -10746,7 +10778,19 @@
    "refused": null,
    "delta": null,
    "stderr": null,
-   "terms": [],
+   "terms": [
+    {
+     "noun": "pawn",
+     "value": 1,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 1,
+     "estimated": false,
+     "note": "permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "For your opponent's next 3 turns, lightning strikes a random square in their half after each of their moves, destroying any enemy pawn standing there."
   },
@@ -10816,8 +10860,8 @@
    "effectCategory": "single-piece-freeze",
    "mechanic": "activated",
    "refused": null,
-   "delta": 0,
-   "stderr": 14.907119849998596,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Turn one enemy rook you target into a walnut for 1 of their turns, and while the tower stands petrified your opponent cannot castle at all."
@@ -11190,8 +11234,8 @@
    "effectCategory": "single-piece-freeze",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's pawns are rooted in salted ground for their next 2 turns and cannot move, not even to capture, except that the first pawn to move may take one escape move, after which every pawn is locked."
@@ -11718,8 +11762,8 @@
    "effectCategory": "movement-upgrade",
    "mechanic": "activated",
    "refused": null,
-   "delta": -5,
-   "stderr": 13.844373104863458,
+   "delta": -10,
+   "stderr": 16.329931618554518,
    "terms": [],
    "notes": [],
    "description": "Choose one bishop; for the game it may also step one square horizontally or vertically."
@@ -11736,8 +11780,8 @@
    "effectCategory": "movement-upgrade",
    "mechanic": "activated",
    "refused": null,
-   "delta": 15,
-   "stderr": 13.017082793177757,
+   "delta": 5,
+   "stderr": 17.40051084818425,
    "terms": [],
    "notes": [],
    "description": "Choose one rook; for the game it may also step one square diagonally."
@@ -12274,8 +12318,8 @@
    "effectCategory": "move-budget-change",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Nobody presses the attack: starting after your opponent's next move, for their following 3 turns any move toward your side of the board may cover at most 2 squares. Sideways moves and retreats keep their full range."
@@ -13173,7 +13217,30 @@
    "refused": null,
    "delta": 22.727272727272727,
    "stderr": 19.497827808661107,
-   "terms": [],
+   "terms": [
+    {
+     "noun": "knights -> bishop",
+     "value": 0,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 0,
+     "estimated": false,
+     "note": "transform / permanent / unconditional"
+    },
+    {
+     "noun": "bishops -> knight",
+     "value": 0,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 0,
+     "estimated": false,
+     "note": "transform / permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "Every one of your knights becomes a bishop and every one of your bishops becomes a knight, all at once, where they stand. Your material is unchanged, only re-tasked. None of the re-tasked minors can be captured on your opponent's next turn."
   },
@@ -13192,7 +13259,10 @@
    "delta": null,
    "stderr": null,
    "terms": [],
-   "notes": [],
+   "notes": [
+    "repeats 3x",
+    "capture gate"
+   ],
    "description": "Every prize is entered in the ledger: each of your next 3 captures earns you one draft reroll to spend whenever you like. The ledger closes after two of your drafts, and any captures not yet cashed in are lost."
   },
   {
@@ -13372,8 +13442,8 @@
    "effectCategory": "mass-freeze",
    "mechanic": "activated",
    "refused": null,
-   "delta": 0,
-   "stderr": 14.907119849998596,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Flash-freeze one enemy piece you target: it and every enemy piece beside it are frozen for 1 of their turns. The defender keeps their single most valuable caught piece free. Kings are never frozen."
@@ -13668,8 +13738,8 @@
    "effectCategory": "single-piece-shield",
    "mechanic": "activated",
    "refused": null,
-   "delta": 0,
-   "stderr": 18.257418583505537,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Pick a 3x3 zone: up to three of your pieces there, your king aside, cannot be captured for your opponent's next turn, then the zone becomes ordinary terrain."
@@ -13706,8 +13776,8 @@
    "effectCategory": "single-piece-freeze",
    "mechanic": "instant",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Freeze your opponent's knights and bishops for 1 of their turns."
@@ -13880,8 +13950,8 @@
    "effectCategory": "single-piece-freeze",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's queen and rooks are in irons for their next 2 turns. The first heavy piece they move slips free for that one move; after it, no queen or rook may move for the rest of the duration."
@@ -13946,8 +14016,8 @@
    "effectCategory": "movement-phase-jump",
    "mechanic": "passive",
    "refused": null,
-   "delta": 10,
-   "stderr": 16.329931618554518,
+   "delta": 25,
+   "stderr": 8.333333333333334,
    "terms": [],
    "notes": [],
    "description": "One knight captures a piece one leap away and lands a second leap beyond, once."
@@ -13964,8 +14034,8 @@
    "effectCategory": "promotion-grant",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Their weapons kick like cannons: for your opponent's next 3 turns, any piece of theirs that captures is flung straight back to the square it attacked from (the victim is still taken, but the ground is not). Captures that promote are too heavy to throw back."
@@ -13982,8 +14052,8 @@
    "effectCategory": "piece-mind-control",
    "mechanic": "activated",
    "refused": null,
-   "delta": 35,
-   "stderr": 15,
+   "delta": null,
+   "stderr": null,
    "terms": [
     {
      "noun": "(pronoun)",
@@ -14050,8 +14120,8 @@
    "effectCategory": "instant-piece-spawn",
    "mechanic": "passive",
    "refused": null,
-   "delta": 5,
-   "stderr": 11.666666666666666,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [
     "capture gate"
@@ -15767,8 +15837,8 @@
    "effectCategory": "enemy-movement-restriction",
    "mechanic": "instant",
    "refused": null,
-   "delta": 25,
-   "stderr": 17.078251276599328,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "On your opponent's next turn they may move only their king."
@@ -16025,8 +16095,8 @@
    "effectCategory": "piece-downgrade-transform",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's bishops turn to walnuts for 3 of their turns: a walnut is so heavy it can only shuffle one square at a time. The first bishop keeps one free move before it too sets."
@@ -16163,8 +16233,8 @@
    "effectCategory": "piece-upgrade-transform",
    "mechanic": "passive",
    "refused": null,
-   "delta": 25,
-   "stderr": 13.437096247164249,
+   "delta": 5,
+   "stderr": 11.666666666666666,
    "terms": [],
    "notes": [],
    "description": "Both knights become nightrooks, for the game."
@@ -16181,8 +16251,8 @@
    "effectCategory": "retaliation-damage",
    "mechanic": "passive",
    "refused": null,
-   "delta": -10,
-   "stderr": 10,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Their drawback bites back: for your opponent's next 3 captures, the capturing piece is frozen for 1 of their turns."
@@ -17914,9 +17984,9 @@
    "id": "bw2_alchemists_trade",
    "name": "Alchemist's Trade",
    "tier": 5,
-   "floor": 1,
-   "gap": -4,
-   "m": 0,
+   "floor": 5,
+   "gap": 0,
+   "m": 6,
    "estimated": false,
    "category": "pieces",
    "effectCategory": "promotion-grant",
@@ -17924,7 +17994,19 @@
    "refused": null,
    "delta": 8.333333333333332,
    "stderr": 19.29960485281363,
-   "terms": [],
+   "terms": [
+    {
+     "noun": "knights -> queen",
+     "value": 6,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 6,
+     "estimated": false,
+     "note": "transform / permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "One of your knights, bishops or rooks becomes a queen. In payment, another of your officers (not on a first or last rank) becomes a pawn."
   },
@@ -18499,8 +18581,8 @@
    "effectCategory": "single-piece-freeze",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "The next piece your opponent moves freezes solid the instant it lands and cannot move again for 2 of their turns."
@@ -18609,8 +18691,8 @@
    "effectCategory": "piece-downgrade-transform",
    "mechanic": "instant",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's rooks turn to walnuts for 2 of their turns, and for their next 2 turns they cannot move any piece onto their own back two ranks."
@@ -18713,8 +18795,8 @@
    "effectCategory": "multi-piece-freeze",
    "mechanic": "activated",
    "refused": null,
-   "delta": 0,
-   "stderr": 14.907119849998596,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Freeze two enemy pieces you target so they cannot move for 2 of their turns. Kings cannot be targeted."
@@ -19321,8 +19403,8 @@
    "effectCategory": "mass-freeze",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "For your opponent's next turn they may move only their king and their knights. Every other piece is stuck fast."
@@ -19339,8 +19421,8 @@
    "effectCategory": "turn-skip-enemy",
    "mechanic": "instant",
    "refused": null,
-   "delta": 25,
-   "stderr": 17.078251276599328,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent skips their next turn, and their clock loses 20 seconds."
@@ -19913,8 +19995,8 @@
    "effectCategory": "enemy-movement-restriction",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "The levy defends only the homeland: for your opponent's next 2 turns they may move only pieces standing in their own half of the board. Anything already across the middle is stranded."
@@ -20321,9 +20403,9 @@
    "id": "smurf_account",
    "name": "Smurf Account",
    "tier": 5,
-   "floor": 1,
-   "gap": -4,
-   "m": 0,
+   "floor": 5,
+   "gap": 0,
+   "m": 5,
    "estimated": false,
    "category": "pieces",
    "effectCategory": "capture-denial",
@@ -20331,7 +20413,19 @@
    "refused": null,
    "delta": 41.66666666666667,
    "stderr": 14.86470975026408,
-   "terms": [],
+   "terms": [
+    {
+     "noun": "rook",
+     "value": 5,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 5,
+     "estimated": false,
+     "note": "permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "A suspiciously strong new player joins your side mid-game: choose an empty square in your half, and a fresh rook drops in there right after your opponent's next move, so it cannot capture before they reply."
   },
@@ -20413,8 +20507,8 @@
    "effectCategory": "piece-downgrade-transform",
    "mechanic": "instant",
    "refused": null,
-   "delta": 10,
-   "stderr": 16.32993161855452,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent's knights turn to walnuts for 2 of their turns, and your own knights harden into living statues: they cannot be captured for those same 2 turns."
@@ -20461,8 +20555,8 @@
    "effectCategory": "mass-freeze",
    "mechanic": "activated",
    "refused": null,
-   "delta": 5,
-   "stderr": 15.723301886761007,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Target two enemy minor pieces (knights or bishops). After your opponent's next move, both are petrified for 3 of their turns."
@@ -20509,8 +20603,8 @@
    "effectCategory": "forced-move",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "The queen may not stray from her king: for your opponent's next 3 turns, her every move must end within 2 squares of their king."
@@ -20953,7 +21047,7 @@
    "tier": 5,
    "floor": 4,
    "gap": -1,
-   "m": 2.6,
+   "m": 4.16,
    "estimated": false,
    "category": "attack",
    "effectCategory": "conditional-piece-removal",
@@ -20965,16 +21059,19 @@
     {
      "noun": "pieces",
      "value": 2.6,
-     "count": 1,
+     "count": 2,
      "sign": 1,
      "permanence": 1,
-     "conditionality": 1,
-     "m": 2.6,
+     "conditionality": 0.8,
+     "m": 4.16,
      "estimated": false,
-     "note": "permanent / unconditional"
+     "note": "permanent / capture gate"
     }
    ],
-   "notes": [],
+   "notes": [
+    "repeats 2x",
+    "capture gate"
+   ],
    "description": "Your next 2 captures each also destroy the enemy pieces (never a king) on the two squares immediately left and right of the captured square."
   },
   {
@@ -21375,8 +21472,8 @@
    "effectCategory": "conditional-piece-removal",
    "mechanic": "activated",
    "refused": null,
-   "delta": 27.77777777777778,
-   "stderr": 20.60055135304351,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Two squares you pick open an abyss for the game: any enemy piece except a king that enters is swallowed. The defender keeps one bridge, the void nearest the enemy king, which never swallows."
@@ -21395,7 +21492,19 @@
    "refused": null,
    "delta": 0,
    "stderr": 14.907119849998596,
-   "terms": [],
+   "terms": [
+    {
+     "noun": "knight -> knight",
+     "value": 0,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 0,
+     "estimated": false,
+     "note": "transform / permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "One knight becomes a knight plus queen for 2 turns."
   },
@@ -22386,8 +22495,8 @@
    "effectCategory": "multi-piece-freeze",
    "mechanic": "activated",
    "refused": null,
-   "delta": 0,
-   "stderr": 14.907119849998596,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Freeze three enemy pieces (not the king) for 2 of their owner's turns. The first piece you choose gets one escape move: its freeze sets in only after your opponent's next move."
@@ -22396,9 +22505,9 @@
    "id": "detonation_field",
    "name": "Detonation Field",
    "tier": 6,
-   "floor": 1,
-   "gap": -5,
-   "m": 0,
+   "floor": 5,
+   "gap": -1,
+   "m": 6.24,
    "estimated": false,
    "category": "attack",
    "effectCategory": "conditional-piece-removal",
@@ -22406,8 +22515,23 @@
    "refused": null,
    "delta": 30,
    "stderr": 16.99673171197595,
-   "terms": [],
-   "notes": [],
+   "terms": [
+    {
+     "noun": "piece",
+     "value": 2.6,
+     "count": 3,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 0.8,
+     "m": 6.240000000000001,
+     "estimated": false,
+     "note": "permanent / capture gate"
+    }
+   ],
+   "notes": [
+    "repeats 3x",
+    "capture gate"
+   ],
    "description": "Your next three captures each remove at most one adjacent enemy piece: the most valuable non-king beside the captured square, kings aside. The blast never chains."
   },
   {
@@ -22470,8 +22594,8 @@
    "effectCategory": "movement-upgrade",
    "mechanic": "activated",
    "refused": null,
-   "delta": 10,
-   "stderr": 17.950549357115015,
+   "delta": 5,
+   "stderr": 11.666666666666666,
    "terms": [],
    "notes": [],
    "description": "Choose two knights; each may make one queen-style move once, then moves as a normal knight again."
@@ -22676,8 +22800,8 @@
    "effectCategory": "delayed-contract",
    "mechanic": "activated",
    "refused": null,
-   "delta": 15,
-   "stderr": 19.790570145063196,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Send up to five of your pieces back to their original home squares, once."
@@ -22686,9 +22810,9 @@
    "id": "giants_maul",
    "name": "Giant's Maul",
    "tier": 6,
-   "floor": 1,
-   "gap": -5,
-   "m": 0,
+   "floor": 4,
+   "gap": -2,
+   "m": 3,
    "estimated": false,
    "category": "attack",
    "effectCategory": "mass-freeze",
@@ -22696,7 +22820,19 @@
    "refused": null,
    "delta": 41.66666666666667,
    "stderr": 13.530735681433145,
-   "terms": [],
+   "terms": [
+    {
+     "noun": "knight",
+     "value": 3,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 3,
+     "estimated": false,
+     "note": "3-way choice, priced at the cheapest / permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "The maul comes down once: crush one enemy knight, bishop, or rook, and the shock leaves every enemy piece beside it (kings aside) frozen for 1 of their turns."
   },
@@ -22875,9 +23011,21 @@
    "effectCategory": "promotion-grant",
    "mechanic": "activated",
    "refused": null,
-   "delta": 15,
-   "stderr": 22.42270674512285,
-   "terms": [],
+   "delta": null,
+   "stderr": null,
+   "terms": [
+    {
+     "noun": "queen -> rook",
+     "value": -4,
+     "count": 1,
+     "sign": -1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": -4,
+     "estimated": false,
+     "note": "transform / permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "Their queen becomes a rook for 4 of their turns, or until she captures. If she is taken while a rook, she is lost as a rook."
   },
@@ -22893,8 +23041,8 @@
    "effectCategory": "capture-permission",
    "mechanic": "instant",
    "refused": null,
-   "delta": 25,
-   "stderr": 15.36590742882148,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Raise a leering effigy on an empty square in your opponent's half. No enemy piece may step onto the ring around it, though a piece already inside may leave. It stands 6 of their turns, and it is a piece they can capture: smashing it ends the curse."
@@ -22941,8 +23089,8 @@
    "effectCategory": "mass-removal",
    "mechanic": "activated",
    "refused": null,
-   "delta": 45,
-   "stderr": 8.975274678557508,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Roll a powder keg onto an empty square in your opponent's half with a lit 4-turn fuse, in full view. When it blows, every enemy piece except the king standing on or next to that square is blown off the board, and you gain one draft reroll."
@@ -23289,9 +23437,9 @@
    "id": "lightning_strike",
    "name": "Lightning Strike",
    "tier": 6,
-   "floor": 1,
-   "gap": -5,
-   "m": 0,
+   "floor": 3,
+   "gap": -3,
+   "m": 1.95,
    "estimated": false,
    "category": "attack",
    "effectCategory": "mass-removal",
@@ -23299,7 +23447,19 @@
    "refused": null,
    "delta": 44.44444444444444,
    "stderr": 10.015420209622192,
-   "terms": [],
+   "terms": [
+    {
+     "noun": "(pronoun)",
+     "value": 1,
+     "count": 3,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 0.65,
+     "m": 1.9500000000000002,
+     "estimated": false,
+     "note": "bound to the previous sentence / up to / permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "Mark up to three enemy knights, bishops, or pawns; after your opponent's next move, lightning falls and removes each marked piece that still stands."
   },
@@ -23462,9 +23622,9 @@
    "id": "ov_cloud_serpent",
    "name": "Cloud Serpent",
    "tier": 6,
-   "floor": 1,
-   "gap": -5,
-   "m": 0,
+   "floor": 2,
+   "gap": -4,
+   "m": 1,
    "estimated": false,
    "category": "protection",
    "effectCategory": "zone-denial",
@@ -23472,7 +23632,19 @@
    "refused": null,
    "delta": null,
    "stderr": null,
-   "terms": [],
+   "terms": [
+    {
+     "noun": "pawn",
+     "value": 1,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 1,
+     "estimated": false,
+     "note": "permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "A serpent coils a chosen rank: enemy pieces cannot enter or cross it for your opponent's next 5 turns (yours can). As it lands it may crush one enemy pawn on an adjacent rank."
   },
@@ -23804,8 +23976,8 @@
    "effectCategory": "piece-swap",
    "mechanic": "activated",
    "refused": null,
-   "delta": 5.555555555555555,
-   "stderr": 21.154925294066413,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Teleport up to two of your pieces, your king aside, each to any empty square, then swap the squares of two enemy pieces caught in the churn, once."
@@ -23822,8 +23994,8 @@
    "effectCategory": "movement-upgrade",
    "mechanic": "passive",
    "refused": null,
-   "delta": 15,
-   "stderr": 10.671873729054747,
+   "delta": 0,
+   "stderr": 14.907119849998596,
    "terms": [],
    "notes": [],
    "description": "Your king gains queen movement permanently, but its added long-range moves cannot capture; it still captures as a normal king (and still loses on capture)."
@@ -24242,8 +24414,8 @@
    "effectCategory": "retaliation-damage",
    "mechanic": "passive",
    "refused": null,
-   "delta": -10,
-   "stderr": 6.666666666666668,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Their greed turns to wood: for your opponent's next 2 captures, the capturing piece becomes a walnut for 3 of their turns, able only to shuffle one square at a time. Kings shrug the curse off."
@@ -24729,9 +24901,9 @@
    "id": "bn4_ascension_small",
    "name": "Ascension of the Small",
    "tier": 7,
-   "floor": 1,
-   "gap": -6,
-   "m": 0,
+   "floor": 5,
+   "gap": -2,
+   "m": 6,
    "estimated": false,
    "category": "pieces",
    "effectCategory": "promotion-grant",
@@ -24739,7 +24911,19 @@
    "refused": null,
    "delta": 45.83333333333333,
    "stderr": 12.995239998794275,
-   "terms": [],
+   "terms": [
+    {
+     "noun": "(anaphor) -> queen",
+     "value": 6,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 6,
+     "estimated": false,
+     "note": "class upgrade in place, bound to the previous sentence / permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "Choose one of your knights or bishops. After your opponent's next move, it ascends: it becomes a queen where it stands."
   },
@@ -25386,8 +25570,8 @@
    "effectCategory": "single-piece-freeze",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 18.257418583505537,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "On your opponent's next 2 turns they may move only their king, and their queen is the last to return from exile: she cannot move for 2 further turns after the court comes back."
@@ -25404,8 +25588,8 @@
    "effectCategory": "draft-advantage",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "After your opponent's next move, both cards in your next draft are set to tier 7, once."
@@ -25506,9 +25690,9 @@
    "id": "fm_sunforge",
    "name": "Sunforge",
    "tier": 7,
-   "floor": 1,
-   "gap": -6,
-   "m": 0,
+   "floor": 2,
+   "gap": -5,
+   "m": 1.3,
    "estimated": false,
    "category": "pieces",
    "effectCategory": "promotion-grant",
@@ -25516,7 +25700,19 @@
    "refused": null,
    "delta": null,
    "stderr": null,
-   "terms": [],
+   "terms": [
+    {
+     "noun": "(anaphor) -> knight",
+     "value": 2,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 0.65,
+     "m": 1.3,
+     "estimated": false,
+     "note": "class upgrade in place, bound to the previous sentence / permanent / board-state gate"
+    }
+   ],
    "notes": [
     "board-state gate"
    ],
@@ -25534,8 +25730,8 @@
    "effectCategory": "extra-move",
    "mechanic": "passive",
    "refused": null,
-   "delta": 25,
-   "stderr": 17.078251276599328,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Suspend your nerf for your next 12 turns and store one bonus move: after your opponent's next move you take an extra move on your following turn."
@@ -25552,8 +25748,8 @@
    "effectCategory": "delayed-contract",
    "mechanic": "activated",
    "refused": null,
-   "delta": 15,
-   "stderr": 19.790570145063196,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Reset the entire board to the opening position, once. Every lingering effect is washed away."
@@ -25724,8 +25920,8 @@
    "effectCategory": "enemy-movement-restriction",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 12.909944487358056,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "For the rest of the game, whenever your opponent's king moves, castling included, the court mourns: on their following turn they may move only pawns or the king."
@@ -25734,17 +25930,29 @@
    "id": "hw3_doomed_vow",
    "name": "Doomed Vow",
    "tier": 7,
-   "floor": 1,
-   "gap": -6,
-   "m": 0,
+   "floor": 4,
+   "gap": -3,
+   "m": 2.6,
    "estimated": false,
    "category": "hex",
    "effectCategory": "piece-nudge-reposition",
    "mechanic": "activated",
    "refused": null,
-   "delta": 55.00000000000001,
-   "stderr": 8.975274678557508,
-   "terms": [],
+   "delta": null,
+   "stderr": null,
+   "terms": [
+    {
+     "noun": "(pronoun)",
+     "value": 2.6,
+     "count": 1,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 2.6,
+     "estimated": false,
+     "note": "bound to the previous sentence / permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "Condemn one enemy piece: in 4 of their turns it is dragged off the board, unless their own king comes to stand on a square next to it first, which breaks the vow at once. Kings themselves cannot be condemned."
   },
@@ -25964,8 +26172,8 @@
    "effectCategory": "instant-piece-spawn",
    "mechanic": "instant",
    "refused": null,
-   "delta": 35,
-   "stderr": 13.017082793177757,
+   "delta": null,
+   "stderr": null,
    "terms": [
     {
      "noun": "rook",
@@ -26059,8 +26267,8 @@
    "effectCategory": "mass-removal",
    "mechanic": "activated",
    "refused": null,
-   "delta": 35,
-   "stderr": 16.74979270186815,
+   "delta": null,
+   "stderr": null,
    "terms": [
     {
      "noun": "pieces",
@@ -26239,8 +26447,8 @@
    "effectCategory": "piece-revival",
    "mechanic": "instant",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [
     {
      "noun": "pawns",
@@ -26421,8 +26629,8 @@
    "effectCategory": "mass-removal",
    "mechanic": "activated",
    "refused": null,
-   "delta": 44.44444444444444,
-   "stderr": 15.466012118972284,
+   "delta": null,
+   "stderr": null,
    "terms": [
     {
      "noun": "pawns",
@@ -26464,8 +26672,8 @@
    "effectCategory": "nerf-relief",
    "mechanic": "activated",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Free action: suspend your nerf for your next 10 turns, used at the moment you choose, but your next draft is skipped."
@@ -26500,8 +26708,8 @@
    "effectCategory": "enemy-movement-restriction",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 16.666666666666668,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "The pews claim whoever lingers: for your opponent's next 6 turns, any of their bishops standing in their own half may only shuffle one square at a time. Bishops that cross into your half move freely."
@@ -26584,9 +26792,9 @@
    "id": "total_atomic",
    "name": "Total Atomic",
    "tier": 7,
-   "floor": 1,
-   "gap": -6,
-   "m": 0,
+   "floor": 6,
+   "gap": -1,
+   "m": 8.112,
    "estimated": false,
    "category": "attack",
    "effectCategory": "mass-removal",
@@ -26594,8 +26802,23 @@
    "refused": null,
    "delta": 33.33333333333333,
    "stderr": 12.811768579763458,
-   "terms": [],
-   "notes": [],
+   "terms": [
+    {
+     "noun": "pieces",
+     "value": 2.6,
+     "count": 6,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 0.52,
+     "m": 8.112000000000002,
+     "estimated": false,
+     "note": "up to / permanent / capture gate"
+    }
+   ],
+   "notes": [
+    "repeats 3x",
+    "capture gate"
+   ],
    "description": "Your next three captures each detonate one square in every direction, destroying up to two adjacent enemy pieces. Shielded pieces resist, and the blast never chains."
   },
   {
@@ -26610,8 +26833,8 @@
    "effectCategory": "teleport-relocate",
    "mechanic": "activated",
    "refused": null,
-   "delta": -10,
-   "stderr": 12.472191289246473,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Teleport your whole army except the king anywhere you like, once. Pawns stay off the first and last ranks."
@@ -26656,9 +26879,9 @@
    "id": "twin_queens",
    "name": "Twin Queens",
    "tier": 7,
-   "floor": 5,
-   "gap": -2,
-   "m": 5.2,
+   "floor": 7,
+   "gap": 0,
+   "m": 10.4,
    "estimated": false,
    "category": "pieces",
    "effectCategory": "promotion-grant",
@@ -26670,11 +26893,11 @@
     {
      "noun": "pawns -> queens",
      "value": 8,
-     "count": 1,
+     "count": 2,
      "sign": 1,
      "permanence": 1,
      "conditionality": 0.65,
-     "m": 5.2,
+     "m": 10.4,
      "estimated": false,
      "note": "transform / permanent / board-state gate"
     }
@@ -26696,8 +26919,8 @@
    "effectCategory": "turn-skip-enemy",
    "mechanic": "instant",
    "refused": null,
-   "delta": 25,
-   "stderr": 17.078251276599328,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Suspend your nerf for your next 14 turns, then it returns at full strength. Your opponent skips their next turn."
@@ -26816,8 +27039,8 @@
    "effectCategory": "draft-denial",
    "mechanic": "instant",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Cancel your opponent's unused and temporary buffs and block their next draft, but they gain a reroll in return. Locked-in upgrades resist."
@@ -26852,8 +27075,8 @@
    "effectCategory": "instant-piece-removal",
    "mechanic": "activated",
    "refused": null,
-   "delta": 33.33333333333333,
-   "stderr": 14.433756729740644,
+   "delta": null,
+   "stderr": null,
    "terms": [
     {
      "noun": "pieces",
@@ -27409,8 +27632,8 @@
    "effectCategory": "mass-removal",
    "mechanic": "activated",
    "refused": null,
-   "delta": 11.11111111111111,
-   "stderr": 18.215107011950003,
+   "delta": null,
+   "stderr": null,
    "terms": [
     {
      "noun": "pieces",
@@ -27475,8 +27698,8 @@
    "effectCategory": "single-piece-shield",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Every piece on your half of the board, your king aside, is uncapturable for 3 turns, but while the fortress stands those pieces cannot give check."
@@ -27529,8 +27752,8 @@
    "effectCategory": "single-piece-shield",
    "mechanic": "passive",
    "refused": null,
-   "delta": 25,
-   "stderr": 11.180339887498949,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your king gains permanent queen movement and cannot be captured for 3 turns."
@@ -27678,8 +27901,8 @@
    "effectCategory": "instant-piece-spawn",
    "mechanic": "instant",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Add replacements to your pocket until your army would be back to full starting strength, then drop them onto empty squares on later turns. You skip your next draft in exchange."
@@ -27728,8 +27951,8 @@
    "effectCategory": "conditional-piece-removal",
    "mechanic": "activated",
    "refused": null,
-   "delta": 55.00000000000001,
-   "stderr": 8.975274678557508,
+   "delta": null,
+   "stderr": null,
    "terms": [
     {
      "noun": "(pronoun)",
@@ -27758,8 +27981,8 @@
    "effectCategory": "enemy-movement-restriction",
    "mechanic": "passive",
    "refused": null,
-   "delta": 33.33333333333333,
-   "stderr": 18.633899812498246,
+   "delta": null,
+   "stderr": null,
    "terms": [
     {
      "noun": "pawns",
@@ -27930,8 +28153,8 @@
    "effectCategory": "alt-win-loss-condition",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your king cannot be captured for your opponent's next 8 turns, but this protection ends the instant your king captures a piece. You can still lose by running out of moves."
@@ -27940,17 +28163,29 @@
    "id": "mass_mind_control",
    "name": "Mass Mind Control",
    "tier": 8,
-   "floor": 1,
-   "gap": -7,
-   "m": 0,
+   "floor": 7,
+   "gap": -1,
+   "m": 10.4,
    "estimated": false,
    "category": "pieces",
    "effectCategory": "piece-mind-control",
    "mechanic": "activated",
    "refused": null,
-   "delta": 55.00000000000001,
-   "stderr": 8.975274678557508,
-   "terms": [],
+   "delta": null,
+   "stderr": null,
+   "terms": [
+    {
+     "noun": "(pronoun)",
+     "value": 2.6,
+     "count": 4,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 10.4,
+     "estimated": false,
+     "note": "bound to the previous sentence / defection, worth double / permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "Mark two enemy pieces of any type below queen. After your opponent's next move, any of them still in place defect to your side for the game."
   },
@@ -28068,8 +28303,8 @@
    "effectCategory": "piece-revival",
    "mechanic": "passive",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [
     {
      "noun": "piece",
@@ -28152,8 +28387,8 @@
    "effectCategory": "turn-skip-enemy",
    "mechanic": "instant",
    "refused": null,
-   "delta": 0,
-   "stderr": 18.257418583505537,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Your opponent skips their next turn, then on their following turn every enemy piece except the king is frozen."
@@ -28170,8 +28405,8 @@
    "effectCategory": "turn-skip-enemy",
    "mechanic": "passive",
    "refused": null,
-   "delta": 25,
-   "stderr": 17.078251276599328,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Skip your opponent's next turn. For their following two turns they may move only pawns, knights, or the king; any capture, by either player, ends the restriction early."
@@ -28254,8 +28489,8 @@
    "effectCategory": "piece-downgrade-transform",
    "mechanic": "instant",
    "refused": null,
-   "delta": 10,
-   "stderr": 14.52966314513558,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "The whole court hardens where it sits: every enemy piece except the king still on its own back rank turns into a walnut for 3 of their turns. A walnut can only shuffle one square at a time."
@@ -28290,8 +28525,8 @@
    "effectCategory": "zone-denial",
    "mechanic": "instant",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Seal the border: your opponent cannot move any piece into your half of the board for their next 3 turns."
@@ -28362,8 +28597,8 @@
    "effectCategory": "mass-army-spawn",
    "mechanic": "instant",
    "refused": null,
-   "delta": 0,
-   "stderr": 0,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "Revive your queen, both rooks, and one minor piece to your half."
@@ -28398,8 +28633,8 @@
    "effectCategory": "mass-freeze",
    "mechanic": "passive",
    "refused": null,
-   "delta": 15,
-   "stderr": 7.637626158259732,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [
     "repeats 9x"
@@ -28674,9 +28909,9 @@
    "id": "philosophers_stone",
    "name": "Philosopher's Stone",
    "tier": 9,
-   "floor": 1,
-   "gap": -8,
-   "m": 0,
+   "floor": 9,
+   "gap": 0,
+   "m": 24,
    "estimated": false,
    "category": "pieces",
    "effectCategory": "promotion-grant",
@@ -28684,7 +28919,19 @@
    "refused": null,
    "delta": null,
    "stderr": null,
-   "terms": [],
+   "terms": [
+    {
+     "noun": "pawns -> queens",
+     "value": 8,
+     "count": 3,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 24,
+     "estimated": false,
+     "note": "transform / permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "Press the fabled stone to your ranks and transmute base metal to gold: three of your pawns become queens, once."
   },
@@ -28722,17 +28969,29 @@
    "id": "reality_warp",
    "name": "Reality Warp",
    "tier": 9,
-   "floor": 1,
-   "gap": -8,
-   "m": 0,
+   "floor": 8,
+   "gap": -1,
+   "m": 12.8,
    "estimated": false,
    "category": "pieces",
    "effectCategory": "piece-upgrade-transform",
    "mechanic": "activated",
    "refused": null,
-   "delta": 50,
-   "stderr": 10.540925533894598,
-   "terms": [],
+   "delta": null,
+   "stderr": null,
+   "terms": [
+    {
+     "noun": "pieces -> queens",
+     "value": 6.4,
+     "count": 2,
+     "sign": 1,
+     "permanence": 1,
+     "conditionality": 1,
+     "m": 12.8,
+     "estimated": false,
+     "note": "transform / permanent / unconditional"
+    }
+   ],
    "notes": [],
    "description": "Rewrite the rules of matter: any two of your pieces, king aside, become queens."
   },
@@ -31135,8 +31394,8 @@
    "effectCategory": "move-budget-change",
    "mechanic": "passive-rule",
    "refused": null,
-   "delta": -20,
-   "stderr": 13.333333333333334,
+   "delta": null,
+   "stderr": null,
    "terms": [],
    "notes": [],
    "description": "All non-pawn moves are distance ≤ 3."
