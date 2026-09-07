@@ -397,7 +397,10 @@ function LobbyInner() {
                 aria-controls={`lobby-panel-${t.id}`}
                 onClick={() => setTab(t.id)}
                 className={
-                  "-mb-px flex min-h-[44px] shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-1 pb-2.5 pt-1 font-display text-sm font-semibold transition-colors sm:text-base " +
+                  // 33.9px WIDE before this. The height was fixed and the width never was,
+                  // which is the same half-fix as the home footer: a short label like
+                  // "Play" inside px-1 is a 34px target however tall it is.
+                  "-mb-px flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-1 pb-2.5 pt-1 font-display text-sm font-semibold transition-colors [@media(pointer:fine)]:min-w-0 sm:text-base " +
                   (selected
                     ? "border-[color:var(--accent)] text-gold-leaf"
                     : "border-transparent text-parchment-300 hover:border-[color:var(--edge-strong)] hover:text-parchment-50")

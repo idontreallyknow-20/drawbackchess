@@ -671,7 +671,9 @@ function ModeChoice({
       aria-label={mode === "nerf" ? "Nerf" : "Buff"}
       onClick={onClick}
       className={
-        "flex items-center justify-center gap-2 px-3 py-3 border transition font-display text-sm font-bold " +
+        // 148.5x41: py-3 is 0.75rem, and at a 14px root that is 10.5px a side, so
+        // the box lands three short of the minimum however wide it is.
+        "flex min-h-[44px] items-center justify-center gap-2 px-3 py-3 border transition font-display text-sm font-bold [@media(pointer:fine)]:min-h-0 " +
         identity
       }
     >
@@ -768,7 +770,12 @@ function TimeSlider({
         value={index}
         disabled={disabled}
         onChange={(e) => onChange(values[Number(e.target.value)])}
-        className="w-full accent-gold-leaf disabled:cursor-not-allowed"
+        // 16px tall, and the one control on this page that has to be dragged
+        // rather than tapped. The track paints centred in whatever height the
+        // element has, so min-height grows the hit area without moving the
+        // slider. Same shape and same fix as the picker on /play, which is a
+        // separate copy of this component.
+        className="min-h-[44px] w-full accent-gold-leaf disabled:cursor-not-allowed [@media(pointer:fine)]:min-h-0"
       />
       <div className="mt-1 flex justify-between font-mono text-[12px] text-parchment-400">
         <span>{formatEdgeLabel(values[0])}</span>

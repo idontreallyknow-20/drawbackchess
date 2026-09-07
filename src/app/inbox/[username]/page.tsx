@@ -161,7 +161,13 @@ export default function ThreadPage() {
             this page from every other thread. */}
         <h1 className="sr-only">Conversation with {thread?.peer.username ?? username}</h1>
         <div className="mb-4 flex min-w-0 items-center gap-3">
-          <Link href="/inbox" className="text-sm text-parchment-400 hover:text-parchment-100">
+          {/* A breadcrumb crumb, 34.9x18 before this. The negative margin gives the
+              pixels back so the trail keeps its density, and both relax on a
+              pointer that can hit 18px. */}
+          <Link
+            href="/inbox"
+            className="-mx-2 -my-3 inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-2 text-sm text-parchment-400 hover:text-parchment-100 [@media(pointer:fine)]:mx-0 [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:min-w-0 [@media(pointer:fine)]:px-0"
+          >
             Inbox
           </Link>
           <span className="text-parchment-500">/</span>

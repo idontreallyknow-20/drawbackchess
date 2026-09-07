@@ -121,8 +121,15 @@ function LiveNowStrip() {
   if (!lobby) return null;
   const online = lobby.players.length + lobby.anonymous;
   const games = lobby.games.length;
+  // 42px tall, two short of the minimum, purely from line-height: it is a
+  // full-width block so only the height was ever in question. `flex-col`
+  // rather than a bare `flex`, because the two spans are a stacked two-line
+  // strip and a row would have put them side by side.
   return (
-    <Link href="/lobby" className="mt-5 block text-[13px] leading-6 text-parchment-300 no-underline">
+    <Link
+      href="/lobby"
+      className="mt-5 flex min-h-[44px] flex-col justify-center text-[13px] leading-6 text-parchment-300 no-underline [@media(pointer:fine)]:min-h-0"
+    >
       <span className="block">
         <span className="font-semibold tabular-nums text-parchment-50">{online.toLocaleString()}</span>{" "}
         {online === 1 ? "player" : "players"}
@@ -465,12 +472,24 @@ function SiteFooter() {
           here. Height comes from a min-height that relaxes behind
           (pointer: fine), so the desktop row keeps its density. */}
       <div className="flex flex-col gap-3 border-t border-[color:var(--edge)] pt-4 text-[13px] text-parchment-400 sm:flex-row sm:items-center sm:justify-between">
-        <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        {/* Height was fixed here already; WIDTH was not, so "FAQ" was a
+            24.7px-wide target that happened to be 44px tall. The shared footer
+            solved this with px-3 and this copy never picked it up.
+            The padding cannot come out of the existing 16px gap without the
+            neighbouring hit areas overlapping (12px each side into a 16px gap),
+            and no padding that fits inside that gap gets a 24.7px word to 44.
+            So on a coarse pointer the links get their padding and the gap
+            shrinks to compensate, and on a fine pointer both revert exactly to
+            what this footer looked like before. */}
+        <nav
+          aria-label="Footer"
+          className="flex flex-wrap items-center gap-x-1 gap-y-1 [@media(pointer:fine)]:gap-x-4"
+        >
           {footerLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="-my-1 inline-flex min-h-[44px] items-center no-underline transition-colors hover:text-parchment-100 [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
+              className="-my-1 inline-flex min-h-[44px] min-w-[44px] items-center justify-center px-3 no-underline transition-colors hover:text-parchment-100 [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:min-w-0 [@media(pointer:fine)]:px-0"
             >
               {link.label}
             </Link>

@@ -539,9 +539,25 @@ async function probe(page: Page, interactiveSelector: string): Promise<DomReport
       // of this check tested `tagName === "A"` and so reported 241 of them as
       // defects across the guide and codex pages. They were the single largest
       // cluster in the whole sweep and none of them was real.
+      // "Inside running prose" is a property of the TEXT AROUND the control,
+      // not of its ancestor's tag name, and testing the tag name has now been
+      // too narrow twice. First it was `tagName === "A"`, which reported 241
+      // GlossaryText spans as defects. Then it was this closest() list, which
+      // missed "New here? [Take the tour]: a guided first game" on /play,
+      // because that sentence lives in a <span> inside a role="note" rather
+      // than in a <p>. So test the thing itself: does the control sit among
+      // real text in its own parent? Whitespace between two nav links does not
+      // count, which is why the text nodes are trimmed.
+      const inlineParent = el.parentElement;
+      const amongText = inlineParent
+        ? Array.prototype.some.call(
+            inlineParent.childNodes,
+            (n: ChildNode) => n.nodeType === 3 && (n.textContent ?? "").trim().length > 0,
+          )
+        : false;
       const inlineInProse =
         cs.display.startsWith("inline") &&
-        !!el.closest("p, li, blockquote, dd, figcaption");
+        (amongText || !!el.closest("p, li, blockquote, dd, figcaption"));
 
       // A control that FILLS a row which is itself a 44px target is not a
       // small target: the row is the target, and every pixel of it triggers

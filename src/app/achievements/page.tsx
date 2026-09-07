@@ -125,7 +125,8 @@ function RarityFilterRow({
           // floor at every width; it now clears 44 on a finger and tightens to
           // its dense size once there is a pointer (not once the viewport is
           // wide: a touchscreen laptop still has fingers).
-          "inline-flex min-h-[44px] items-center rounded-none border px-2.5 text-[13px] transition-colors [@media(pointer:fine)]:min-h-[32px] " +
+          // A one-word chip ("All") is 34.5px wide inside px-2.5 however tall it is.
+          "inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-none border px-2.5 text-[13px] transition-colors [@media(pointer:fine)]:min-h-[32px] [@media(pointer:fine)]:min-w-0 " +
           (filter === "all"
             ? "border-[color:var(--edge-strong)] bg-[color:var(--bg-raised)] text-parchment-100"
             : "border-[color:var(--edge)] text-parchment-400 hover:border-[color:var(--edge-strong)] hover:text-parchment-200")

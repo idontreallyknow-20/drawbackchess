@@ -400,6 +400,14 @@ export default function OnlineGamePage() {
     return (
       <main className="min-h-screen">
         <SiteNav />
+        {/* Every terminal branch below has an h1; this one did not, so a game
+            that is slow to resolve (or an id with no game behind it, which
+            sits here until the socket gives up) served a page with no
+            accessible name and no document outline. Same shape as C34 on
+            /u/[username]. sr-only because the visible chrome here is a
+            skeleton and a real heading would be a jump when the board fills
+            in. */}
+        <h1 className="sr-only">Game</h1>
         <div className="mx-auto w-full max-w-[1200px] px-3 pb-10 sm:px-6">
           <div className="mb-2 flex items-center justify-between gap-3">
             <div className="text-[12px] text-parchment-400">

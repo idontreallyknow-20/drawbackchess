@@ -39,7 +39,8 @@ export function CategoryTabs({
               // measured 33.8px, and an underline tab is still a tab: the
               // underline sits at the bottom edge, so the extra height goes above
               // it and the row reads the same.
-              "-mb-px flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-1 pb-2.5 pt-1 text-[13px] font-medium transition-colors duration-150 " +
+              // Width, not height: see the lobby tabs, same shape and same miss.
+              "-mb-px flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap border-b-2 px-1 pb-2.5 pt-1 text-[13px] font-medium transition-colors duration-150 [@media(pointer:fine)]:min-w-0 " +
               (selected
                 ? "border-[color:var(--accent)] text-parchment-50"
                 : "border-transparent text-parchment-300 hover:border-[color:var(--edge-strong)] hover:text-parchment-100")

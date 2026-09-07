@@ -1289,3 +1289,253 @@ guard: it states the defect, pins its size at 17 granted moves in a fixed
 position so the file cannot quietly stop measuring anything, keeps the refuted
 depth hypothesis refuted, and inverts its own message the moment the search
 starts seeing buffs. Verified to fail when the pin is moved by one.
+
+---
+
+## 2026-09-07 15:10 UTC
+
+Round 7. The search-blindness finding confirmed from the data, the board made
+keyboard-playable end to end, `/settings` given a real URL, and a measurement
+harness caught measuring the wrong thing twice.
+
+### A6 confirmed from the win-rate data, by the interaction it predicts
+
+Round 6 established from the source that `negamax` cannot see buff-granted
+moves below the root. `scripts/analyze-search-bias.ts` asks whether that leaves
+a fingerprint in the 617 measured cards. It is a harder question than it looks,
+because the obvious comparison proves nothing: move-granting cards do measure
+below everything else (+2.6 against +5.8, widening to -19.1 at t7), but at
+those tiers the comparison group is mass-removal and spawn cards which are
+genuinely enormous.
+
+The obvious test fails too. If invisible moves alone made a card measure badly,
+the residual would scale with the grant. It does not (1.2 sigma), and a
+threshold split PEAKS at 12 granted moves and decays above it, which no real
+dose-response does. The three largest grants in the library are `warp_step`
+(108 moves), `overclock_major` (39) and `reposition` (37), with residuals -8.6,
+-5.1 and **+19.4**. Those should be the worst cards on the board.
+
+The reason is in their text: "once", "for 1 turn". A card spent on the turn it
+fires cannot be hurt by a search that forgets it one ply down, because there is
+no future left to get wrong. A card that lasts three turns is wrong about every
+ply it searches. So the defect predicts an interaction, not a main effect.
+
+| | slope, points per granted move | sigma | n | r2 | mean residual |
+|---|---|---|---|---|---|
+| expires in 2 to 4 turns | **-1.26 +-0.28** | **4.5** | 20 | 0.53 | -6.1pt |
+| never expired in the probe | -0.38 +-1.04 | 0.4 | 6 | 0.03 | **+10.1pt** |
+| spent on the turn it fires | -0.05 +-0.09 | 0.5 | 18 | 0.02 | -1.2pt |
+
+Duration alone is 0.3 sigma and grant size alone is 1.2 sigma. The signal lives
+entirely in their interaction. The permanent row is the third leg and it
+sharpens the story: no expiry to miss, and a buffed root on every move of the
+game rather than two or three, so the search's wrongness never has to be cashed
+into a plan. **The penalty is worst exactly where a card demands a multi-turn
+plan**, which is the one thing a search that forgets the buff after one ply
+cannot build.
+
+`amazon_army` grants 17 moves over three turns: 1.26 x 17 is about 21 points
+against a measured -25.
+
+Section 1c of the balance pass now holds a tier FLOOR for all 26 affected
+cards, so a later blanket wave cannot cut one on numbers that are an artefact
+of the instrument. The asymmetry is deliberate: the bias only pushes
+measurements down, so a card here that still measures well may be raised
+freely. The block retires when A13 lands.
+
+The ladder was checked for contamination and cleared. The biased cards carry no
+material, so they sit in the M=0 baseline the tier floor is fitted against;
+excluding all 26 moves that baseline from +3.99 to **+4.06**. A6 corrupts one
+family's per-card readings and does not reach the ladder.
+
+One measurement trap, recorded because it inverted the answer on the first
+attempt: probing a card's duration by playing QUIET moves reports a "once" card
+as permanent, because its charge is spent by playing the granted move, not by
+taking a turn. The probe has to play the card's own moves.
+
+### A8 closed: the pocket discount is not backwards
+
+The plan said "measure the family, then move the multiplier". The family was
+measured and the multiplier stays. Pocket cards sit at **+1.1pt** residual
+against their own tier (n=13); the other 71 material-carrying cards sit at
+**+7.3pt**; the difference is **-6.3 +-5.0pt, 1.3 sigma**, in the opposite
+direction to the hypothesis and unresolvable either way.
+
+The hypothesis came from one row, `bn4_care_package` at +41.7 +-14.9, which is
+the top of a spread reaching down to `legendary_forge` at -16.7. Those two
+carry the same payload class and sit 58 points apart on 12 pairs each. That is
+the error bar, the same one round 1 found between `legendary_forge` and
+`bodyguard`. The mechanical argument for the change is still good and the sweep
+may simply not resolve 5%, but repricing a whole family on the largest number
+in a noisy column is the failure mode the model exists to avoid.
+
+### The sweep was measuring touch targets with a mouse
+
+The 44px rule is about a finger. Playwright's default context is a desktop
+mouse, so `pointer: fine` matched, so every `[@media(pointer:fine)]:min-h-*`
+step-down applied, so a control CORRECTLY fixed to 44px-on-touch was still
+counted as a defect. On one tree that is **258 findings at 360 with a fine
+pointer against 81 with a coarse one.** The fine number is not a stricter
+version of the right answer; it is an answer to a different question, and
+`sweep-baseline.json` had been encoding it.
+
+Two more things were wrong with the same check. It ran only at widths <= 390,
+so the whole 768 to 1024 tablet band went unchecked, and a 1024px tablet is a
+coarse pointer with no keyboard. And it read its numbers off the same per-cell
+report as everything else, so the pass was tied to the theme loop even though a
+hit area does not change colour.
+
+Now: one pass per route, in its own `hasTouch: true` context, across 360, 390,
+768 and 1024, theme-independent. Measured after: `/guide/glossary` goes 19
+touch-target findings to **0** (those controls were fixed and the sweep was
+still reporting them), `/play` goes 8 to 16 (four real defects, now also seen
+at 768 and 1024) and then to **0** once they were fixed.
+
+CDP looked like the cheap way to do this and does not work: with
+`Emulation.setEmulatedMedia` sent `{name:"pointer", value:"coarse"}`,
+`matchMedia("(pointer: coarse)")` still reports false. A sweep built on it
+would have gone on reporting fine-pointer numbers under a coarse-pointer label.
+Both paths were measured before the change was written.
+
+The inline-in-prose exemption was too narrow for the third time. It was
+`tagName === "A"` (241 false positives), then a `closest("p, li, ...")` list,
+which missed "New here? [Take the tour]: a guided first game" because that
+sentence lives in a `<span>` inside a `role="note"`. It now tests the property
+itself: does the control sit among real text in its own parent? Whitespace
+between two nav links does not count.
+
+### The board is playable without a pointer, and reachable on a phone
+
+`BoardTools` (flip, `f`, a shortcuts sheet) was already on `/game`, but the rail
+is `hidden sm:grid`, so at 360 the flip button measured **0.0 x 0.0**: a phone
+had a keyboard shortcut and no button, which is the whole of what the backlog
+item complained about. `FlipBoardButton` is extracted (button only, no keymap,
+so a second mount cannot double-bind `useBoardKeys` and turn `f` into a no-op)
+and placed in the mobile player strip, exactly complementary to the rail. Now
+44 x 44 coarse at 360/390/768/1024 and 36 x 36 fine.
+
+Keyboard play was already correct and is now measured rather than assumed: a
+real move lands on board state (`sq12` white pawn to `sq28`) at 1440 fine and
+390 coarse, in both orientations, and the arrow keys move in SCREEN space
+(`ArrowRight dx=+87.1 dy=0` with either colour at the bottom), with exactly one
+`[tabindex="0"]` per board. `f` is also bound on `/analysis`, locally, because
+its flip is local state and must not write the global `flipBoard`.
+
+The last `role="lead"` is gone (it was in `src/app/dev/plays/PlaysGallery.tsx`,
+latent rather than live, one `{...props}` from the DOM), and the `/analysis`
+nav buttons went from 31.5 x 31.5 to 44 x 44 on coarse pointers at every width.
+
+`/game/[id]` served no `h1` while connecting, which is where a nonexistent game
+id sits until the socket gives up. Every terminal branch had one. Fixed, and
+measured across 14 samples over 5.6s: zero frames without an `h1`.
+
+### Touch targets, by shape
+
+The wordmark link was 147.3 x **34** on every one of 39 routes: 37 of the 81
+coarse findings were that one control. New shared `Breadcrumbs` and
+`SearchInput` primitives replace one hand-rolled breadcrumb (19.5px) and four
+hand-rolled search boxes (19.5 to 40.5px); the min-height goes on the INPUT,
+not the wrapper, because a 44px box around a 19.5px field is not a 44px target.
+
+Two defects the route sweep structurally cannot see, found by hand: the desktop
+nav dropdown rows are 194 x **35** and only exist while hovered, and the band
+where they ARE the navigation is 768 to 1024, which is a tablet; and the header
+icon buttons are `w-[44px]` flex items with no `shrink-0`, so a long generated
+username squeezed all of them to **43.2px** on 34 routes in one probe run and 0
+in the next. An intermittent 44px violation is the worst kind.
+
+Coarse-pointer findings, same probe both times, 39 routes: **81 to 20 at 360**
+and **122 to 29 at 1024**. The 1024 re-run is the proof that no width
+breakpoint was used as a pointer proxy.
+
+The home page's local `SiteFooter` copy had the height fixed and the WIDTH
+never was, so "FAQ" was a 24.7px-wide target that happened to be 44px tall. The
+padding cannot come out of the existing 16px gap without neighbouring hit areas
+overlapping, and no padding that fits inside that gap gets a 24.7px word to 44,
+so on a coarse pointer the links take their padding and the gap shrinks to
+compensate, and on a fine pointer both revert exactly. Measured: six links all
+44px+ at 360 coarse with zero overlaps across two wrapped rows, and byte-identical
+geometry at 1440 fine.
+
+### `/settings` is a real route
+
+Settings lived only in a panel opened from the header, so they were not
+linkable, bookmarkable or deep-linkable. `/settings` and `/settings/<section>`
+now exist, and the deep link is a PATH segment rather than a fragment: a path
+reaches the server, so a section gets its own title, its own canonical, browser
+history, and a real 404 for an unknown name.
+
+Sync is structural rather than copied. The entire settings surface moved out of
+`SettingsPanel.tsx` into `src/components/settings/rows.tsx` (the model, the one
+switch over `Control.kind`, every picker, the row layout), leaving the panel as
+dialog chrome only: **901 lines to 178**. Both surfaces read the same config and
+the same controls, and the model subscribes to `SETTINGS_CHANGED_EVENT`, so a
+write on either lands on the other with nothing passed between them. Verified
+both directions, including a route row flipping live behind the open modal.
+
+Two measured trade-offs. `/settings/nope` returned **200 plus a soft 404** at
+first, because a `loading.tsx` puts a Suspense boundary above the section route
+and `notFound()` then fires after the shell has started streaming. Moving the
+index into a `(all)` route group scopes that boundary to `/settings` only:
+measured 200 before, **404 after**, with the specific 404 UI intact.
+`dynamicParams = false` also gave a 404 but discarded the specific UI. And
+`/settings#appearance` did not scroll, because the browser resolves the
+fragment while parsing, before the rows exist behind the hydration gate:
+measured `#appearance` at 2680px down with `scrollY: 0`, and after the fix
+section top 14px, `scrollY` 2681.
+
+### 404s, and one route that was 404ing on every load
+
+`src/app/not-found.tsx` plus segment boundaries for `/u/[username]`,
+`/game/[id]`, `/tournaments/[id]` and `/settings/[section]`. Each says what was
+not found in that thing's own words: "No player by that name", "No game with
+that id". All five measured at 360 and 1440, dark and light: 404 status, one
+`h1`, zero overflow, zero sub-44px targets.
+
+`/api/lobby` was 404ing twice per load on 8 routes under `next dev`:
+`lobbyClient.ts` fetches it and only `worker.ts` served it. A handler now
+exists, rather than teaching the client to swallow a 404, because a deaf client
+would also go quiet on a real routing regression in production. Production is
+untouched: the worker matches `/api/lobby` before falling through to Next, and
+the handler returns 503 under `NODE_ENV=production` rather than inventing an
+empty lobby on a live site. Lobby-related console errors per load: **4 to 0**.
+
+### Board feel, measured
+
+`e2e/feel.spec.ts` plays a real game and puts numbers on what a player notices.
+What is already right, now pinned so nobody "fixes" it: legal-move dots appear
+**50 to 79ms after pointerdown**, not pointerup, which is the Lichess behaviour;
+a move commits in **171 to 272ms** with origin and destination updating in the
+same frame; the easy bot replies in **807 to 826ms** including any draft its
+move triggers; the clock reads `5:00` on a five-minute game and `0:08.0` inside
+the emergency band.
+
+Three findings filed. Every buff game opens with a modal over the board for
+about **4.6 seconds** (4571 / 4577 / 5258ms across three runs) before a move is
+possible, because the cards are not interactive until the deal finishes. Draft
+cards carry no `aria-pressed` or `aria-selected`, so the only signal a card is
+chosen is the commit button renaming itself. And badge spans concatenate with no
+separator, so a card announces as "Walking Pace,
+PleaseMovementPassiveITrivialOnce, your a-file..." and the live region as
+"black knight g8 to f6 | Special OrderIBot played a buffYour next draft is
+dealt from tier 2."
+
+### Notes for the next session
+
+Six verification probes were wrong before the code was, every one of them
+because the probe measured the wrong thing rather than because the measurement
+was hard. The board's squares carry `data-sq` as a numeric index and are
+addressable only by `aria-label`. Draft cards are inert until the decision
+timer appears, and clicking early silently does nothing. The commit button
+renames itself on selection, so matching its first label waits forever. `t` is
+SECONDS per side, so `t=1` is a one-second game. The clock digits change size
+deliberately between phone and desktop, which reads as a broken arbitrary value
+if you check the computed size without the classes. And an overlap check that
+sorts hit areas by `left` reports a false positive the moment the row wraps.
+
+`next dev` leaks: after about seven hours it held **9.1 GB resident**, 57% of
+the box, and was the whole of a near-OOM this round. Killing it took available
+memory from 1.1 GB to 12.9 GB in three seconds, before anything else was
+touched. Check `ps -eo rss,args --sort=-rss | head` before blaming the workers.
+When memory does get tight, `pkill` and `pkill -9` themselves fail or return
+144, and `pgrep -f pat | xargs -r kill -9` works where `pkill -f pat` does not.
