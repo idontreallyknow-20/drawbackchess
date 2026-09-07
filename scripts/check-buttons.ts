@@ -104,11 +104,9 @@ const BASELINE: string[] = [
   "src/app/tutorial/walkthrough/page.tsx",
   "src/app/tv/page.tsx",
   "src/app/u/[username]/page.tsx",
-  "src/components/AccountChip.tsx",
   "src/components/AchievementToast.tsx",
   "src/components/AdminGodPanel.tsx",
   "src/components/Board.tsx",
-  "src/components/CurrentGameCard.tsx",
   // The dock split (BuffDock.tsx -> components/dock/) carried the monolith's
   // remaining bespoke affordances with it: row/chip toggles, the segmented
   // hand filter, and the targeting banner's Done/Cancel pair. A move, not new

@@ -1648,7 +1648,7 @@ export class GameServer extends DurableObject<Env> {
 
     if (url.pathname === "/live-game" && request.method === "GET") {
       // Authoritative live-seat lookup for the profile "Playing Right Now" card
-      // (see src/components/CurrentGameCard.tsx). Given a user id, return the id
+      // (see src/components/profile/CurrentGameCard.tsx). Given a user id, return the id
       // (and public mode) of the started, unfinished game that user currently
       // occupies, or null. This reads the SAME bounded live index the lobby
       // snapshot uses, so it never scans a stale lobby cache or guesses a seat.
