@@ -216,7 +216,7 @@ export function DockRow({
               onStartUse?.(index);
             }}
             title={def.description}
-            className="touch-manipulation px-2.5 py-1 text-[12px] font-semibold tracking-wide max-sm:min-h-[36px] sm:cursor-grab sm:active:cursor-grabbing"
+            className="touch-manipulation px-2.5 py-1 text-[12px] font-semibold tracking-wide max-[@media(pointer:fine)]:min-h-[36px] sm:cursor-grab sm:active:cursor-grabbing"
           >
             Use
           </Button>

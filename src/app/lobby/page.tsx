@@ -436,7 +436,7 @@ function LobbyInner() {
                   <div className="flex items-center gap-3">
                     <Link
                       href="/tv"
-                      className="inline-flex min-h-[44px] items-center sm:min-h-0 text-xs text-gold-leaf hover:text-gold transition-colors"
+                      className="inline-flex min-h-[44px] items-center [@media(pointer:fine)]:min-h-0 text-xs text-gold-leaf hover:text-gold transition-colors"
                     >
                       Open Nerf Chess TV
                     </Link>
@@ -475,7 +475,7 @@ function LobbyInner() {
                     {filteredGames.length > WATCH_TAB_FOLD && (
                       <Button tone="ghost"
                         onClick={() => setShowAllGames((v) => !v)}
-                        className="mt-2.5 sm:min-h-0 w-full px-3 py-2 text-xs font-medium text-parchment-300">
+                        className="mt-2.5 [@media(pointer:fine)]:min-h-0 w-full px-3 py-2 text-xs font-medium text-parchment-300">
                         {showAllGames
                           ? "Show fewer"
                           : `View all ${filteredGames.length} games`}
@@ -585,7 +585,7 @@ function LobbyInner() {
                           setTab("watch");
                           setFriendsOpen(true);
                         }}
-                        className="inline-flex min-h-[44px] items-center sm:min-h-0 text-xs text-gold-leaf hover:text-gold transition-colors"
+                        className="inline-flex min-h-[44px] items-center [@media(pointer:fine)]:min-h-0 text-xs text-gold-leaf hover:text-gold transition-colors"
                       >
                         Create a friend game
                       </button>
@@ -675,7 +675,7 @@ function LobbyInner() {
                     >
                       <Link
                         href={`/u/${encodeURIComponent(p.name)}`}
-                        className="flex min-h-[44px] min-w-0 items-center gap-2 sm:min-h-0 text-parchment-100 hover:text-gold-leaf transition-colors"
+                        className="flex min-h-[44px] min-w-0 items-center gap-2 [@media(pointer:fine)]:min-h-0 text-parchment-100 hover:text-gold-leaf transition-colors"
                       >
                         <span className="min-w-0 truncate">{p.name}</span>
                         {p.rating != null && (
@@ -695,7 +695,7 @@ function LobbyInner() {
                   <Button tone="ghost"
                    
                     onClick={() => setShowAllPlayers((v) => !v)}
-                    className="mt-2 sm:min-h-0 w-full px-3 py-2 text-xs font-medium text-parchment-300">
+                    className="mt-2 [@media(pointer:fine)]:min-h-0 w-full px-3 py-2 text-xs font-medium text-parchment-300">
                     {showAllPlayers
                       ? "Show fewer"
                       : `View all ${sortedPlayers.length} players`}
@@ -757,7 +757,7 @@ function LobbyInner() {
                     <Button tone="ghost"
                      
                       onClick={() => setTab("watch")}
-                      className="mt-2 sm:min-h-0 w-full px-3 py-2 text-xs font-medium text-parchment-300">
+                      className="mt-2 [@media(pointer:fine)]:min-h-0 w-full px-3 py-2 text-xs font-medium text-parchment-300">
                       {`See all ${lobby.games.length} live games`}
                     </Button>
                   )}
@@ -1065,7 +1065,7 @@ function LobbyRailError({ message, onRetry }: { message: string; onRetry: () => 
       <Button tone="ghost"
        
         onClick={onRetry}
-        className="sm:min-h-0 px-3 py-2 text-xs font-medium text-parchment-200">
+        className="[@media(pointer:fine)]:min-h-0 px-3 py-2 text-xs font-medium text-parchment-200">
         Retry
       </Button>
     </div>
@@ -1130,7 +1130,7 @@ function PlayerNameLink({
     <Link
       href={`/u/${encodeURIComponent(name)}`}
       className={
-        "inline-flex min-h-[44px] min-w-0 items-center sm:min-h-0 hover:text-gold-leaf hover:underline transition-colors " +
+        "inline-flex min-h-[44px] min-w-0 items-center [@media(pointer:fine)]:min-h-0 hover:text-gold-leaf hover:underline transition-colors " +
         className
       }
     >

@@ -230,7 +230,7 @@ export default function LeaderboardPage() {
                  
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={safePage === 0}
-                  className="px-4 text-sm sm:min-h-0 sm:py-2">
+                  className="px-4 text-sm [@media(pointer:fine)]:min-h-0 sm:py-2">
                   Previous
                 </Button>
                 <span className="font-mono text-xs tabular-nums text-parchment-400">
@@ -242,7 +242,7 @@ export default function LeaderboardPage() {
                  
                   onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
                   disabled={safePage>= pageCount - 1}
-                  className="px-4 text-sm sm:min-h-0 sm:py-2" >
+                  className="px-4 text-sm [@media(pointer:fine)]:min-h-0 sm:py-2" >
                   Next
                 </Button>
               </div>

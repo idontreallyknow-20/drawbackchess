@@ -1908,7 +1908,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
     ) : null;
 
   return (
-    <main className={"flex min-h-dvh flex-col sm:h-dvh sm:min-h-0 sm:overflow-hidden " + TABLET_STACK_SCROLL}>
+    <main className={"flex min-h-dvh flex-col sm:h-dvh [@media(pointer:fine)]:min-h-0 sm:overflow-hidden " + TABLET_STACK_SCROLL}>
       {/* The live game had NO h1 at all: the only one on this route sits in
           the pre-game nerf-draft branch, so the moment a game started the
           page lost its heading. A screen reader landing here was told nothing

@@ -1271,7 +1271,7 @@ function ChipGroup({
             aria-pressed={on}
             onClick={() => onChange(o.value)}
             className={
-              "inline-flex h-[44px] items-center rounded-none border px-3 text-[14px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] sm:h-[36px] sm:text-[13px] " +
+              "inline-flex h-[44px] items-center rounded-none border px-3 text-[14px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] [@media(pointer:fine)]:h-[36px] sm:text-[13px] " +
               (on
                 ? "border-[color:var(--edge-strong)] bg-[color:var(--bg-raised)] text-gold-leaf"
                 : "border-[color:var(--edge)] text-parchment-400 hover:border-[color:var(--edge-strong)] hover:text-parchment-200")

@@ -75,7 +75,7 @@ function PlayerIdentity({
   return (
     <Link
       href={`/u/${encodeURIComponent(name)}`}
-      className="group flex min-h-[44px] min-w-0 items-center gap-2 sm:min-h-0"
+      className="group flex min-h-[44px] min-w-0 items-center gap-2 [@media(pointer:fine)]:min-h-0"
       title={`View ${name}'s profile`}
     >
       <PlayerAvatar name={name} avatar={avatar} size={size} />
@@ -375,7 +375,7 @@ function TvView() {
           <button
             type="button"
             onClick={reloadLobby}
-            className="mt-5 inline-flex min-h-[44px] items-center rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-4 py-2 font-display text-[13px] font-medium text-parchment-200 transition-colors hover:bg-[color:var(--bg-raised)] hover:text-parchment-100 sm:min-h-[36px]"
+            className="mt-5 inline-flex min-h-[44px] items-center rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-4 py-2 font-display text-[13px] font-medium text-parchment-200 transition-colors hover:bg-[color:var(--bg-raised)] hover:text-parchment-100 [@media(pointer:fine)]:min-h-[36px]"
           >
             Retry
           </button>
@@ -398,12 +398,12 @@ function TvView() {
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
             <LinkButton tone="leaf"
               href="/lobby"
-              className="px-4 py-2 text-[13px] font-semibold sm:min-h-[36px]">
+              className="px-4 py-2 text-[13px] font-semibold [@media(pointer:fine)]:min-h-[36px]">
               Find a match
             </LinkButton>
             <LinkButton tone="ghost"
               href="/play"
-              className="px-4 py-2 text-[13px] sm:min-h-[36px]">
+              className="px-4 py-2 text-[13px] [@media(pointer:fine)]:min-h-[36px]">
               Play a bot
             </LinkButton>
           </div>

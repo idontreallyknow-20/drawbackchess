@@ -35,7 +35,11 @@ export function CategoryTabs({
             aria-selected={selected}
             onClick={() => onChange(c.id)}
             className={
-              "-mb-px flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-1 pb-2.5 pt-1 text-[13px] font-medium transition-colors duration-150 " +
+              // min-h-[44px] matches the lobby's tab row, which already had it. These
+              // measured 33.8px, and an underline tab is still a tab: the
+              // underline sits at the bottom edge, so the extra height goes above
+              // it and the row reads the same.
+              "-mb-px flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-1 pb-2.5 pt-1 text-[13px] font-medium transition-colors duration-150 " +
               (selected
                 ? "border-[color:var(--accent)] text-parchment-50"
                 : "border-transparent text-parchment-300 hover:border-[color:var(--edge-strong)] hover:text-parchment-100")

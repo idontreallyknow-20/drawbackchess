@@ -2866,7 +2866,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
   return (
     <main
       className={
-        "flex min-h-dvh flex-col sm:h-dvh sm:min-h-0 sm:overflow-hidden " +
+        "flex min-h-dvh flex-col sm:h-dvh [@media(pointer:fine)]:min-h-0 sm:overflow-hidden " +
         TABLET_STACK_SCROLL +
         (recordingLayout ? " recording-mode" : "")
       }
@@ -2928,7 +2928,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
             onClick={toggleMute}
             aria-label={muted ? "Unmute" : "Mute"}
             title={muted ? "Sound off" : "Sound on"}
-            className="h-[44px] w-[44px] sm:h-[36px] sm:w-[36px] rounded-full">
+            className="h-[44px] w-[44px] [@media(pointer:fine)]:h-[36px] [@media(pointer:fine)]:w-[36px] rounded-full">
             {muted ? (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -2947,7 +2947,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
             onClick={() => setSettingsOpen(true)}
             aria-label="Settings"
             title="Settings"
-            className="h-[44px] w-[44px] sm:h-[36px] sm:w-[36px] rounded-full">
+            className="h-[44px] w-[44px] [@media(pointer:fine)]:h-[36px] [@media(pointer:fine)]:w-[36px] rounded-full">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />

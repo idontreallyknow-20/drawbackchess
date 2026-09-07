@@ -58,8 +58,8 @@ const TONE: Record<ButtonTone, string> = {
 
 // Touch first: every size clears a 44px tap target on a phone (the hit-area
 // floor in docs/design-system.md §10) and only tightens once there is a
-// pointer. `xs` is the exception and is for dense data rows only — it clears
-// 36px, never 44, so it is not allowed to be the only way to do something.
+// pointer. `xs` is for dense data rows: it is the tightest size on a mouse
+// (36px), and like every other size it still clears 44px on touch.
 //
 // "Once there is a pointer" is `(pointer: fine)`, not `sm:`. It used to be
 // `sm:`, which reads a WIDTH as a proxy for a mouse and so is wrong for every
@@ -68,10 +68,20 @@ const TONE: Record<ButtonTone, string> = {
 // and "Play a bot" both rendered 40px tall against the 44px floor.
 const SIZE: Record<ButtonSize, string> = {
   // Lichess's .button is padding .8em 1em at 14px, about 40px tall. That is
-  // the floor for anything that is a real control; xs/sm are for dense data
-  // rows only and still clear 36px.
-  xs: "min-h-[36px] gap-1 px-2.5 py-1 text-[12px]",
-  sm: "min-h-[36px] gap-1.5 px-3 py-1.5 text-[13px]",
+  // the floor for anything that is a real control on a mouse; every size
+  // clears 44px on touch.
+  // xs and sm follow md's rule rather than opting out of it. "Dense data row"
+  // describes the DESKTOP case, and a dense row on a phone is still pressed
+  // with a finger: leaving these at 36px meant the smallest controls in the
+  // app were the ones that missed the floor, which is backwards. They now
+  // clear 44px on touch and tighten to their dense size once there is a
+  // pointer, so nothing about the desktop density changes.
+  //
+  // xs was also 12px, which section 3 allows for captions and labels but not
+  // for interactive text: the floor there is 13px. A button label is
+  // interactive text however small the button.
+  xs: "min-h-[44px] gap-1 px-2.5 py-1 text-[13px] [@media(pointer:fine)]:min-h-[36px]",
+  sm: "min-h-[44px] gap-1.5 px-3 py-1.5 text-[13px] [@media(pointer:fine)]:min-h-[36px]",
   md: "min-h-[44px] gap-2 px-[1em] py-[0.8em] text-sm [@media(pointer:fine)]:min-h-[40px]",
   // `lg` is Lichess's lobby button: 52px tall, 16px label, a roomy gap so a
   // leading icon reads as part of the label rather than a decoration.
@@ -80,8 +90,8 @@ const SIZE: Record<ButtonSize, string> = {
 
 /** Square, so an icon-only control is a target rather than a sliver. */
 const ICON_SIZE: Record<ButtonSize, string> = {
-  xs: "min-h-[36px] min-w-[36px] p-1 text-[12px]",
-  sm: "min-h-[36px] min-w-[36px] p-1.5 text-[13px]",
+  xs: "min-h-[44px] min-w-[44px] p-1 text-[13px] [@media(pointer:fine)]:min-h-[36px] [@media(pointer:fine)]:min-w-[36px]",
+  sm: "min-h-[44px] min-w-[44px] p-1.5 text-[13px] [@media(pointer:fine)]:min-h-[36px] [@media(pointer:fine)]:min-w-[36px]",
   md: "min-h-[44px] min-w-[44px] p-2 text-sm [@media(pointer:fine)]:min-h-[40px] [@media(pointer:fine)]:min-w-[40px]",
   lg: "min-h-[48px] min-w-[48px] p-2.5 text-base",
 };

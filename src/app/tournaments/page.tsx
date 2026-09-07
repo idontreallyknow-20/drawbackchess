@@ -292,7 +292,7 @@ export default function TournamentsPage() {
                       onClick={() => setClockIdx(i)}
                       aria-pressed={clockIdx === i}
                       className={
-                        "min-h-[44px] sm:min-h-0 border px-2.5 py-1 font-mono text-xs transition-colors " +
+                        "min-h-[44px] [@media(pointer:fine)]:min-h-0 border px-2.5 py-1 font-mono text-xs transition-colors " +
                         (clockIdx === i
                           ? "border-[color:var(--edge-strong)] bg-[color:var(--bg-raised)] text-gold-leaf"
                           : "border-[color:var(--edge)] text-parchment-300 hover:border-[color:var(--edge-strong)]")

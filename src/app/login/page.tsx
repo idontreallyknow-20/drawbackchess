@@ -139,8 +139,13 @@ function LoginPage() {
                 setTab(t);
                 setError(null);
               }}
+              // These are tabs, not a bespoke control, and they measured 32px
+              // tall: the smallest targets on the one page every new player
+              // has to get through. A min-height rather than more padding, so
+              // the pair keeps its current density on a mouse.
+              aria-pressed={tab === t}
               className={
-                "py-2 text-sm font-display font-semibold tracking-wide transition " +
+                "flex min-h-[44px] items-center justify-center py-2 text-sm font-display font-semibold tracking-wide transition " +
                 (tab === t ? "bg-[color:var(--bg-raised)] text-gold-leaf" : "text-parchment-300 hover:bg-[color:var(--bg-raised)]")
               }
             >
