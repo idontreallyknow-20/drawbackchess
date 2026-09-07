@@ -66,7 +66,8 @@ which is why nothing caught it.
 | A8 | The pocket discount is probably backwards: a crazyhouse drop lands anywhere, dodges every nerf filter, and breaks stalemate, so it is worth MORE than the same piece in your own half, not 0.95 of it. Measure the family, then move the multiplier | M | TODO |
 | A9 | Two parser holes left, held out by name in `KNOWN_MISREAD`: a replacement (`X ... and Y returns in its place`) is a transform written the long way round (`seance`), and a later sentence re-describing an already-scored piece is a gloss, not a second body (`wc_lost_and_found`) | S | TODO |
 | A5 | Rework, not just retier, cards that are cheap AND boring (pure "+3 material, no decision") | M | TODO |
-| A6 | **`amazon_army` measured -25 points and it is probably not the card.** It is passive, so the activation fix (A11) does not touch it, and it only ADDS legal moves: knights gain bishop slides, bishops gain knight leaps. A card that strictly widens your options cannot make the position worse, so the loss has to come from somewhere else. Measured fact: in a normal middlegame position it takes White from **40 legal moves to 57, a 43 percent wider tree**. Unproven hypothesis: the harness plays at skill 1350, which is a **60ms** search budget, and a fixed budget over a 43 percent wider tree buys fewer plies, so the bot simply plays worse while holding it. If that is right the harness systematically under-measures EVERY move-expansion card, which would be a second measurement bias on top of the activation one. I could not settle it: timing a 60ms search needs a quiet machine and this box was running three simulation shards, a route sweep and two workers. To finish it, instrument the search to report the ply depth it completed (`analyzeBoard` already returns `depth` but takes a raw board and cannot see buffs, so `pickAIMove` needs the same) and compare depth, not wall time | M | TODO |
+| A6 | **`amazon_army` measured -25 points. Root-caused: the bot's search cannot see buff-granted moves below the root.** Settled in round 6, see the write-up below. Pinned by `npm run test:search-buffs`. The fix is an engine change to a hot path with a desync hazard, so it is filed separately as A13 | M | DIAGNOSED |
+| A13 | **Make `negamax` buff-aware.** `negamax`/`quiesce` take a bare `BoardState` and call `generateMoves(board)`; only the root calls `legalMoves(game)`, which is the only function that runs `def.augmentMoves`. So every move-granting buff exists at ply 0 and nowhere else. Design sketch and the three hazards are in `scripts/test-search-buff-visibility.ts`. Do not attempt this in the same round as anything else | L | TODO |
 | A7 | Work the `pending-review` backlog in `docs/card-audit.md`: 266 duplicate-signature, 211 near-duplicate, 90 dominated | L | TODO |
 | A11 | **`queens_rampage` was a play-policy bug, not a tier problem.** FIXED (round 5) by `refineLastSquarePick` in `src/engine/game.ts`: the bot now re-picks a card's last square by simulating the activation on a detached copy of the game and scoring the resulting position, instead of ranking squares by the piece standing on them. Pinned by `npm run test:ai-activation`, which fails on two of three assertions without the fix | S | DONE |
 | A12 | **Material is one axis of power and the model only sees that one.** Twelve cards measure above +30 win-rate points at M=0: `mirror_of_souls` +50.0 (piece-swap), `bn4_ascension_small` +45.8 (promotion-grant), `detonate` +44.4 (forced-sacrifice), `smurf_account` +41.7 (capture-denial), `giants_maul` +41.7 (mass-freeze), `piece_parole` +40.0 (single-piece-shield), `bn4_endless_militia` +35.0 and `total_atomic` +33.3 and `atomic_captures` +31.8 (mass-removal). Either a second model for those categories, or an explicit statement that they are priced by hand and why | M | TODO |
@@ -177,6 +178,82 @@ Round 1's two recorded over-counts are closed: `apotheosis` now reads the minor
 it spends (M 8.55 to 5.70, which puts it exactly at its tier and removes it from
 the list), and `wc_sacrificial_bishop` already nets to zero, so the note was
 stale. Both are pinned in the parser's self-check.
+
+### A6 settled (round 6): the search is blind to buffs below the root
+
+Round 5 left `amazon_army`'s -25 open with a named hypothesis and the exact
+experiment that would settle it. The experiment was run. **The hypothesis was
+wrong.**
+
+The instrument first. `pickAIMove` now takes an optional write-only
+`SearchStats` and reports the deepest ply it actually completed and how many
+root moves it considered, so "the bot played worse while holding this" and
+"this card is bad" can finally be told apart. `analyzeBoard` already returned a
+depth, but it takes a raw board and therefore cannot see buffs at all, which is
+the same defect this ended up finding.
+
+The hypothesis was that a 43 percent wider tree buys fewer plies out of the
+bot's 60ms floor budget, so the harness charges the card for a weaker search.
+Measured, on a quiet box:
+
+| level | budget | depth without | depth with | root moves |
+|---|---|---|---|---|
+| medium | 60ms | 3 | 3 | 40 -> 57 |
+| medium | 700ms | 3 | 3 | 40 -> 57 |
+| hard | 60ms | 3 | 3 | 40 -> 57 |
+| hard | 700ms | 4 | 4 | 40 -> 57 |
+
+The widening costs **zero plies at every level and budget tried**. Alpha-beta
+with move ordering absorbs it, and `medium` is capped at `maxDepth: 3` anyway,
+which is low enough that 60ms was never the binding constraint. There is no
+search-depth bias against move-expansion cards. That is a clean negative and it
+closes off a whole line of suspicion about the balance dataset.
+
+The real mechanism is worse and it was two greps away once the timing story
+died. `negamax` and `quiesce` take a bare `BoardState`. Only `pickAIMove`'s root
+calls `legalMoves(game)`, and `legalMoves` is the *only* place `def.augmentMoves`
+runs. So:
+
+```
+ply 0   legalMoves(game)      57 moves, 17 of them granted by the card
+ply 1+  generateMoves(board)  42 moves, 0 of them granted by the card
+```
+
+Both lines describe positions two of White's turns into a three-turn card. The
+bot plays a move that exists **only** because of the card, then evaluates every
+follow-up as if the piece were an ordinary knight. It cannot see a two-move plan
+that needs the buff twice, it cannot see the opponent's buffed replies at all,
+and it never models expiry in either direction. Holding a move-granting card
+makes the bot's own move real and its picture of the future false, which is a
+strictly worse place to be than not holding it. That is enough to produce a
+negative measurement from a card that only adds options.
+
+This is not specific to `amazon_army`. It applies to every card in the library
+that grants movement, which is the whole `movement` category plus every
+`timedAugment` / `permanentAugment` / `pieceBound` holder. **Do not retier a
+move-granting card downward on win-rate evidence** until A13 lands and the
+measurements are retaken.
+
+Not fixed in this round, deliberately. The obvious fix is a board-bound augment
+closure called per node, and it carries three hazards, the second of which is
+disqualifying for an unsupervised change:
+
+1. `makeBuffApi` captures `game.board` by value, so a per-node augment means
+   either rebuilding a ~20-closure api object per node (too slow for a hot
+   path) or mutating a shared one (a lifetime hazard).
+2. Not every `augmentMoves` generator is board-pure. One that touches `api.rng`
+   would advance the game's RNG stream once per searched node. That is exactly
+   what `test:desync`, `test:snapshot` and `test:spectator-sync` exist to catch,
+   and it would corrupt live games rather than merely mis-score them.
+3. Applying the augment at every ply ignores expiry, so a 12-ply `hard` search
+   would over-value a three-turn card. Swapping one bias for the other is not
+   obviously progress.
+
+`npm run test:search-buffs` is a known-issue lock, not a red guard: it states
+the defect, pins its size at 17 granted moves in a fixed position so the file
+cannot quietly stop measuring anything, keeps the refuted depth hypothesis
+refuted, and turns its message inside out the moment the search starts seeing
+buffs.
 
 ## B. Feel: the practice-games loop
 

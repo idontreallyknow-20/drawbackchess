@@ -436,7 +436,7 @@ function LobbyInner() {
                   <div className="flex items-center gap-3">
                     <Link
                       href="/tv"
-                      className="inline-flex min-h-[44px] items-center [@media(pointer:fine)]:min-h-0 text-xs text-gold-leaf hover:text-gold transition-colors"
+                      className="inline-flex min-h-[44px] items-center [@media(pointer:fine)]:min-h-0 text-[13px] text-gold-leaf hover:text-gold transition-colors"
                     >
                       Open Nerf Chess TV
                     </Link>
@@ -966,7 +966,12 @@ function ModeFilter({
           aria-pressed={value === o.id}
           onClick={() => onChange(o.id)}
           className={
-            "min-h-[44px] px-4 py-1 text-xs font-medium transition-colors sm:min-h-[34px] " +
+            // A segmented tab's label is interactive text, so 13px, not the
+            // 12px caption size. The tightening was behind `sm:`, which reads a
+            // WIDTH as a proxy for a mouse: a 768px tablet and a touchscreen
+            // laptop both got 34px targets with fingers on them. It is now
+            // behind (pointer: fine), like Button.tsx.
+            "min-h-[44px] px-4 py-1 text-[13px] font-medium transition-colors [@media(pointer:fine)]:min-h-[34px] " +
             (i > 0 ? "border-l border-[color:var(--edge)] " : "") +
             (value === o.id
               ? "bg-[color:var(--accent)] text-[color:var(--text-on-accent)]"
@@ -1065,7 +1070,7 @@ function LobbyRailError({ message, onRetry }: { message: string; onRetry: () => 
       <Button tone="ghost"
        
         onClick={onRetry}
-        className="[@media(pointer:fine)]:min-h-0 px-3 py-2 text-xs font-medium text-parchment-200">
+        className="[@media(pointer:fine)]:min-h-0 px-3 py-2 text-[13px] font-medium text-parchment-200">
         Retry
       </Button>
     </div>

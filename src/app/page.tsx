@@ -273,7 +273,7 @@ function HomeFeed() {
     <div>
       <div className="flex items-baseline justify-between">
         <h2 className="text-[13px] uppercase tracking-[0.05em] text-parchment-400">Latest games</h2>
-        <Link href="/community" className="text-[12px] text-parchment-400 no-underline hover:text-parchment-100">
+        <Link href="/community" className="-my-1 inline-flex min-h-[44px] items-center text-[13px] text-parchment-400 no-underline hover:text-parchment-100 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:my-0">
           Community »
         </Link>
       </div>
@@ -321,7 +321,7 @@ function UpdatesTimeline() {
     <div className="plate p-4 sm:p-5">
       <div className="flex items-baseline justify-between">
         <h2 className="text-[13px] uppercase tracking-[0.05em] text-parchment-400">Latest updates</h2>
-        <Link href="/updates" className="text-[12px] text-parchment-400 no-underline hover:text-parchment-100">
+        <Link href="/updates" className="-my-1 inline-flex min-h-[44px] items-center text-[13px] text-parchment-400 no-underline hover:text-parchment-100 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:my-0">
           All updates »
         </Link>
       </div>
@@ -399,7 +399,7 @@ function CardOfTheDay() {
     <div className="plate p-4 sm:p-5">
       <div className="flex items-baseline justify-between">
         <h2 className="text-[13px] uppercase tracking-[0.05em] text-parchment-400">Card of the day</h2>
-        <Link href="/codex" className="text-[12px] text-parchment-400 no-underline hover:text-parchment-100">
+        <Link href="/codex" className="-my-1 inline-flex min-h-[44px] items-center text-[13px] text-parchment-400 no-underline hover:text-parchment-100 [@media(pointer:fine)]:min-h-0 [@media(pointer:fine)]:my-0">
           Codex »
         </Link>
       </div>
@@ -458,10 +458,20 @@ function SiteFooter() {
 
   return (
     <footer className="mx-auto mt-12 w-full max-w-[1300px] px-3 pb-8 sm:px-5">
-      <div className="flex flex-col gap-3 border-t border-[color:var(--edge)] pt-4 text-[12px] text-parchment-400 sm:flex-row sm:items-center sm:justify-between">
+      {/* This is a local copy of the site footer, and it had drifted below the
+          shared one in components/SiteFooter.tsx: 12px links with no tap
+          target, where the shared footer is 13px with 44px targets. Footer
+          links are nav links, not captions, so they take the same treatment
+          here. Height comes from a min-height that relaxes behind
+          (pointer: fine), so the desktop row keeps its density. */}
+      <div className="flex flex-col gap-3 border-t border-[color:var(--edge)] pt-4 text-[13px] text-parchment-400 sm:flex-row sm:items-center sm:justify-between">
         <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-4 gap-y-1">
           {footerLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="no-underline transition-colors hover:text-parchment-100">
+            <Link
+              key={link.href}
+              href={link.href}
+              className="-my-1 inline-flex min-h-[44px] items-center no-underline transition-colors hover:text-parchment-100 [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
+            >
               {link.label}
             </Link>
           ))}

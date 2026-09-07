@@ -392,7 +392,8 @@ export default function EditProfilePage() {
                     aria-label="No flair"
                     aria-pressed={!account.flair}
                     className={
-                      "grid h-[46px] w-[46px] place-items-center rounded-none text-xs text-parchment-300 transition " +
+                      // "none" is this button's label, so it is interactive text at 13px.
+                      "grid h-[46px] w-[46px] place-items-center rounded-none text-[13px] text-parchment-300 transition " +
                       (!account.flair ? "ring-2 ring-[color:var(--accent)]" : "ring-1 ring-white/10 hover:ring-white/40")
                     }
                   >
@@ -436,7 +437,13 @@ export default function EditProfilePage() {
                   >
                     {LAUREL_FLAIR}
                   </button>
-                  <p className="text-xs text-parchment-400">
+                  {/* This help line carries an inline link, and a link is
+                      interactive text whatever it is sitting in: at 12px the
+                      link was under the floor, and sizing just the link would
+                      put a step in the middle of a sentence. The paragraph
+                      goes to 13px so the link clears it. Sibling help lines
+                      with no control in them stay 12px captions. */}
+                  <p className="text-[13px] text-parchment-400">
                     <span className="font-display text-gold-leaf">Laurelled</span>, reserved for
                     players currently in the top 10 of a{" "}
                     <Link href="/leaderboard" className="text-gold-leaf hover:underline">

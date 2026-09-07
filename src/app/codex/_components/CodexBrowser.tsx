@@ -425,7 +425,13 @@ export function CodexBrowser() {
                   type="button"
                   onClick={chip.clear}
                   aria-label={`Remove filter: ${chip.label}`}
-                  className="inline-flex items-center gap-1 rounded-none border border-[color:var(--accent)]/40 bg-[rgb(var(--accent-rgb)/0.1)] px-2 py-1 text-[12px] text-parchment-100 transition-colors hover:border-[color:var(--accent)] hover:bg-[rgb(var(--accent-rgb)/0.18)]"
+                  // Chip-shaped, but the whole pill IS the control (its name is
+                  // "Remove filter: …"), so its text is interactive text at
+                  // 13px rather than a 12px label. The static chips on this
+                  // page — the tier roman numeral and the filter count badge —
+                  // stay at 12px because they are labels beside a control, not
+                  // the control itself.
+                  className="inline-flex min-h-[44px] items-center gap-1 rounded-none border border-[color:var(--accent)]/40 bg-[rgb(var(--accent-rgb)/0.1)] px-2 py-1 text-[13px] text-parchment-100 transition-colors hover:border-[color:var(--accent)] hover:bg-[rgb(var(--accent-rgb)/0.18)] [@media(pointer:fine)]:min-h-[28px]"
                 >
                   {chip.label}
                   <X size={12} aria-hidden className="text-parchment-300" />
@@ -434,7 +440,7 @@ export function CodexBrowser() {
               <button
                 type="button"
                 onClick={clearAll}
-                className="px-1.5 py-1 text-[12px] text-parchment-400 underline-offset-2 hover:text-parchment-100 hover:underline"
+                className="inline-flex min-h-[44px] items-center px-1.5 py-1 text-[13px] text-parchment-400 underline-offset-2 hover:text-parchment-100 hover:underline [@media(pointer:fine)]:min-h-[28px]"
               >
                 Clear all
               </button>

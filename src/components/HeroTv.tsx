@@ -80,10 +80,11 @@ export function HeroTv() {
     return (
       <div className="w-full max-w-[600px] mx-auto">
         <div className="flex items-center justify-between gap-2 pb-2">
-          <span className="text-[12px] text-parchment-400">Live games appear here</span>
+          {/* The empty state's one sentence is body copy, not a caption. */}
+          <span className="text-[13px] text-parchment-400">Live games appear here</span>
           <Link
             href="/tv"
-            className="text-[12px] text-parchment-400 no-underline transition hover:text-gold-leaf"
+            className="-my-1 inline-flex min-h-[44px] items-center text-[13px] text-parchment-400 no-underline transition hover:text-gold-leaf [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
           >
             Watch TV &rarr;
           </Link>
@@ -223,7 +224,7 @@ export function HeroTv() {
           ) : null}
           <Link
             href={`/game/${shownId}`}
-            className="text-[12px] font-medium text-gold-leaf no-underline transition hover:text-parchment-50"
+            className="-my-1 inline-flex min-h-[44px] items-center text-[13px] font-medium text-gold-leaf no-underline transition hover:text-parchment-50 [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
           >
             Watch live →
           </Link>

@@ -2699,7 +2699,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={confirmHeldMove}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Confirm
         </button>
@@ -2716,7 +2716,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onOfferDraw}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Offer draw
         </button>
@@ -2755,13 +2755,13 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onClaimWin}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Claim win
         </button>
         <Button tone="ghost"
           onClick={onClaimDraw}
-          className="min-w-0 px-3 py-2 text-xs font-semibold tracking-wide">
+          className="min-w-0 px-3 py-2 text-[13px] font-semibold tracking-wide">
           Claim draw
         </Button>
       </div>
@@ -2783,13 +2783,13 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onAcceptTakeback}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Allow
         </button>
         <Button tone="ghost"
           onClick={onDeclineTakeback}
-          className="min-w-0 px-3 py-2 text-xs font-semibold tracking-wide">
+          className="min-w-0 px-3 py-2 text-[13px] font-semibold tracking-wide">
           Decline
         </Button>
       </div>
@@ -2801,19 +2801,19 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onAcceptDraw}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Accept
         </button>
         <Button tone="ghost"
           onClick={onDeclineDraw}
-          className="min-w-0 px-3 py-2 text-xs font-semibold tracking-wide">
+          className="min-w-0 px-3 py-2 text-[13px] font-semibold tracking-wide">
           Decline
         </Button>
       </div>
       <Button tone="danger"
         onClick={requestResign}
-        className="w-full min-w-0 px-3 py-2 text-xs font-semibold tracking-wide">
+        className="w-full min-w-0 px-3 py-2 text-[13px] font-semibold tracking-wide">
         Resign
       </Button>
     </div>
@@ -2831,7 +2831,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           <button
             onClick={onAbort}
             title="End the game without a result. Nobody wins and no rating changes."
-            className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+            className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
           >
             Abort
           </button>
@@ -2839,7 +2839,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           <button
             onClick={onOfferDraw}
             disabled={drawOfferStatus === "offering"}
-            className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+            className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {drawOfferStatus === "offering" ? "Offered" : "Draw"}
           </button>
@@ -2849,14 +2849,14 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
             onClick={onOfferTakeback}
             disabled={takebackStatus === "offering"}
             title="Ask your opponent to let you take your last move back"
-            className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-bruise-glow/40 bg-bruise/10 text-bruise-glow hover:bg-bruise/20 hover:border-bruise-glow/70 transition text-xs font-display font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+            className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-bruise-glow/40 bg-bruise/10 text-bruise-glow hover:bg-bruise/20 hover:border-bruise-glow/70 transition text-[13px] font-display font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {takebackStatus === "offering" ? "Asked" : "Takeback"}
           </button>
         )}
         <Button tone="danger"
           onClick={requestResign}
-          className="min-w-0 px-3 py-2 text-xs font-semibold tracking-wide">
+          className="min-w-0 px-3 py-2 text-[13px] font-semibold tracking-wide">
           Resign
         </Button>
       </div>
@@ -3770,7 +3770,7 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
           <Button tone="leaf"
            
             onClick={handleRematch}
-            className="shrink-0 px-3 py-1.5 text-xs font-semibold">
+            className="shrink-0 px-3 py-1.5 text-[13px] font-semibold">
             Accept
           </Button>
         </motion.div>

@@ -1085,3 +1085,207 @@ Route transitions: deliberately not added. See the report reasoning; the short
 version is that every route already ships a `loading.tsx` skeleton in the final
 geometry, and a transition would put frames between a player and a board whose
 clock is running.
+
+---
+
+## 2026-09-07 12:20 UTC
+
+Puzzles: the daily puzzle, capture-the-king shaped (roadmap Priority 1 item 2,
+lichess-parity P1). Branch `claude/ralph-loop-optimization-nl2902`, `db76e0d`.
+
+Why the formats are what they are. `docs/lichess-parity-2026-09.md` section 7 is
+explicit that classic tactics puzzles do not transfer: there is no checkmate here
+and no stable piece value, so an imported puzzle usually has no solution or
+several. Three formats were built instead, and all three are proved rather than
+asserted:
+
+- `king-hunt` (28): capture the king in N under a named handicap. 25 are forced
+  in two of the solver's own moves against every defence; 3 are one-movers, kept
+  only where the handicap is what picks the move (several pieces could take the
+  king and the rule allows exactly one of them).
+- `card-choice` (31): two cards are offered mid-game, one of them wins. No chess
+  analogue. The winning card is proved to create a forced king capture and the
+  other is proved, by exhaustive search, not to.
+- `only-move` (12): the handicap leaves exactly one legal move out of ten or more
+  on the board. Reading your own rule is the puzzle.
+
+How a solution is proved unique (`src/lib/puzzles/solve.ts`, imported by both the
+generator and the route, so the code that proved a puzzle is the code that judges
+the player):
+
+- An AND/OR search over real `NerfGame` states through the real `legalMoves` and
+  `playMove`, so every nerf filter, buff hook and loss condition is in force at
+  every node. Nothing about the rules is re-modelled.
+- The claim is "capture the king", not "win": a branch that ends with the
+  defender losing to their own rule does NOT count, so the proven statement is
+  narrower than the engine's idea of winning.
+- Uniqueness means every other legal move at that node was played out and shown
+  to fail, re-checked at every position the solver will be asked to move in, not
+  only the first.
+- A search that hits the node cap is discarded as unproven, so the cap can lose
+  puzzles and can never invent one.
+
+New files: `scripts/gen-puzzles.ts` (mines 2,451 real positions from 90 bot games
+at two strengths, proves candidates, writes and then re-verifies the file it just
+wrote by re-parsing it), `public/puzzle-data/puzzles.json` (71 puzzles, 266 KB,
+37 distinct handicaps, no winning card used more than twice),
+`src/lib/puzzles/{types,solve,daily,session,useCorpus}.ts`,
+`src/components/puzzles/{PuzzleBoard,PuzzleRunner}.tsx`,
+`src/app/puzzles/{page,layout,loading,error}.tsx`,
+`src/app/puzzles/_components/PuzzleStates.tsx`,
+`src/app/puzzles/[id]/{page,layout,loading,error}.tsx`.
+
+Route surface: `/puzzles` is the daily (deterministic from the UTC date, so every
+player worldwide is on the same one and no backend is involved; `?date=` opens an
+earlier day) with the corpus folded behind a disclosure; `/puzzles/[id]` is any
+single puzzle, shareable. Both carry a self-canonical, a `loading.tsx`, an
+`error.tsx` and exactly one `h1`.
+
+Small additions elsewhere: "Daily puzzle" in the Play nav menu and `/puzzles`
+mapped to that section (`src/components/SiteHeader.tsx`); `/puzzles` in the
+sitemap at daily change frequency (`src/app/sitemap.ts`).
+
+The board is a new lightweight component rather than `Board.tsx`: a puzzle needs a
+position, a click and an answer, and the match board would drag framer-motion and
+the card database into a route whose job is to load fast for a search visitor.
+Its squares are focusable `gridcell` controls with spoken names, so the route is
+playable from the keyboard (verified), which `Board.tsx` still is not (X1).
+
+Verified in a browser: solving and failing all three formats, an illegal-under-
+the-rule move answered in the rule's own words, the daily stable across two loads
+and different on six different dates against an independent implementation of the
+selection, all five system states (loading, empty, error plus a working Retry,
+disconnected, recovered), keyboard-only solving, reduced motion, mobile at 390px
+with no horizontal scroll, and the unknown-id empty state.
+
+---
+
+## 2026-09-07 13:40 UTC
+
+Two things: a stale-live-state fix with the 13px type floor behind it, and the
+root cause of `amazon_army`'s -25.
+
+### The connection banner, and where a connection banner is a lie
+
+`design-system.md` section 8 asks every async surface for five states. The gap
+audit said 18 routes were missing "disconnected" and "recovered". One got them.
+
+The line drawn: states 1-3 (loading, empty, error) apply to any fetch. States 4
+and 5 presuppose a *connection*, something repeating or persistent that can drop
+and come back on its own. A route that fetches once can only error, and its
+recovery is the reader pressing Retry, which is state 3 and already there. A
+banner on such a route narrates a socket that does not exist.
+
+`/inbox/[username]` was the real case: it polls every 5s, and its failure path
+was `if (!loaded) setLoadError(true)`, i.e. **silent after the first successful
+load**, so a dead connection looked like a quiet conversation.
+
+`ConnectionBanner.tsx` was refactored so the phase machine and the pill are
+shared and the signal source is pluggable: `ConnectionBanner({session})` is
+unchanged for game and TV, new `PollConnectionBanner({healthy})` for polled
+routes. Section 8.5's "silent when fast (under 2s)" is now honoured, which the
+original did not do, so a sub-2s blip no longer flashes red then green.
+
+The 17 skips, each with its reason, are in the round-6 report. The one worth
+repeating: `/tournaments` has a `setInterval`, but it is a purely local 1s clock
+tick that re-buckets rows, so the page *looks* live while its data is a one-shot
+snapshot. Its staleness is by design; a banner would promise self-healing that
+does not happen.
+
+Verified in a browser across a full cycle: lost pill with a live counter,
+`role="status" aria-live="polite"`, "Reconnected" on recovery, auto-dismiss.
+The message bubble and the unsent composer draft both survived the outage.
+
+### The 13px floor
+
+Same probe over 42 routes, guest signed in.
+
+| | before | after |
+|---|---|---|
+| sub-13px elements with their own text | 942 | 671 |
+| of those, in an interactive context | 312 | 151 |
+
+Biggest movers: `/codex` 186 to 66 (interactive 181 to 61), `/achievements` 327
+to 208 (18 to 1), `/` 38 to 23 (20 to 6).
+
+Fixed as body or interactive text: 102 achievement descriptions, 60 codex card
+descriptions, 60 codex Copy buttons, and 48 `Button`/`LinkButton` and raw
+`button`/`a`/`Link`/`summary` call sites whose `className` overrode the
+primitive's own 13px with `text-xs` (Resign, Draw, Takeback, Abort, Accept,
+Decline, Claim win, Confirm, four Retries, Reload, Mark all read, Send, View
+all, Watch, Post). Also the home page's **local duplicate `SiteFooter`**, which
+had drifted to 12px with no tap target while the shared one was already
+13px/44px.
+
+Left at 12px, as labels rather than body: rarity and tier chips, the header
+Guest badge (it qualifies the username; the button's accessible name is the
+username), the Bullet/Blitz/Rapid speed chips, 104 progress counters, 64 board
+coordinates, 30 `/updates` timestamps, form labels, `kbd` hints, and On/Off
+inside the privacy switch (a state readout, and 13px does not fit a 72px
+control).
+
+Every touch-target fix went behind `[@media(pointer:fine)]`, never `sm:`,
+including `src/app/lobby/page.tsx`, which was tightening to 34px behind `sm:`
+and so handed 34px targets to every tablet.
+
+Two left for a decision: `.rule-ornament` in `globals.css` is a 12px uppercase
+letterspaced section rule, and section 3 retires that device in favour of a
+plain bold heading at body size, but restyling a shared ornament is not a type
+fix. And `DraftOverlay.tsx:1796` has a 12px Skip button.
+
+Also: `sr-only` `h1` added to the in-flight branch of `/clubs/[slug]` and
+`/tournaments/[id]`. Frame-by-frame over a client-side navigation, 63 samples in
+4s at 1920: zero frames with no `h1`.
+
+### A6: `amazon_army` root-caused, and the hypothesis that was wrong
+
+Round 5 left this open with a named hypothesis and the experiment that would
+settle it. The experiment was run and the hypothesis was **wrong**, which is
+worth as much as the answer.
+
+`pickAIMove` now takes an optional write-only `SearchStats` reporting the
+deepest ply it actually completed and the root move count, so "the bot played
+worse while holding this" and "this card is bad" can be told apart. The guess
+was that a 43% wider tree buys fewer plies out of the bot's 60ms floor budget.
+Measured: depth 3 to 3 at medium/60ms, 3 to 3 at medium/700ms, 3 to 3 at
+hard/60ms, 4 to 4 at hard/700ms. **Zero plies lost at every level and budget.**
+Alpha-beta with move ordering absorbs the width, and `medium` is capped at
+`maxDepth: 3` anyway, so 60ms was never the binding constraint.
+
+The real mechanism is worse. `negamax` and `quiesce` take a bare `BoardState`.
+Only the root calls `legalMoves(game)`, and `legalMoves` is the only place
+`def.augmentMoves` runs:
+
+```
+ply 0   legalMoves(game)      57 moves, 17 of them granted by the card
+ply 1+  generateMoves(board)  42 moves, 0 of them granted by the card
+```
+
+Both lines are the same position, two of White's turns into a three-turn card.
+The bot plays a move that exists **only** because of the card, then evaluates
+every follow-up as if the piece were an ordinary knight. It cannot see a plan
+needing the buff twice, cannot see the opponent's buffed replies at all, and
+never models expiry in either direction. Holding a move-granting card makes the
+bot's own move real and its picture of the future false, which is worse than not
+holding it. That is enough to turn a strictly-additive card negative.
+
+It is not one card. It is every move-granting card in the library. **Do not
+retier one downward on win-rate evidence** until the search is fixed.
+
+Not fixed here, deliberately: the per-node augment closure has three hazards and
+the second is disqualifying for an unsupervised change. `makeBuffApi` captures
+`game.board` by value, so a per-node augment means rebuilding a 20-closure
+object per node or mutating a shared one. Not every `augmentMoves` generator is
+board-pure, and one touching `api.rng` would advance the game's RNG stream once
+per searched node, which is what `test:desync`, `test:snapshot` and
+`test:spectator-sync` exist to catch and would corrupt live games rather than
+mis-score them. And applying the augment at every ply ignores expiry, so a
+12-ply `hard` search would over-value a three-turn card instead of
+under-valuing it.
+
+New guard `npm run test:search-buffs`
+(`scripts/test-search-buff-visibility.ts`) is a known-issue lock, not a red
+guard: it states the defect, pins its size at 17 granted moves in a fixed
+position so the file cannot quietly stop measuring anything, keeps the refuted
+depth hypothesis refuted, and inverts its own message the moment the search
+starts seeing buffs. Verified to fail when the pin is moved by one.

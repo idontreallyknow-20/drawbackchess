@@ -427,7 +427,7 @@ export function PlayerSearch({ className = "", autoFocus = false }: { className?
       {showingResults && error && (
         <div className="absolute inset-x-0 top-full z-[70] mt-1 plate dropdown flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-parchment-400 shadow-2xl">
           <span>Search failed.</span>
-          <Button tone="ghost" onClick={retry} className="px-3 py-1.5 text-xs">
+          <Button tone="ghost" onClick={retry} className="px-3 py-1.5 text-[13px]">
             Retry
           </Button>
         </div>

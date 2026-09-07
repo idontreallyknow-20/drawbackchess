@@ -19,6 +19,7 @@
     "test:san": "npx -y tsx scripts/test-san.ts",
     "test:card-impact": "npx -y tsx scripts/test-card-impact.ts",
     "test:ai-activation": "npx -y tsx scripts/test-ai-activation.ts",
+    "test:search-buffs": "npx -y tsx scripts/test-search-buff-visibility.ts",
     "test:arena-seat": "npx -y tsx scripts/test-arena-seat.ts",
     "test:rules": "npm run server:build && node scripts/gen-card-icons.mjs --check && node scripts/test-hexes.cjs && node scripts/check-sig-plugins.cjs && node scripts/check-vfx-coverage.cjs",
     "test:nerfs": "npm run server:build && node scripts/test-nerfs.cjs",

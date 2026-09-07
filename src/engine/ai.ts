@@ -282,16 +282,38 @@ type RankedRootMove = { move: Move; scoreCp: number };
 // and by the client so the bot's thinking never exceeds its remaining clock.
 // `weaken` (house bots only) degrades move CHOICE for a realistic handicap;
 // see WeakenParams.
+/**
+ * Diagnostics an interested caller can ask for. Optional and write-only, so
+ * nothing about the search changes when it is absent.
+ *
+ * `depth` exists because "the bot played worse while holding this card" and
+ * "the card is bad" look identical from a win rate, and the difference is
+ * whether the search got shallower. A card that widens the legal move set
+ * buys fewer plies out of a fixed time budget, and the win-rate harness runs
+ * at a 60ms budget, so that is not a hypothetical.
+ */
+export interface SearchStats {
+  /** The deepest ply the search actually completed, not the depth it aimed at. */
+  depth: number;
+  /** Root moves considered, which is the branching factor being paid for. */
+  rootMoves: number;
+}
+
 export function pickAIMove(
   game: NerfGame,
   level: AILevel,
   overrideBudgetMs?: number,
   weaken?: WeakenOptions,
+  stats?: SearchStats,
 ): Move | null {
   const all = legalMoves(game);
   if (!all.length) return null;
   const safe = all.filter((m) => !isSelfLosing(game, m));
   const moves = safe.length ? safe : all;
+  if (stats) {
+    stats.rootMoves = moves.length;
+    stats.depth = 0;
+  }
 
   const me = game.board.turn;
   const cfg = LEVELS[level];
@@ -361,7 +383,10 @@ export function pickAIMove(
       if (score > alpha) alpha = score;
     }
 
-    if (!timedOut && depthBest) bestMove = depthBest;
+    if (!timedOut && depthBest) {
+      bestMove = depthBest;
+      if (stats) stats.depth = d;
+    }
 
     // A timed-out depth means the budget (clock or node cap) is spent; going
     // deeper would only burn more nodes to time out again immediately.

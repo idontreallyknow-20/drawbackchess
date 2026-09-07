@@ -296,7 +296,7 @@ export function PlayerStatsPanel({
                 </Link>
                 <Link
                   href={`/game/${win.id}`}
-                  className="shrink-0 text-xs text-parchment-400 hover:text-parchment-100 transition-colors"
+                  className="shrink-0 text-[13px] text-parchment-400 hover:text-parchment-100 transition-colors"
                 >
                   {formatDate(win.at)} →
                 </Link>

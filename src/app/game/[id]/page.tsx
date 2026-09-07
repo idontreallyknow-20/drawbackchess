@@ -427,7 +427,7 @@ export default function OnlineGamePage() {
                 </Button>
                 <Link
                   href="/lobby"
-                  className="min-h-[36px] inline-flex items-center rounded-sm border border-parchment-700 px-3 py-1.5 font-display text-xs text-parchment-200 hover:text-parchment-50"
+                  className="min-h-[36px] inline-flex items-center rounded-sm border border-parchment-700 px-3 py-1.5 font-display text-[13px] text-parchment-200 hover:text-parchment-50"
                 >
                   Back to lobby
                 </Link>

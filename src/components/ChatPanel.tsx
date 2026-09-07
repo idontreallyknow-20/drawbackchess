@@ -160,7 +160,7 @@ export function ChatPanel({
           <button
             type="button"
             onClick={toggleMute}
-            className="inline-flex items-center -mx-1 -my-1 min-h-[44px] px-2 py-2 text-[12px] text-parchment-400 hover:text-parchment-100 transition-colors"
+            className="inline-flex items-center -mx-1 -my-1 min-h-[44px] px-2 py-2 text-[13px] text-parchment-400 hover:text-parchment-100 transition-colors"
             title={muted ? "Show chat messages" : "Hide chat messages"}
           >
             {muted ? "Unmute" : "Mute"}
@@ -171,7 +171,7 @@ export function ChatPanel({
               onClick={() => setExpanded(false)}
               aria-label="Collapse chat"
               title="Collapse chat"
-              className="inline-flex items-center -mx-1 -my-1 min-h-[44px] px-2 py-2 text-[12px] text-parchment-400 hover:text-parchment-100 transition-colors"
+              className="inline-flex items-center -mx-1 -my-1 min-h-[44px] px-2 py-2 text-[13px] text-parchment-400 hover:text-parchment-100 transition-colors"
             >
               Collapse
             </button>
@@ -217,12 +217,12 @@ export function ChatPanel({
               aria-label="Chat message"
               // 16px on phones: anything smaller makes iOS Safari zoom the
               // page on focus, which is what used to box the input off-screen.
-              className="min-w-0 flex-1 rounded-sm border border-white/15 bg-ink-900/60 px-2 py-1.5 text-base sm:text-[12px] text-parchment placeholder:text-parchment-500 focus:border-gold/60 focus:outline-none"
+              className="min-w-0 flex-1 rounded-sm border border-white/15 bg-ink-900/60 px-2 py-1.5 text-base sm:text-[13px] text-parchment placeholder:text-parchment-500 focus:border-gold/60 focus:outline-none"
             />
             <Button tone="ghost"
               type="submit"
               disabled={!draft.trim()}
-              className="shrink-0 px-3 py-1.5 text-[12px]">
+              className="shrink-0 px-3 py-1.5 text-[13px]">
               Send
             </Button>
           </form>

@@ -217,7 +217,8 @@ export function BuffDock({ game, myColor, canAct, onStartUse, hideOpponentCards,
               aria-selected={view === t.id}
               onClick={() => setView(t.id)}
               className={
-                "flex flex-1 items-center justify-center gap-1.5 border-b-2 px-2 py-1.5 font-display text-[12px] transition " +
+                // Tab labels ("You" / "Them") are interactive text: 13px.
+                "flex min-h-[44px] flex-1 items-center justify-center gap-1.5 border-b-2 px-2 py-1.5 font-display text-[13px] transition [@media(pointer:fine)]:min-h-0 " +
                 (view === t.id
                   ? "border-[color:var(--accent)] text-parchment-50"
                   : "border-transparent text-parchment-300 hover:text-parchment-100")

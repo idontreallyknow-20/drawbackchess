@@ -382,18 +382,18 @@ function FragmentRow({
         </td>
         <td className="px-3 py-2 text-right whitespace-nowrap">
           {isEditing ? (
-            <Button tone="ghost" onClick={onCancel} className="px-3 py-1 text-xs" disabled={busy}>
+            <Button tone="ghost" onClick={onCancel} className="px-3 py-1 text-[13px]" disabled={busy}>
               Cancel
             </Button>
           ) : (
             <>
-              <Button tone="ghost" onClick={onEdit} className="px-3 py-1 text-xs">
+              <Button tone="ghost" onClick={onEdit} className="px-3 py-1 text-[13px]">
                 Edit
               </Button>
               {overridden && (
                 <Button tone="ghost"
                   onClick={onReset}
-                  className="ml-2 px-3 py-1 text-xs" disabled={busy}
+                  className="ml-2 px-3 py-1 text-[13px]" disabled={busy}
                   title="Delete the override and fall back to the code definition">
                   Reset to code
                 </Button>

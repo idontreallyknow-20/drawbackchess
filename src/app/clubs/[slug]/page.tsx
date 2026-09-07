@@ -313,7 +313,17 @@ export default function ClubPage() {
       <SiteHeader active="/clubs" />
       <section className="mx-auto max-w-6xl px-5 pt-6 sm:px-6 sm:pt-8">
         {!club ? (
-          <p className="py-16 text-center text-sm text-parchment-400">Loading…</p>
+          // loading.tsx carries an sr-only h1, but it only renders on a hard
+          // navigation. Arriving from inside the app (a link on /clubs) skips
+          // it entirely and lands straight in this branch, which left the
+          // route with no heading at all for the whole fetch. Same generic
+          // wording as loading.tsx; the loaded page replaces it with the real
+          // club name. This page is not used as a Suspense fallback anywhere,
+          // so there is no phase where two of these are live at once.
+          <>
+            <h1 className="sr-only">Club</h1>
+            <p className="py-16 text-center text-sm text-parchment-400">Loading…</p>
+          </>
         ) : (
           <>
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -471,7 +481,7 @@ export default function ClubPage() {
                       <Button tone="leaf"
                         type="submit"
                         disabled={!postText.trim()}
-                        className="px-4 py-1.5 text-xs font-semibold disabled:opacity-50">
+                        className="px-4 py-1.5 text-[13px] font-semibold disabled:opacity-50">
                         Post
                       </Button>
                     </div>

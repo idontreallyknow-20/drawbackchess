@@ -175,15 +175,17 @@ export function AchievementToast() {
           </span>
           <X size={13} className="ml-auto shrink-0 text-parchment-500" aria-hidden />
         </span>
-        <span className="mt-1.5 block text-[12px] leading-snug text-parchment-300">
+        {/* The achievement description is body copy, not a caption on the name. */}
+        <span className="mt-1.5 block text-[13px] leading-snug text-parchment-300">
           {current.description}
         </span>
       </button>
-      {/* Readable, clickable secondary actions (12px floor, 32px hit area). */}
+      {/* Secondary actions: 13px interactive text (section 3), and a 44px hit
+          area that tightens to 32px only once there is a pointer. */}
       <div className="mt-1 flex justify-end gap-3">
         <Link
           href="/achievements"
-          className="inline-flex min-h-[32px] items-center px-1 text-[12px] text-parchment-300 transition-colors hover:text-parchment-100"
+          className="inline-flex min-h-[44px] items-center px-1 text-[13px] text-parchment-300 transition-colors hover:text-parchment-100 [@media(pointer:fine)]:min-h-[32px]"
         >
           View all
         </Link>
@@ -195,7 +197,7 @@ export function AchievementToast() {
             setQueue([]);
             dismiss();
           }}
-          className="inline-flex min-h-[32px] items-center px-1 text-[12px] text-parchment-300 underline decoration-dotted underline-offset-2 transition-colors hover:text-parchment-100"
+          className="inline-flex min-h-[44px] items-center px-1 text-[13px] text-parchment-300 underline decoration-dotted underline-offset-2 transition-colors hover:text-parchment-100 [@media(pointer:fine)]:min-h-[32px]"
         >
           Disable these popups
         </button>

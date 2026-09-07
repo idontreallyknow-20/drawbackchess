@@ -540,7 +540,7 @@ function TvView() {
                     <button
                       type="button"
                       onClick={reloadLobby}
-                      className="rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-3 py-1.5 text-[12px] font-medium text-parchment-200 transition-colors hover:bg-[color:var(--bg-raised)] hover:text-parchment-100"
+                      className="inline-flex min-h-[44px] items-center rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-3 py-1.5 text-[13px] font-medium text-parchment-200 transition-colors hover:bg-[color:var(--bg-raised)] hover:text-parchment-100 [@media(pointer:fine)]:min-h-[32px]"
                     >
                       Retry
                     </button>

@@ -8,6 +8,7 @@ import { PlayerLink } from "@/components/PlayerLink";
 import { AccountUser, fetchMe } from "@/lib/authClient";
 import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/Button";
+import { PollConnectionBanner } from "@/components/ConnectionBanner";
 
 type ThreadMessage = { id: string; fromMe: boolean; text: string; at: number };
 type Thread = { peer: { username: string; avatar: string | null }; messages: ThreadMessage[] };
@@ -23,6 +24,14 @@ export default function ThreadPage() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Whether the last poll landed. This is the ONE async surface in the sweep
+  // with a repeating network dependency, so it is the one that can be
+  // "disconnected" as distinct from "errored": every other route in the batch
+  // fetches once, and a failed one-shot is the error state (§8.3) whose
+  // recovery is the reader pressing Retry. Failures here were silent by
+  // design after the first successful load (see the poll below), which is
+  // exactly the stale-live-state case the ConnectionBanner exists for.
+  const [pollHealthy, setPollHealthy] = useState(true);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const stickToBottom = useRef(true);
 
@@ -61,13 +70,18 @@ export default function ThreadPage() {
           return;
         }
         if (!res.ok) {
-          // Only surface an error before the first successful load; a failed
-          // poll on an open thread should stay quiet and retry on the next tick.
+          // Only surface the full error state before the first successful
+          // load; a failed poll on an open thread keeps the thread on screen
+          // (never unmount live state during a reconnect, §8.4) and retries on
+          // the next tick. It is no longer silent, though: the banner says the
+          // conversation has stopped updating and counts the seconds.
           if (!loaded) setLoadError(true);
+          else setPollHealthy(false);
           return;
         }
         loaded = true;
         setLoadError(false);
+        setPollHealthy(true);
         const data = (await res.json()) as Thread;
         setThread((prev) => {
           if (!prev) return data;
@@ -86,6 +100,7 @@ export default function ThreadPage() {
         });
       } catch {
         if (!loaded) setLoadError(true);
+        else setPollHealthy(false);
       }
     };
     load();
@@ -132,6 +147,9 @@ export default function ThreadPage() {
 
   return (
     <main className="min-h-screen">
+      {/* Only once a thread is on screen: before that there is no live state to
+          go stale, and the pre-load failure path is the error state below. */}
+      {thread && <PollConnectionBanner healthy={pollHealthy} />}
       <SiteHeader />
       <section className="max-w-2xl mx-auto px-5 sm:px-6 py-6">
         {/* This route had no h1 at all. The visible header is a breadcrumb

@@ -99,7 +99,11 @@ export function CodexRow({
           >
             {TIER_ROMAN[tier]}
           </span>
-          <span className="hidden min-w-0 flex-1 truncate text-[12px] text-parchment-400 sm:block">
+          {/* The card's description is the row's content, not a label on it,
+              so it sits at the 13px body floor. The tier chip above stays at
+              12px: a roman numeral in a bordered pill is a label. The row's
+              height is set by the 14px name, so this does not grow it. */}
+          <span className="hidden min-w-0 flex-1 truncate text-[13px] text-parchment-400 sm:block">
             {card.description}
           </span>
         </span>
@@ -109,7 +113,12 @@ export function CodexRow({
         type="button"
         onClick={onCopy}
         aria-label={`Copy link to ${card.name}`}
-        className="hidden h-8 shrink-0 self-center items-center gap-1 rounded-none px-2 text-[12px] text-parchment-400 hover:bg-[color:var(--bg-raised)] hover:text-parchment-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)] sm:inline-flex"
+        // "Copy" is a button label: interactive text, so 13px. The fixed 32px
+        // height is now a floor that clears 44px on touch and tightens only
+        // behind (pointer: fine). The `sm:` here gates VISIBILITY, which is a
+        // layout call and stays; it is not standing in for "has a mouse", and
+        // the tablets that do see this control are touch devices.
+        className="hidden min-h-[44px] shrink-0 self-center items-center gap-1 rounded-none px-2 text-[13px] text-parchment-400 hover:bg-[color:var(--bg-raised)] hover:text-parchment-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)] sm:inline-flex [@media(pointer:fine)]:min-h-[32px]"
       >
         <Link2 size={14} aria-hidden />
         {copied ? "Copied" : "Copy"}

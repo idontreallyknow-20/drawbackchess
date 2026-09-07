@@ -531,7 +531,8 @@ export function FriendGameSetup({ showFriends = true }: { showFriends?: boolean 
           })}
         </div>
         <details className="mt-3" open={customOpen} onToggle={(e) => setCustomOpen(e.currentTarget.open)}>
-          <summary className="cursor-pointer select-none text-[12px] text-parchment-400 hover:text-parchment-200">
+          {/* A disclosure summary is a control: its text is interactive text. */}
+          <summary className="inline-flex min-h-[44px] cursor-pointer select-none items-center text-[13px] text-parchment-400 hover:text-parchment-200 [@media(pointer:fine)]:min-h-0">
             Custom time
           </summary>
           <div className="mt-3 space-y-4">

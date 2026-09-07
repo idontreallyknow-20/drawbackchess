@@ -30,7 +30,10 @@ export function BoardKey({ only, className }: { only?: BoardStatus[]; className?
 export function BoardKeyDetails() {
   return (
     <details className="group border-t border-[color:var(--edge)] px-1 pt-2 text-[12px]">
-      <summary className="cursor-pointer select-none list-none text-parchment-400 hover:text-parchment-200">
+      {/* The block is 12px because the key itself is a legend, which is a set
+          of labels. The summary is not: it is the disclosure control, so its
+          own text sits at the 13px interactive floor. */}
+      <summary className="inline-flex min-h-[44px] cursor-pointer select-none list-none items-center text-[13px] text-parchment-400 hover:text-parchment-200 [@media(pointer:fine)]:min-h-0">
         <span className="mr-1 inline-block transition-transform group-open:rotate-90">›</span>
         Board key
       </summary>

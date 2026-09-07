@@ -158,7 +158,15 @@ export default function TournamentDetailPage() {
       <SiteHeader active="/tournaments" />
       <section className="mx-auto max-w-6xl px-5 sm:px-6">
         {!t ? (
-          <p className="py-16 text-center text-sm text-parchment-400">Loading...</p>
+          // Same gap as /clubs/[slug]: loading.tsx has the heading, but a
+          // client-side navigation from /tournaments never renders it, so the
+          // page's own in-flight branch has to carry one. Generic until the
+          // real name arrives. Not used as a Suspense fallback, so it never
+          // doubles up with another heading.
+          <>
+            <h1 className="sr-only">Tournament</h1>
+            <p className="py-16 text-center text-sm text-parchment-400">Loading...</p>
+          </>
         ) : (
           <>
             {/* Header */}

@@ -328,7 +328,7 @@ export default function CommunityPage() {
                           {game ? (
                             <LinkButton tone="ghost"
                               href={`/game/${game.id}${game.origin === "arena" ? "?src=arena" : ""}`}
-                              className="shrink-0 px-3 py-1.5 text-xs">
+                              className="shrink-0 px-3 py-1.5 text-[13px]">
                               <Eye size={13} aria-hidden />
                               Watch
                             </LinkButton>
@@ -563,7 +563,7 @@ function RailCard({
         {action && (
           <Link
             href={action.href}
-            className="inline-flex items-center gap-0.5 text-xs text-parchment-400 transition-colors hover:text-gold-leaf"
+            className="inline-flex items-center gap-0.5 text-[13px] text-parchment-400 transition-colors hover:text-gold-leaf"
           >
             {action.label}
             <ChevronRight size={12} aria-hidden />
@@ -754,7 +754,7 @@ function RailError({ onRetry }: { onRetry: () => void }) {
   return (
     <div role="alert" className="mt-2 space-y-2">
       <p className="text-sm text-parchment-400">Could not load this list.</p>
-      <Button tone="ghost" onClick={onRetry} className="px-3 py-1 text-xs">
+      <Button tone="ghost" onClick={onRetry} className="px-3 py-1 text-[13px]">
         Retry
       </Button>
     </div>

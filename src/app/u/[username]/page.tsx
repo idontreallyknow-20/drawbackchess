@@ -1465,7 +1465,9 @@ function AchievementsStrip({ username }: { username: string }) {
               </span>
             );
           })}
-          <span className="text-[12px] text-gold-leaf">
+          {/* The disclosure's action word: interactive text, so 13px. The
+              medallion count beside it stays a 12px caption. */}
+          <span className="text-[13px] text-gold-leaf">
             {expanded ? "Hide" : "See all"}
           </span>
         </span>
@@ -1520,7 +1522,7 @@ function AchievementsStrip({ username }: { username: string }) {
               <div className="mt-3">
                 <Link
                   href={`/achievements?u=${encodeURIComponent(username)}`}
-                  className="text-[12px] text-gold-leaf transition-colors hover:text-brag"
+                  className="-my-1 inline-flex min-h-[44px] items-center text-[13px] text-gold-leaf transition-colors hover:text-brag [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
                 >
                   Open the achievements wall
                 </Link>

@@ -1805,7 +1805,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={confirmHeldMove}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Confirm
         </button>
@@ -1822,7 +1822,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onOfferDraw}
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide"
         >
           Offer draw
         </button>
@@ -1860,7 +1860,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
           disabled={drawOfferStatus !== "idle"}
           title="Offer a draw"
           aria-label="Offer a draw"
-          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-xs font-display font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+          className="min-w-0 min-h-[44px] inline-flex items-center justify-center px-3 py-2 border border-gold/40 bg-gold/10 text-gold-leaf hover:bg-gold/20 hover:border-gold/70 transition text-[13px] font-display font-semibold tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {drawOfferStatus === "offering" ? "Offering..." : "Draw"}
         </button>
@@ -1868,7 +1868,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
           onClick={requestResign}
           title="Resign the game"
           aria-label="Resign the game"
-          className="min-w-0 px-3 py-2 text-xs font-semibold tracking-wide">
+          className="min-w-0 px-3 py-2 text-[13px] font-semibold tracking-wide">
           Resign
         </Button>
       </div>
@@ -1890,7 +1890,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
             ? "Clip unavailable: these moves can't be replayed (the board was rewritten by a card)"
             : "Save the last moves as a short video clip"
         }
-        className="min-w-0 w-full px-3 py-2 text-xs tracking-wide disabled:opacity-50">
+        className="min-w-0 w-full px-3 py-2 text-[13px] tracking-wide disabled:opacity-50">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <polygon points="23 7 16 12 23 17 23 7" />
           <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />

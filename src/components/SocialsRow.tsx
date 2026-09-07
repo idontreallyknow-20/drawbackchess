@@ -105,7 +105,9 @@ export function SocialsRow({
           href={s.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-[12px] text-parchment-400 no-underline transition-colors hover:text-parchment-100"
+          // Social links are nav links, so 13px and a 44px target on touch;
+          // the "Check out our socials" label beside them stays a 12px label.
+          className="-my-1 flex min-h-[44px] items-center gap-1.5 text-[13px] text-parchment-400 no-underline transition-colors hover:text-parchment-100 [@media(pointer:fine)]:my-0 [@media(pointer:fine)]:min-h-0"
         >
           {s.icon(14)}
           {s.label}
