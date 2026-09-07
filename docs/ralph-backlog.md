@@ -19,6 +19,18 @@ Working rules for every round, non-negotiable:
   guards relevant to what changed, plus `npm run build` before a push.
 - `./node_modules/.bin/tsx`, never `npx -y tsx` (parallel npx installs race and
   corrupt the cache).
+- **Parallelism has a hard ceiling here, and it is lower than it looks.** The
+  box has 4 cores. `tsc --noEmit` and `eslint .` each walk 649 files across
+  340k lines (one of them 1.06 MB), and each run costs about 10 to 17 percent
+  of memory. Round 0 ran eight workers at once, they all reached their verify
+  step together, and load average hit 87: every command including `pkill`
+  started timing out. Three or four concurrent workers is the real limit, and
+  a worker should lint and typecheck the files it touched rather than the
+  whole repo, with one full-repo pass done once at integration time.
+- Long simulations run niced and get suspended (`pkill -STOP`) while workers
+  verify, then resumed. `sim-card-winrate.ts` flushes every 10 cards and
+  resumes from its own shard file, so stopping it never costs more than the
+  current batch.
 
 ---
 
@@ -122,10 +134,48 @@ Research lands in `docs/lichess-parity-2026-09.md` and feeds items back here.
 
 | # | Item | Size | Status |
 |---|---|---|---|
-| E1 | Lichess behaviour study and gap analysis | S | WIP |
+| E1 | Lichess behaviour study and gap analysis | S | DONE (round 0), see `docs/lichess-parity-2026-09.md` |
 | E2 | Puzzles, and a daily puzzle. The roadmap's top retention ask: it works with nobody else online | L | TODO |
 | E3 | The named-bot ladder. 900 personas already exist in `src/lib/server/bots.ts` | M | TODO |
 | E4 | Analysis: eval bar and move classification | M | TODO |
+
+Ranked from the parity study, cheapest first. lichess.org itself is blocked by
+the egress proxy, so these were read out of `lichess-org/lila` and
+`lichess-org/chessground` source rather than the live site.
+
+| # | Item | Size | Status |
+|---|---|---|---|
+| E10 | **Every drag paints the piece twice.** `.dragging` is defined at `globals.css:1524` and applied nowhere, so the origin square never fades under a dragged piece | XS | TODO |
+| E11 | Bind `z` (zen) on `/analysis`, `/tv` and `/history/[id]`. The hook exists and is only imported on `/game` | XS | TODO |
+| E12 | Clock urgency relative to the time control (Lichess's formula) rather than fixed 30s and 10s thresholds | XS | TODO |
+| E13 | Blink the clock separator while a clock runs. It matters more here than on Lichess because our clock genuinely pauses for drafts | XS | TODO |
+| E14 | Wheel over the board scrubs plies | XS | TODO |
+| E15 | PGN export on `/history/[id]`; it is already wired on the other two replay surfaces | XS | TODO |
+| E16 | A shared keymap module plus the `?` help dialog. Buys `f`, `k`/`j`, `0`/`$`, `home`/`end` and `c` in one change | S | TODO |
+| E17 | TV featured-game hysteresis (Lichess uses a 1.17x gate) and rematch follow. We reshuffle on every poll | S | TODO |
+| E18 | Arrow polish: snap to queen and knight lines, bent knight arrows, the Lichess modifier map | S | TODO |
+| E19 | Drag distance threshold, and tap-tap as the touch default | S | TODO |
+| E20 | Move the analysis engine into a Worker. It currently runs a 300ms blocking search on the main thread | M | TODO |
+| E21 | Move classification from win-percent deltas (0.1 / 0.2 / 0.3, Lichess's own thresholds) | M | TODO |
+| E22 | Card-aware game review. `Analyze` currently truncates at the first card-enabled move | M | TODO |
+| E23 | Move times in the notation panel. The draft charges the clock, so "where did my time go" has a real answer here that it does not have on Lichess | S | TODO |
+| E24 | Give-more-time button | S | TODO |
+
+Deliberately NOT building, with reasons, so a later round does not relitigate:
+the opening explorer (a hidden nerf changes the legal move set from move one,
+so opening stats would be noise dressed as authority; build a card explorer
+over the win-rate data instead), anything mate-based, variation trees and
+studies, correspondence (one day per move against a draft every 5 moves breaks
+the mechanic), berserk unless the draft cadence moves with it, and a
+pieces-only board editor, which can only produce positions that cannot occur.
+
+Two conflicts to respect when E2 and the a11y work land: classic tactics
+puzzles do not transfer, because nearly all of them resolve to mate or
+material. The three formats that do work here are "capture the king in N under
+this nerf", "find the only move your rule allows", and "two cards are offered,
+which one wins", and the last has no chess analogue at all. And a screen-reader
+board here has to name card state per square (frozen, warded, doomed with a
+count, mined), not just pieces, or it is unplayable in a way Lichess's is not.
 
 ## F. Correctness and docs drift
 
