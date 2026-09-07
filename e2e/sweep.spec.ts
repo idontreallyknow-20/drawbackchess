@@ -312,8 +312,27 @@ function isDevNoise(text: string): boolean {
 // ---------------------------------------------------------------------------
 
 type Culprit = { selector: string; right: number; left: number; width: number; text: string; hasText: boolean };
-type SmallText = { selector: string; px: number; text: string; tag: string; interactive: boolean; body: boolean };
+type SmallText = {
+  selector: string;
+  px: number;
+  text: string;
+  tag: string;
+  interactive: boolean;
+  /** Inside a control but not its whole name: a chip, count, keycap or badge. */
+  fragment: boolean;
+  body: boolean;
+};
 type SmallTarget = { selector: string; w: number; h: number; tag: string; label: string; inlineInProse: boolean };
+/** A sub-44px control the "the row IS the target" exemption let through. */
+type RowExempt = {
+  selector: string;
+  w: number;
+  h: number;
+  rowH: number;
+  scrolls: boolean;
+  peers: number;
+  label: string;
+};
 type IconButton = { selector: string; html: string };
 
 type DomReport = {
@@ -324,6 +343,7 @@ type DomReport = {
   culprits: Culprit[];
   smallText: SmallText[];
   smallTargets: SmallTarget[];
+  rowExempt: RowExempt[];
   iconButtons: IconButton[];
 };
 
@@ -366,6 +386,7 @@ async function touchTargetPass(
   browser: Browser,
   url: string,
   emit: (width: number, t: SmallTarget) => void,
+  emitExempt: (width: number, x: RowExempt) => void,
 ) {
   const context = await browser.newContext({
     viewport: { width: 360, height: 900 },
@@ -388,6 +409,9 @@ async function touchTargetPass(
         if (t.inlineInProse) continue;
         emit(width, t);
       }
+      // Hand back what the row exemption forgave, so it can never again hide a
+      // rail of undersized chips by being silent about them.
+      for (const x of report.rowExempt) emitExempt(width, x);
     }
   } finally {
     await context.close();
@@ -522,9 +546,38 @@ async function probe(page: Page, interactiveSelector: string): Promise<DomReport
       // The 12px allowance is for captions and labels only. Text inside a
       // control, and running body copy, both sit on the 13px floor, so the
       // caller needs to know which kind of text this is.
-      const interactive = !!el.closest(
+      //
+      // "Inside a control" is NOT the same as "is the control's label", and an
+      // earlier version of this conflated them. `closest()` is true for every
+      // text node anywhere under a button, so a tier chip reading "VII", a
+      // count reading "0 games", a state pill reading "On" and a "Ctrl K"
+      // keycap were all classified as interactive text on the 13px floor —
+      // when the project's own rule puts exactly that kind of token in the
+      // 12px caption allowance. The detector was asserting something it had
+      // not measured.
+      //
+      // So measure it. The text that sits on the hard floor is the text you
+      // must read to operate the control: its own visible name. If this
+      // element's text IS that whole name, it is the label and the floor
+      // applies. If it is one fragment of a richer control, the detector
+      // cannot tell a caption from a label, and says so by reporting the
+      // softer kind rather than guessing the harder one. Severity only ever
+      // goes down here; nothing stops being reported.
+      const control = el.closest(
         'button, a[href], input, select, textarea, [role="button"], [role="tab"], [role="link"], [role="menuitem"]',
       );
+      let interactive = false;
+      if (control) {
+        // The control's operable text, with aria-hidden decoration removed:
+        // `textContent` happily includes a keycap the screen reader is told to
+        // ignore, and comparing against that would misjudge every control that
+        // carries one.
+        const clone = control.cloneNode(true) as Element;
+        clone.querySelectorAll('[aria-hidden="true"]').forEach((n) => n.remove());
+        const named = (clone.textContent || "").replace(/\s+/g, " ").trim();
+        const own = text.replace(/\s+/g, " ").trim();
+        interactive = control === el || named === own;
+      }
       const bodyCopy = ["p", "li", "td", "dd", "blockquote"].includes(el.tagName.toLowerCase());
       smallText.push({
         selector: cssPath(el),
@@ -532,6 +585,7 @@ async function probe(page: Page, interactiveSelector: string): Promise<DomReport
         text: text.replace(/\s+/g, " ").slice(0, 50),
         tag: el.tagName.toLowerCase(),
         interactive,
+        fragment: !!control && !interactive,
         body: bodyCopy,
       });
     }
@@ -541,6 +595,7 @@ async function probe(page: Page, interactiveSelector: string): Promise<DomReport
     // are the sanctioned exception (you cannot make a word in a sentence
     // 44px tall), so they are flagged separately rather than counted.
     const smallTargets: SmallTarget[] = [];
+    const rowExempt: RowExempt[] = [];
     document.querySelectorAll(SEL).forEach((el) => {
       if (!visible(el) || srOnly(el)) return;
       if ((el as HTMLButtonElement).disabled) return;
@@ -651,6 +706,26 @@ async function probe(page: Page, interactiveSelector: string): Promise<DomReport
       // the gap between them must be only the parent's own border and padding.
       // A link floating inside a tall row with real dead space around it is
       // still a defect and still reported.
+      //
+      // This exemption used to be SILENT, and that was its real defect. A 36px
+      // chip inside a 45px `overflow-x: auto` rail satisfies it — vertically
+      // the chip does fill its parent — so a whole rail of undersized mobile
+      // chips vanished from the sweep with no trace that anything had been
+      // forgiven. The mod shell's chip row was invisible here for exactly that
+      // reason and had to be found by reading the markup instead.
+      //
+      // Tightening the threshold is not the answer: every generalisation I
+      // measured (require horizontal fill too; require the parent to hold one
+      // control; require the parent not to scroll sideways) re-reports the 120
+      // codex list rows this exemption was written for, because a codex row
+      // carries a trailing tier badge and so leaves 25 to 95px of dead width
+      // beside its link. The rail and the list row are not distinguishable by
+      // geometry alone.
+      //
+      // So the exemption stays as it was, and instead it now HANDS BACK what
+      // it forgave. Every exempted control is recorded with its geometry and
+      // whether its parent scrolls sideways, so a masked rail shows up in the
+      // report as something to judge rather than as nothing at all.
       const parent = el.parentElement;
       let filledByRow = false;
       if (parent) {
@@ -663,6 +738,23 @@ async function probe(page: Page, interactiveSelector: string): Promise<DomReport
           parseFloat(ps.paddingBottom);
         const dead = pr.height - chrome - r.height;
         filledByRow = pr.height >= 43.5 && dead <= 0.5 && r.width >= 43.5;
+        if (filledByRow) {
+          const cps = getComputedStyle(parent);
+          rowExempt.push({
+            selector: cssPath(el),
+            w: Math.round(r.width * 10) / 10,
+            h: Math.round(r.height * 10) / 10,
+            rowH: Math.round(pr.height * 10) / 10,
+            scrolls:
+              (cps.overflowX === "auto" || cps.overflowX === "scroll") &&
+              parent.scrollWidth > parent.clientWidth + 1,
+            peers: parent.querySelectorAll(SEL).length,
+            label:
+              (el.getAttribute("aria-label") || (el.textContent || "").trim())
+                .replace(/\s+/g, " ")
+                .slice(0, 40),
+          });
+        }
       }
       if (filledByRow) return;
       smallTargets.push({
@@ -710,6 +802,7 @@ async function probe(page: Page, interactiveSelector: string): Promise<DomReport
       culprits,
       smallText,
       smallTargets,
+      rowExempt,
       iconButtons,
     };
   }, interactiveSelector);
@@ -1199,8 +1292,10 @@ for (const route of routes()) {
               t.px < 12
                 ? `<${t.tag}> renders at ${t.px}px, under the 12px absolute floor. Text: "${t.text}"`
                 : onBodyFloor
-                  ? `${t.interactive ? "interactive" : "body"} text in <${t.tag}> renders at ${t.px}px; the 13px floor applies (12px is captions and labels only). Text: "${t.text}"`
-                  : `<${t.tag}> renders at ${t.px}px, inside the 12px caption allowance. Only a defect if this is body or interactive text. Text: "${t.text}"`,
+                  ? `${t.interactive ? "the operable name of a control" : "body copy"}, in <${t.tag}>, renders at ${t.px}px; the 13px floor applies (12px is captions and labels only). Text: "${t.text}"`
+                  : t.fragment
+                    ? `<${t.tag}> renders at ${t.px}px inside a control, but it is one fragment of that control rather than its name (a chip, count, keycap or badge), so the 12px caption allowance may well cover it. Judge it by eye. Text: "${t.text}"`
+                    : `<${t.tag}> renders at ${t.px}px, inside the 12px caption allowance. Only a defect if this is body or interactive text. Text: "${t.text}"`,
           });
         }
 
@@ -1298,6 +1393,25 @@ for (const route of routes()) {
         severity: t.w < 32 || t.h < 32 ? "high" : "medium",
         selector: t.selector,
         detail: `<${t.tag}> hit area is ${t.w}x${t.h} on a COARSE pointer, below the 44x44 minimum. Label: "${t.label}"`,
+      });
+    }, (width, x) => {
+      // Not a defect claim. This is the sweep declaring what its own row
+      // exemption swallowed, so a rail of 36px chips inside a 45px scroller
+      // is visible as a judgement call instead of being absent from the
+      // report. The two facts that decide it are here: does the parent
+      // actually scroll sideways, and how many controls share it.
+      record({
+        route: url,
+        width,
+        theme: null,
+        kind: "touch-target-row-exempt",
+        severity: "info",
+        selector: x.selector,
+        detail:
+          `${x.w}x${x.h} control exempted because its ${x.rowH}px parent row is the target. ` +
+          `The parent holds ${x.peers} control${x.peers === 1 ? "" : "s"}` +
+          `${x.scrolls ? " AND SCROLLS SIDEWAYS, so it is a rail of separate targets rather than one row: check this one by hand" : ""}. ` +
+          `Label: "${x.label}"`,
       });
     });
 
@@ -1601,6 +1715,12 @@ test("report: write the defect list", async () => {
 
   const counts: Record<string, number> = {};
   for (const d of defects) {
+    // touch-target-row-exempt is a disclosure, not a defect: it lists what the
+    // "the row IS the target" exemption swallowed so a rail of undersized
+    // chips cannot hide inside it. Ratcheting it would gate on correct markup
+    // (every codex row discloses) and would punish a route for ADDING a
+    // properly built 44px row. It stays in the report and out of the lock.
+    if (d.kind === "touch-target-row-exempt") continue;
     const key = `${d.route} ${d.kind}`;
     counts[key] = (counts[key] || 0) + 1;
   }

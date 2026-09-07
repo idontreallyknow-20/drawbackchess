@@ -61,6 +61,7 @@
     "test:nerf-categories": "npx -y tsx scripts/test-nerf-categories.ts",
     "test:draft-fairness": "npx -y tsx scripts/test-draft-fairness.ts",
     "test:draft-sequence": "npx -y tsx scripts/test-draft-sequence.ts",
+    "test:draft-derivation": "npx -y tsx scripts/test-draft-derivation.ts",
     "test:draft-timeout": "npx -y tsx scripts/test-draft-timeout.ts",
     "audit:cards": "npx -y tsx scripts/audit-cards.ts",
     "test:buff-purity": "npx -y tsx scripts/test-buff-purity.ts",

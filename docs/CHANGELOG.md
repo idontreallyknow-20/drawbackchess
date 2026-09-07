@@ -2199,3 +2199,72 @@ Dev-only inflation, recorded so nobody chases a ghost: `reactStrictMode`
 double-renders everything, and four or five Turbopack chunks are fetched inside
 that window on every run. Both vanish in a production build; the structural
 extra commit does not.
+
+## 2026-09-07 13:10 EDT (round 10: the draft opens in one commit, the mod shell reaches 44px, and two sweep detectors stop lying)
+
+Branch `claude/ralph-loop-optimization-nl2902`, OPEN.
+
+**C49, the draft overlay's opening latency, is fixed** and it took one file,
+`src/lib/useDraftSequence.ts` (+197/-23). The mirrored phase now carries the
+offer version it describes, and a pure `deriveDraftPhase` predicts the phase
+during render for a version the machine's effect has not adopted yet. Round 9
+diagnosed the cost as a forced second commit at game start, where `sigBusy` is
+false from the very first render and there is nothing to wait for; that commit
+is now gone. Both traps round 9 named are defended and tested rather than
+assumed: `CardsReadyGate` latches an `onCardsReady` that arrives before its
+arm (child effects run before parent effects), and teardown mirrors
+`DRAFT_COMPLETE` tagged with the version that just finished, so the post-pick
+window cannot flash the overlay back on.
+
+Measured on my own re-run rather than only the agent's: **offer render to
+overlay render 0ms, React commits between the offer and the overlay 1 to 0**,
+the "Resolving effects" chip painted in 0 of 5 runs, hydration to overlay
+259.8ms median. The agent measured 228.0ms on a quieter box and I got 259.8 on
+one running two other agents, so take the 0-commit result as the durable one:
+it does not depend on the clock. Guards: `test:draft-sequence` 20,
+`test:draft-timeout` 16, a new `test:draft-derivation` 15, and
+`e2e/draft-timing.spec.ts` 3, all green.
+
+**C54: every touch-target defect left on the site was on the four `/mod`
+routes, and they are now at zero.** Three edits to two shapes in
+`src/components/mod/ModShell.tsx`. The count was 17 per route rather than the
+15 the baseline recorded (4 for the Jump-to button at each touch width, 13 for
+the rail links at 1024), so 68 findings, plus 144 type-floor-13, to zero.
+Sitewide touch-target is now 0.
+
+**C55: two detectors in `e2e/sweep.spec.ts` were each wrong**, and the agent
+working `/mod` found both by reading markup the sweep called clean.
+
+The first was silent, which was the real defect: the "the row IS the target"
+exemption tested vertical fill only, so a 36px chip inside a 45px
+`overflow-x: auto` rail satisfied it and a whole rail of undersized mobile
+chips vanished from the report with no trace that anything had been forgiven.
+Tightening the threshold is NOT the fix, and I have the measurements: requiring
+horizontal fill too, requiring the parent to hold a single control, and
+requiring the parent not to scroll sideways each re-report the 120 codex list
+rows the exemption exists for, because a codex row carries a trailing tier
+badge and so leaves 25 to 95px of dead width beside its link and holds two
+controls. A rail and a list row are not separable by geometry. So the exemption
+keeps its threshold and now hands back what it swallowed: a
+`touch-target-row-exempt` disclosure per exempted control, with its size, its
+row height, how many controls share the parent, and whether that parent
+actually scrolls. Severity `info` and excluded from the ratchet by name,
+because ratcheting it would gate on correct markup and punish a route for
+adding a properly built 44px row.
+
+The second was a false positive by construction: `interactive` was
+`closest('button, a[href], ...')`, so every bare token inside a control (a
+roman-numeral tier badge, a count, a state pill, a `Ctrl K` keycap) was called
+interactive text on the 13px floor, when the project's own rule puts exactly
+that in the 12px caption allowance. It now turns on a measured fact: the floor
+applies when the element IS the control, or when its text equals the control's
+whole visible name with aria-hidden decoration stripped before comparing (every
+control carrying a keycap would otherwise misjudge). A fragment of a richer
+control is reported as `type-floor-12` with a detail saying so and to judge it
+by eye. Severity only ever drops; nothing stops being reported. On `/codex`
+that is type-floor-13 4 to 0, all four `X`/`IX` tier badges, and 74 row
+exemptions now disclosed, none of them scrolling rails.
+
+Stated plainly because it invalidates a number already written down: the
+round-9 sitewide `type-floor-13` counts (35 distinct, 1914 raw) are inflated by
+that second defect and have to be re-measured before anyone uses them.
