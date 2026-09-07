@@ -309,7 +309,7 @@ function ClubRow({ club }: { club: Club }) {
           ) : (
             <p className="mt-0.5 truncate text-[13px] italic text-parchment-500">No description.</p>
           )}
-          <div className="mt-0.5 text-[12px] font-medium text-parchment-400">owner {club.owner_name}</div>
+          <div className="mt-0.5 text-[13px] font-medium text-parchment-400">owner {club.owner_name}</div>
         </div>
         <span className="flex shrink-0 items-center gap-1.5 font-mono text-[12px] text-parchment-400 tabular-nums">
           <Users size={13} />

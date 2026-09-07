@@ -540,7 +540,7 @@ function TournamentRow({ t, now }: { t: TournamentListRow; now: number }) {
               <span className="shrink-0 border border-[color:var(--edge-strong)] px-1.5 py-0.5 text-[12px] font-medium text-gold-leaf">Rated</span>
             ) : null}
           </div>
-          <div className="mt-0.5 text-[12px] font-medium text-parchment-400">
+          <div className="mt-0.5 text-[13px] font-medium text-parchment-400">
             {formatLabel(t.format)} · {durationLabel(t.duration_min)}
             {t.club_name ? ` · ${t.club_name}` : ""} · by {t.creator_name}
           </div>

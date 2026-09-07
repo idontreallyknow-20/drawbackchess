@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BoardAnalysis } from "@/engine/ai";
 import type { BoardState, Color, Move } from "@/engine/types";
+import { acquireEvalWorker, releaseEvalWorker, requestEval } from "@/workers/evalClient";
 
 // ---------------------------------------------------------------------------
 // The eval bar, and the one honest thing it is allowed to say.
@@ -36,44 +37,56 @@ import type { BoardState, Color, Move } from "@/engine/types";
 // with a coarse true statement than with nothing. What they must never get is a
 // precise false one.
 //
-// Scheduling: the search runs on the main thread, so it runs in an idle
-// callback (the pattern lib/useDeferredMoveRisks.ts already established for the
-// move-risk dots) and never inside the frame that lands a move. Cost is roughly
-// 2x the budget: negamax aborts at `budget * 2` and the deepening loop only
-// checks the clock after a whole depth completes. See EVAL_LADDER_* below.
+// Scheduling: the search runs in a worker (src/workers/evalWorker.ts), so it
+// costs the page no frames at all. It still climbs a ladder of budgets, but for
+// a different reason than it used to — a rough reading in 15ms and a good one a
+// third of a second later beats one reading that arrives late — rather than as
+// a way of slicing an unaffordable main-thread block into affordable pieces.
+//
+// Browsers without workers (and SSR) fall back to the old idle-callback ladder,
+// with every rung clamped to MAIN_THREAD_RUNG_CAP_MS so the fallback stays
+// frame-safe. It reads a shallower position; that is the price of not having a
+// thread to put the work on, and it is paid where it belongs.
+//
+// Budgets below are TRUE wall times. They used to be halves: negamax aborted at
+// `budget * 2`, so this file's old ladder cost about twice what it said and
+// /analysis's original `analyzeBoard(board, 300)` was a 601ms block. The abort
+// is now the number the caller asked for (see engine/ai.ts).
 // ---------------------------------------------------------------------------
 
-/** Lazily loaded so the ~600-line search never lands in a route's first paint.
- *  A match that never shows the bar never downloads or parses it. */
+/** Lazily loaded so the ~700-line search never lands in a route's first paint.
+ *  Only the main-thread fallback needs it; the worker imports its own copy. */
 let enginePromise: Promise<typeof import("@/engine/ai")> | null = null;
 function loadEngine() {
   if (!enginePromise) enginePromise = import("@/engine/ai");
   return enginePromise;
 }
 
-/** One rung of the deepening ladder. Wall cost is about `budgetMs * 2`. */
+/** One rung of the deepening ladder. `budgetMs` is a hard deadline. */
 export type EvalRung = { budgetMs: number; maxDepth: number };
 
-// Measured (Chromium, this box, 48 positions from two real openings):
-// budget 8 -> 6ms typical / 17ms worst, budget 20 -> 25ms / 34ms, budget 40 ->
-// 80ms worst. No rung on its own is longer than the board's own render, and
-// none of them runs while anyone's clock is ticking: the surfaces that use this
-// ladder are replays, spectating, and a match that has already ended.
+/** No main-thread fallback rung may cost more than this. One frame at 60Hz is
+ *  16.7ms; a rung that lands inside a single dropped frame is a cost a viewer
+ *  scrubbing a move list will not see. */
+const MAIN_THREAD_RUNG_CAP_MS = 24;
+
+// The game surfaces (replay, spectating, a finished match) want a reading that
+// tracks the move list as the viewer arrows through it, so the ladder stays
+// short and lands its first rung almost immediately.
 export const EVAL_LADDER_GAME: EvalRung[] = [
-  { budgetMs: 8, maxDepth: 2 },
-  { budgetMs: 20, maxDepth: 3 },
-  { budgetMs: 40, maxDepth: 4 },
+  { budgetMs: 15, maxDepth: 2 },
+  { budgetMs: 45, maxDepth: 3 },
+  { budgetMs: 120, maxDepth: 5 },
 ];
 
-// The analysis board wants depth, so it climbs further, but it climbs in steps
-// that each fit in an idle slice instead of one 600ms block. The old call here
-// was `analyzeBoard(board, 300)`, which stalls the main thread for ~600ms after
-// every single move: the budget bounds the SEARCH, and the abort is at 2x.
+// The analysis board wants depth, and off the main thread it can simply have
+// it: the last rung is a third of a second of real search, which is more than
+// the old `analyzeBoard(board, 300)` ever completed, and costs the page nothing.
 export const EVAL_LADDER_ANALYSIS: EvalRung[] = [
-  { budgetMs: 8, maxDepth: 2 },
-  { budgetMs: 20, maxDepth: 3 },
-  { budgetMs: 30, maxDepth: 4 },
-  { budgetMs: 55, maxDepth: 6 },
+  { budgetMs: 15, maxDepth: 2 },
+  { budgetMs: 45, maxDepth: 3 },
+  { budgetMs: 120, maxDepth: 5 },
+  { budgetMs: 350, maxDepth: 8 },
 ];
 
 /** One position's reading, always tied to the exact board it came from. */
@@ -86,6 +99,9 @@ export type BoardEval = {
   best: Move | null;
   /** Wall-clock cost of the pass that produced this reading, in ms. */
   costMs: number;
+  /** Where that cost was paid. "main" means this browser has no worker and the
+   *  reading is the shallow, frame-safe fallback. */
+  thread: "worker" | "main";
   /** The ladder has no rungs left for this position. */
   settled: boolean;
 };
@@ -131,6 +147,23 @@ export function useBoardEval(
   // render for a value that is a pure function of the board.
   const decided = board && enabled ? terminalCp(board) : null;
 
+  // The worker is claimed for as long as the bar is mounted and enabled, not
+  // per position: a thread started and stopped on every move would pay the
+  // engine's parse cost on every move. Held in a ref rather than state so
+  // claiming it does not cascade a render; this effect is declared BEFORE the
+  // search effect, and React runs a component's effects in declaration order,
+  // so the ref is already answered when the search below first reads it.
+  const workerRef = useRef(false);
+  useEffect(() => {
+    if (!enabled) return;
+    const claimed = acquireEvalWorker();
+    workerRef.current = claimed;
+    return () => {
+      workerRef.current = false;
+      if (claimed) releaseEvalWorker();
+    };
+  }, [enabled]);
+
   useEffect(() => {
     if (!enabled || !board || terminalCp(board) != null) return;
 
@@ -138,6 +171,9 @@ export function useBoardEval(
     let idleId: number | null = null;
     let timerId: number | null = null;
     let rung = 0;
+    // Local, because a worker that dies mid-ladder demotes THIS ladder to the
+    // main thread without waiting for a remount.
+    let onWorker = workerRef.current;
     const w = window as IdleWindow;
 
     const cancelPending = () => {
@@ -147,24 +183,12 @@ export function useBoardEval(
       timerId = null;
     };
 
-    const pass = async () => {
-      const { analyzeBoard } = await loadEngine();
-      if (cancelled) return;
-      const step = ladder[rung];
-      const t0 = performance.now();
-      let r: BoardAnalysis;
-      try {
-        r = analyzeBoard(board, step.budgetMs, step.maxDepth);
-      } catch {
-        return;
-      }
-      const costMs = performance.now() - t0;
-      if (cancelled) return;
+    // depth 0 means the rung's budget expired before a single ply finished, so
+    // `scoreCp` is the initialiser and `move` is just the first generated move.
+    // Publishing that would paint a confident "level" over an unsearched
+    // position. Climb to the next rung instead and stay silent.
+    const publish = (r: BoardAnalysis, costMs: number, thread: "worker" | "main") => {
       rung += 1;
-      // depth 0 means the rung's budget expired before a single ply finished,
-      // so `scoreCp` is the initialiser and `move` is just the first generated
-      // move. Publishing that would paint a confident "level" over an unsearched
-      // position. Climb to the next rung instead and stay silent.
       if (r.depth > 0) {
         setResult({
           board,
@@ -172,14 +196,51 @@ export function useBoardEval(
           depth: r.depth,
           best: r.move,
           costMs,
+          thread,
           settled: rung >= ladder.length,
         });
       }
       if (rung < ladder.length) schedule();
     };
 
+    const workerPass = async () => {
+      const step = ladder[rung];
+      try {
+        const r = await requestEval(board, step.budgetMs, step.maxDepth);
+        if (cancelled) return;
+        publish({ move: r.move, scoreCp: r.scoreCp, depth: r.depth }, r.costMs, "worker");
+      } catch {
+        // No thread (or it stopped answering). Finish this ladder on the main
+        // thread rather than leaving the bar blank.
+        if (cancelled) return;
+        onWorker = false;
+        schedule();
+      }
+    };
+
+    const mainPass = async () => {
+      const { analyzeBoard } = await loadEngine();
+      if (cancelled) return;
+      const step = ladder[rung];
+      // The budget is a hard deadline now, so this clamp is a real bound on
+      // how long the main thread is held, not half of one.
+      const budgetMs = Math.min(step.budgetMs, MAIN_THREAD_RUNG_CAP_MS);
+      const t0 = performance.now();
+      let r: BoardAnalysis;
+      try {
+        r = analyzeBoard(board, budgetMs, step.maxDepth);
+      } catch {
+        return;
+      }
+      const costMs = performance.now() - t0;
+      if (cancelled) return;
+      publish(r, costMs, "main");
+    };
+
     const schedule = () => {
-      // A background tab must not burn the main thread on a bar nobody sees.
+      // A background tab must not burn CPU on a bar nobody is looking at. This
+      // matters MORE with a worker than it did without one: idle callbacks and
+      // timers are throttled in a hidden tab, a worker's search loop is not.
       if (typeof document !== "undefined" && document.hidden) {
         const onVisible = () => {
           document.removeEventListener("visibilitychange", onVisible);
@@ -188,11 +249,20 @@ export function useBoardEval(
         document.addEventListener("visibilitychange", onVisible);
         return;
       }
-      if (typeof w.requestIdleCallback === "function") {
-        idleId = w.requestIdleCallback(() => void pass(), { timeout: 400 });
+      if (onWorker) {
+        // A short beat before the first rung, so arrowing through a move list
+        // does not queue one search per keystroke behind the one that matters.
+        // Later rungs post straight away: the previous rung has just returned,
+        // so the thread is already free and the position is still current.
+        if (rung === 0) timerId = window.setTimeout(() => void workerPass(), 16);
+        else void workerPass();
         return;
       }
-      timerId = window.setTimeout(() => void pass(), 32);
+      if (typeof w.requestIdleCallback === "function") {
+        idleId = w.requestIdleCallback(() => void mainPass(), { timeout: 400 });
+        return;
+      }
+      timerId = window.setTimeout(() => void mainPass(), 32);
     };
 
     schedule();
@@ -204,7 +274,7 @@ export function useBoardEval(
 
   if (!enabled || !board) return null;
   if (decided != null) {
-    return { board, cpWhite: decided, depth: 0, best: null, costMs: 0, settled: true };
+    return { board, cpWhite: decided, depth: 0, best: null, costMs: 0, thread: "main", settled: true };
   }
   if (!result || result.board !== board) return null;
   return result;
@@ -330,6 +400,7 @@ export function EvalBar({
       title={evalSpeech(result, rules)}
       data-eval-cost={result ? Math.round(result.costMs) : undefined}
       data-eval-depth={result ? result.depth : undefined}
+      data-eval-thread={result ? result.thread : undefined}
       data-eval-mode={exact ? "exact" : "estimate"}
       className={
         "relative w-6 shrink-0 overflow-hidden border border-[color:var(--edge-strong)] " + className
@@ -390,6 +461,7 @@ export function EvalStrip({
       className={"mt-2 " + className}
       data-eval-cost={result ? Math.round(result.costMs) : undefined}
       data-eval-depth={result ? result.depth : undefined}
+      data-eval-thread={result ? result.thread : undefined}
       data-eval-mode={exact ? "exact" : "estimate"}
     >
       <div

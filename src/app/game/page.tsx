@@ -170,6 +170,26 @@ const BOT_ELO: Record<AILevel, number> = {
 const DRAFT_REVEAL_EASE_MS = 450;
 const DRAFT_REVEAL_HOLD_MS = 4000;
 
+// --- Opening-arc instrumentation (C49) -------------------------------------
+// Opt in with ?perf=1. Off, `perfMark` is a dead branch on a module constant
+// and costs one boolean test per call; on, it appends {n, t} to window.__gamePerf
+// so a harness can read the exact render/commit boundaries between hydration
+// and the draft overlay mounting. Deliberately not a `performance.mark` only:
+// the ORDER of render-vs-commit is what the measurement is about, and marks
+// with identical names collapse in the timeline.
+const PERF_MARKS =
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("perf") === "1";
+function perfMark(n: string) {
+  if (!PERF_MARKS) return;
+  try {
+    const w = window as unknown as { __gamePerf?: Array<{ n: string; t: number }> };
+    (w.__gamePerf ??= []).push({ n, t: performance.now() });
+  } catch {
+    // instrumentation must never break the game
+  }
+}
+
 export default function GamePageWrapper() {
   // Rematch remounts GamePage under a fresh key with the URL untouched, so
   // bootstrapGame re-runs against the SAME configuration (mode, strength,
@@ -202,6 +222,7 @@ function LoadingPanel() {
 }
 
 function GamePage({ onRematch }: { onRematch: () => void }) {
+  perfMark("render:start");
   // Zen mode: `z` hides everything but the board, clocks and move list.
   useZenHotkey();
   const router = useRouter();
@@ -428,6 +449,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
   }, []);
 
   function bootstrapGame() {
+    perfMark("bootstrap:start");
     try {
       const saved = loadSavedAiGame(querySignature);
       if (saved) {
@@ -464,6 +486,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
         enableDraftMode(g, makeSeed(), { mode: "buff" });
         setHistoryPly(null);
         setGame(g);
+        perfMark("bootstrap:end");
         return;
       }
       // Deal both players' nerf options; the game starts when the player
@@ -593,6 +616,12 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
     onPrepStart: () => setOfferDeadline(null),
   });
   const draftCovered = !!liveOffer && !liveOfferOnClock && draftSeq.overlayVisible;
+  perfMark(
+    `render:draft key=${liveOfferKey ?? "-"} phase=${draftSeq.phase} vis=${draftSeq.overlayVisible ? 1 : 0} busy=${sigBusy ? 1 : 0}`,
+  );
+  useEffect(() => {
+    perfMark("commit");
+  });
   useEffect(() => {
     draftCoveredRef.current = draftCovered;
   });
@@ -1907,6 +1936,7 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
       </div>
     ) : null;
 
+  perfMark("render:body-done");
   return (
     <main className={"flex min-h-dvh flex-col sm:h-dvh [@media(pointer:fine)]:min-h-0 sm:overflow-hidden " + TABLET_STACK_SCROLL}>
       {/* The live game had NO h1 at all: the only one on this route sits in

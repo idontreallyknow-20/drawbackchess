@@ -398,7 +398,7 @@ function SiteThemePicker({
               <span className="block font-display text-[13px] leading-tight text-parchment">
                 {t.label}
               </span>
-              <span className="block text-[12px] leading-tight text-parchment-400">{t.hint}</span>
+              <span className="block text-[13px] leading-tight text-parchment-400">{t.hint}</span>
             </span>
           </button>
         );
@@ -573,7 +573,7 @@ function PickerDisclosure({
           <span className="block truncate font-display text-[13px] leading-tight text-parchment">
             {selectedName}
           </span>
-          <span className="block text-[12px] leading-tight text-parchment-400">
+          <span className="block text-[13px] leading-tight text-parchment-400">
             {expanded ? "Hide options" : prompt}
           </span>
         </span>
@@ -786,7 +786,7 @@ function AccountSettings() {
       <div className="flex min-h-[44px] items-center justify-between gap-3 rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] p-2.5">
         <div className="min-w-0">
           <div className="text-[13px] font-medium text-parchment-100">Profile</div>
-          <p className="text-[12px] text-parchment-400">Avatar, bio, and game history</p>
+          <p className="text-[13px] text-parchment-400">Avatar, bio, and game history</p>
         </div>
         <LinkButton tone="ghost"
           href="/profile"

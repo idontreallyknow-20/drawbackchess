@@ -318,7 +318,7 @@ export default function TournamentDetailPage() {
                             const isCreator = s.user_id === t.creator_user_id;
                             return (
                               <tr key={s.user_id} className={isMe ? "bg-[color:var(--bg-raised)]" : "transition-colors hover:bg-[color:var(--bg-raised)]"}>
-                                <td className="px-3 py-2 text-right font-mono text-xs text-parchment-500">{i + 1}</td>
+                                <td className="px-3 py-2 text-right font-mono text-sm text-parchment-500">{i + 1}</td>
                                 <td className="px-2 py-2">
                                   <div className="flex items-center gap-2.5">
                                     {/* Through PlayerLink, not a hand-spelled
@@ -339,13 +339,13 @@ export default function TournamentDetailPage() {
                                     {s.streak >= 3 && <Flame size={12} className="shrink-0 text-oxblood-glow" aria-label="On a streak" />}
                                   </div>
                                 </td>
-                                <td className="hidden px-3 py-2 text-right font-mono text-xs text-parchment-400 sm:table-cell">
+                                <td className="hidden px-3 py-2 text-right font-mono text-sm text-parchment-400 sm:table-cell">
                                   {Math.round(s.rating)}
                                 </td>
                                 <td className="px-3 py-2 text-right font-mono text-sm font-semibold text-parchment-50">
                                   {s.score}
                                 </td>
-                                <td className="hidden px-3 py-2 text-right font-mono text-xs text-parchment-400 sm:table-cell">
+                                <td className="hidden px-3 py-2 text-right font-mono text-sm text-parchment-400 sm:table-cell">
                                   {s.performance != null ? Math.round(s.performance) : "-"}
                                 </td>
                               </tr>
@@ -355,7 +355,7 @@ export default function TournamentDetailPage() {
                       </table>
                     </div>
                   )}
-                  <p className="border-t border-[color:var(--edge)] px-5 py-2.5 text-[12px] text-parchment-500">
+                  <p className="border-t border-[color:var(--edge)] px-5 py-2.5 text-[13px] text-parchment-500">
                     Swiss pairing by score, then rating. Win 1 point, draw 0.5, bye 1. Rounds pair
                     automatically while the event runs.
                   </p>

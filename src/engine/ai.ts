@@ -154,10 +154,22 @@ type SearchState = {
 // Rough search throughput used to convert a time budget into a node cap.
 // Measured 2026-07-10 on hard-level midgame searches: ~450 nodes/ms median
 // (317-727 across 30 samples), so 1000 deliberately overshoots ~2x — on any
-// runtime with a working clock the budget*2 clock net below fires first and
+// runtime with a working clock the clock net in negamax fires first and
 // playing strength is unchanged; the node cap only bites where the clock is
-// frozen, containing a runaway search to roughly 2x the nominal budget's
-// worth of real CPU. Precision does not matter, only the order of magnitude.
+// frozen. Precision does not matter, only the order of magnitude.
+//
+// The cap is deliberately UNCHANGED by the 2026-09 hard-deadline fix: for any
+// given budget it allows exactly the node count it always did, so the frozen-
+// clock (Durable Object) path behaves identically and nothing about the
+// backstop is loosened. What changed is its margin over the clock. Before, the
+// clock aborted at 2x budget and the cap at 2000 nodes per ms-of-budget, so the
+// cap bit first only above ~1000 nodes/ms; now the clock aborts at 1x budget,
+// so it bites first below ~2000 nodes/ms — an even wider margin, in the safe
+// direction. On a frozen clock the cap still contains a runaway search to
+// 2000 nodes per ms-of-budget, i.e. ~4.4x the budget's worth of real CPU at the
+// measured 450 nodes/ms. Tightening THAT is a separate, strength-affecting
+// change to the house tiers' local fallback and does not belong in a fix whose
+// whole point is that the numbers should stop moving on their own.
 const NODES_PER_MS = 1000;
 
 function newSearchState(extended: boolean, budgetMs = 0, buffs: SearchBuffs | null = null): SearchState {
@@ -246,10 +258,17 @@ type LevelProfile = {
   extendedEval: boolean;
 };
 
+// `budgetMs` here is WALL TIME the search may spend, and since 2026-09 that is
+// the truth rather than half of it: negamax used to abort at `budget * 2`, so
+// medium's old 700 really cost 1400ms and hard's old 2000 really cost 4000ms.
+// These numbers are doubled from those old nominals for exactly that reason —
+// the practice bot thinks for the same length of time it always did, the label
+// on the tin now matches the tin. Do not read the doubling as a strength buff;
+// reverting it would be a strength CUT.
 const LEVELS: Record<AILevel, LevelProfile> = {
   easy: { maxDepth: 1, budgetMs: 0, rootNoise: 120, blunderChance: 0.22, extendedEval: false },
-  medium: { maxDepth: 3, budgetMs: 700, rootNoise: 0, blunderChance: 0, extendedEval: false },
-  hard: { maxDepth: 12, budgetMs: 2000, rootNoise: 0, blunderChance: 0, extendedEval: true },
+  medium: { maxDepth: 3, budgetMs: 1400, rootNoise: 0, blunderChance: 0, extendedEval: false },
+  hard: { maxDepth: 12, budgetMs: 4000, rootNoise: 0, blunderChance: 0, extendedEval: true },
 };
 
 // The search shape a level runs at by default (depth + whether leaf eval uses
@@ -263,9 +282,18 @@ export function defaultSearchShape(level: AILevel): { maxDepth: number; extended
 // Search budget for a level, capped to a slice of the bot's remaining clock
 // so the bot spends time like a human player and can never think its whole
 // bank away in fast time controls.
+//
+// That sentence is now true as written. It was not before: the returned number
+// was a budget the search was allowed to double, so a bot at the 60ms floor in
+// a 1+0 game spent 120ms of a clock it did not have, and every clamp here was
+// half as tight as it read. `budgetMs` is a hard wall-clock deadline in the
+// search (see negamax), so a tenth of the remaining clock is a tenth of the
+// remaining clock.
 export function aiBudgetMs(level: AILevel, remainingClockMs?: number): number {
   const base = LEVELS[level].budgetMs;
   if (remainingClockMs == null) return base;
+  // `base || 300` covers easy, whose profile budget is 0 because it never
+  // searches; the value only reaches a caller's bookkeeping, not a search.
   return Math.max(60, Math.min(base || 300, remainingClockMs / 10));
 }
 
@@ -311,6 +339,10 @@ type RankedRootMove = { move: Move; scoreCp: number };
 // game server's house players so a bot-vs-bot move never blocks the (single
 // threaded) Durable Object long enough to stall live sockets or the lobby,
 // and by the client so the bot's thinking never exceeds its remaining clock.
+// It is a HARD wall-clock deadline: the search returns within it (give or take
+// the cost of one node), not within twice it. On a runtime whose clock is
+// frozen mid-compute — Cloudflare Workers, i.e. the DO's local fallback — the
+// node cap is what bounds the search instead; see NODES_PER_MS.
 // `weaken` (house bots only) degrades move CHOICE for a realistic handicap;
 // see WeakenParams.
 /**
@@ -548,6 +580,11 @@ export interface BoardAnalysis {
 // Plain-chess analysis for the analysis board: same iterative-deepening
 // negamax as the hard bot, but over a bare BoardState (no nerfs) and
 // returning the score alongside the move so callers can drive an eval bar.
+//
+// `budgetMs` is a hard wall-clock deadline (see negamax). It used to be a
+// number the search doubled, which is why `analyzeBoard(board, 300)` on
+// /analysis was a measured 601ms main-thread block; a caller that wants 600ms
+// of search now writes 600.
 export function analyzeBoard(board: BoardState, budgetMs = 300, maxDepth = 10): BoardAnalysis {
   const moves = generateMoves(board);
   const me = board.turn;
@@ -612,7 +649,28 @@ function negamax(
   // is meaningful even for an uncapped search.
   state.nodes++;
   if (state.nodeCap > 0 && state.nodes > state.nodeCap) return TIMEOUT_SENTINEL;
-  if (budget > 0 && Date.now() - start > budget * 2) return TIMEOUT_SENTINEL;
+  // `budget` is a HARD deadline: the search may not spend more wall-clock time
+  // than the caller asked for. It used to abort at `budget * 2`, which — since
+  // the deepening loops only check the clock BETWEEN depths — let a depth that
+  // started a millisecond under the budget run to twice it. Measured, that was
+  // not an edge case: at every budget the median search landed near the 2x
+  // abort and `analyzeBoard(board, 300)` cost 601ms.
+  //
+  // The 2x also silently falsified every promise built on this number, and
+  // there are several: aiBudgetMs's "can never think its whole bank away"
+  // clamp, the house tiers' margin under the engine service's 3000ms timeout,
+  // and the DO-safe search ceiling. One tight deadline makes all of them true
+  // at once.
+  //
+  // The argument for the old headroom was that aborting mid-depth throws the
+  // whole depth away. Measured over 27 midgame positions (scripts/
+  // bench-search-deadline.ts), it buys nothing: at an equal WALL CEILING the
+  // hard deadline reaches exactly the same depth (asked 700/abort 1400 ->
+  // depth 4.8 avg, max 6; asked 1400/abort 1400 -> depth 4.8 avg, max 6), it
+  // just reaches it with a wall time the caller can predict. Callers who want
+  // the deeper search now ask for the bigger number, and get charged for it
+  // honestly.
+  if (budget > 0 && Date.now() - start > budget) return TIMEOUT_SENTINEL;
 
   // Terminal king captures score from the side to move's perspective (like
   // quiesce below). Scoring them relative to the search root inverted the

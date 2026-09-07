@@ -369,7 +369,7 @@ export default function EditProfilePage() {
                     );
                   })}
                 </div>
-                <p className="mt-3 text-xs text-parchment-400">
+                <p className="mt-3 text-sm text-parchment-400">
                   Shown in the lobby, on leaderboards, and at the board. Use the + tile to upload
                   your own picture (PNG, JPG, WebP, or GIF, under 8 MB, cropped square and scaled
                   down automatically).
@@ -452,7 +452,7 @@ export default function EditProfilePage() {
                     . Claim it while your rank holds.
                   </p>
                 </div>
-                <p className="mt-3 text-xs text-parchment-400">
+                <p className="mt-3 text-sm text-parchment-400">
                   An emoji shown next to your name on your profile and on your avatar around the
                   site. Pick one from the set above.
                   {flairError && <span className="ml-2 text-oxblood-glow">{flairError}</span>}
@@ -557,7 +557,7 @@ function PrivacyToggle({
             <span className="text-xs text-oxblood-glow">{error}</span>
           )}
         </div>
-        <p className="mt-1 text-xs text-parchment-400">{description}</p>
+        <p className="mt-1 text-sm text-parchment-400">{description}</p>
       </div>
       <button
         type="button"

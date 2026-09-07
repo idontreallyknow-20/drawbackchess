@@ -1,6 +1,6 @@
 "use client";
 
-import { createElement } from "react";
+import { createElement, useId } from "react";
 import { Buff, turnCost } from "@/engine/buff";
 import { COMBO_TAGS, COMBO_TAG_LABELS } from "@/engine/comboTags";
 import { Tier } from "@/engine/nerf";
@@ -90,8 +90,13 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
   // Selected (not defined) at render time, so render via createElement rather
   // than binding a capitalized local and using it as a JSX component.
   const catIcon = cardFaceIcon(buff.id, buff.category, buff.icon) ?? CATEGORY_ICON[buff.category];
+  // A pickable card carries its own control (see the stretched target at the
+  // bottom of the face). `faceId` labels that control with the whole card.
+  const pickable = !!onClick && !dead;
+  const faceId = useId();
   const body = (
     <div
+      id={pickable ? faceId : undefined}
       style={enterDelayMs != null ? { animationDelay: `${enterDelayMs}ms` } : undefined}
       className={
         // group/card (a NAMED group, so ancestor `group` wrappers in docks /
@@ -102,6 +107,8 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
         // one draft offer lands the same height (description stretches, tier
         // rows and bottoms align). Compact rows keep their natural height.
         (compact ? "p-3 " : "flex h-full flex-col p-4 ") +
+        // Was on the old wrapping <button>; the face is the target now.
+        (pickable ? "touch-manipulation " : "") +
         (dead ? "opacity-45 " : "") +
         (glow && !dead ? "ring-1 ring-gold/40 " : "") +
         (onClick && !dead
@@ -113,6 +120,50 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           : "")
       }
     >
+      {/* THE PICK TARGET.
+          This used to be a <button> WRAPPING the whole card face, and the rule
+          text inside it is rendered by GlossaryText, which turns one to five
+          words per card into `span[role="button"] tabIndex=0` chips. A control
+          inside a control is invalid HTML and invalid ARIA (the children of a
+          button are presentational), and it had a measured cost: the term's
+          click handler stops propagation so a tap meaning "explain this" does
+          not also press the card, which meant a click on the middle of a draft
+          card -- the rule text, the part you read while deciding -- reached
+          NOTHING. The card stayed unselected and the commit button stayed
+          disabled. DraftOverlay works around that with a capture-phase pick.
+
+          The card face is now a plain container and the control is this
+          stretched target: a real <button>, absolutely filling the face, so
+          the whole card is still one 44px+ hit area and still keyboard
+          operable with Enter / Space. It takes its accessible name from the
+          face via aria-labelledby, so the announcement is unchanged, SrSep
+          punctuation and all (measured: identical string before and after).
+
+          It is FIRST in the face on purpose, so the tab order is the one the
+          wrapping button had: this card, then the glossary chips in its rule
+          text, then the next card. Being first is only safe because the target
+          carries a z-index: several blocks below are `relative` (the header
+          row, the flavour line) and would otherwise paint over it and eat the
+          click. The chips carry the same rung and come later in the DOM, so
+          they stay above it and keep their own hover, long press, click and
+          tab stop -- and now that they are no longer inside a button, their
+          role is finally legitimate. The watermark and the preview medallion
+          are both `pointer-events: none`, so neither can swallow a pick.
+
+          aria-pressed stays here: the selection state was otherwise invisible
+          to assistive tech (the only signal was the commit button renaming
+          itself somewhere else on the screen). Undefined, not false, on cards
+          that are not a choice, so a plain card button is never announced as
+          an unpressed toggle. */}
+      {pickable && (
+        <button
+          type="button"
+          onClick={onClick}
+          aria-pressed={selected}
+          aria-labelledby={faceId}
+          className="card-pick-target"
+        />
+      )}
       {/* Face watermark: a large glyph anchored bottom-right, behind the
           text. Faint by default; hovering the card brightens it in the tier
           (severity) color and nudges the scale. Transitions only (no
@@ -247,21 +298,5 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
     </div>
   );
 
-  if (!onClick || dead) return body;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      // The selection state was invisible to assistive tech: the ONLY signal a
-      // card was chosen was the commit button renaming itself from "Pick a
-      // card" to "Confirm <name>", somewhere else on the screen. The cards
-      // themselves are toggles, so they say so. Undefined (not false) on cards
-      // that are not a choice, so a plain card button is never announced as an
-      // unpressed toggle.
-      aria-pressed={selected}
-      className="block h-full w-full touch-manipulation text-left"
-    >
-      {body}
-    </button>
-  );
+  return body;
 }

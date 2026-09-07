@@ -621,7 +621,7 @@ function TournamentRail({
               <span className="flex items-center gap-1.5">
                 <span className="truncate text-sm font-medium text-parchment-100">{t.name}</span>
               </span>
-              <span className="mt-0.5 flex items-center gap-1.5 text-xs text-parchment-400">
+              <span className="mt-0.5 flex items-center gap-1.5 text-sm text-parchment-400">
                 <ModeBadge mode={t.mode === "nerf" || t.mode === "buff" ? t.mode : undefined} compact />
                 {modeLabel(t.mode)} · {t.players} entered
               </span>

@@ -199,17 +199,45 @@ export default function OnlineGamePage() {
     };
     const offWatch = session.on(onWatchEvent);
 
+    // Watch the game, and land on a TERMINAL mode whatever happens.
+    //
+    // This used to be one try/catch whose catch block did more async work than
+    // the try did: isArenaGameLive, a second MPSession, showReplay, and a
+    // recursive call to itself. Every caller invokes it without awaiting, so
+    // anything that threw in there rejected a promise nobody was holding. The
+    // rejection went to `unhandledrejection` and the page stayed on
+    // {kind:"loading"} — "Connecting…", forever, with no error and no way out
+    // but the reload button the 10s slow-connect banner offers. Reproduced with
+    // scripts/repro-a17-connecting.mjs, which makes isArenaGameLive throw.
+    //
+    // So the recovery now runs in its own try, and the outer catch is a
+    // backstop whose only job is that the page always ends up somewhere the
+    // viewer can act on. Losing the archive is a bad outcome; a permanent
+    // skeleton is not an outcome at all.
     const spectate = async (pendingReplay?: Promise<ReplayGame | null>, s: MPSession = session) => {
+      let failure: unknown;
       try {
         await withResponseTimeout(s.watch(gameId), "watch_timeout", 15000);
+        return; // watch-start already moved us to {kind:"spectator"}
       } catch (e) {
-        if (e instanceof Error && e.message === "not_found") {
+        failure = e;
+      }
+
+      try {
+        if (failure instanceof Error && failure.message === "not_found") {
           // Tier 3: a live arena-hosted (OCI bot-vs-bot) game is unknown to the
           // game-server DO. Before treating not_found as "finished, show the
           // archive", ask the arena — a direct link to a live filler game then
           // watches it instead of flashing "not found". Fail-soft: an
           // unreachable arena answers false and the archive path runs as ever.
-          if (!s.serverUrl && arenaSocketUrl() && (await isArenaGameLive(gameId))) {
+          // That fail-soft is now enforced here rather than assumed of the
+          // helper: whatever it does with a broken arena, this decision only
+          // ever gets a boolean.
+          const arenaLive =
+            !s.serverUrl &&
+            !!arenaSocketUrl() &&
+            (await isArenaGameLive(gameId).catch(() => false));
+          if (arenaLive) {
             s.destroy();
             if (cancelled) return;
             const arenaSession = new MPSession();
@@ -223,11 +251,24 @@ export default function OnlineGamePage() {
           }
           s.destroy();
           await showReplay(pendingReplay);
-        } else if (e instanceof Error && e.message === "watch_timeout") {
+        } else if (failure instanceof Error && failure.message === "watch_timeout") {
           await showReplay(pendingReplay);
         } else if (!cancelled) {
-          setMode({ kind: "error", message: e instanceof Error ? e.message : String(e) });
+          setMode({
+            kind: "error",
+            message: failure instanceof Error ? failure.message : String(failure),
+          });
         }
+      } catch (recoveryFailure) {
+        // The recovery path itself broke. There is nothing left to try, so say
+        // so rather than leaving the skeleton up: `error` renders a heading, the
+        // message, and the way back to the lobby.
+        if (cancelled) return;
+        setMode({
+          kind: "error",
+          message:
+            recoveryFailure instanceof Error ? recoveryFailure.message : String(recoveryFailure),
+        });
       }
     };
 
@@ -274,7 +315,10 @@ export default function OnlineGamePage() {
               // Seat expired (game archived or gone) — fall back to watching.
               off();
               clearOnlineSeat(gameId);
-              spectate();
+              // Deliberately not awaited (nothing here can wait on it), which
+              // is only safe because spectate always resolves to a terminal
+              // mode rather than rejecting. Same at the two sites below.
+              void spectate();
               return;
             }
             if (attempt < MAX_RESUME_ATTEMPTS) {
@@ -285,7 +329,7 @@ export default function OnlineGamePage() {
               }, delay);
             } else {
               off();
-              spectate();
+              void spectate();
             }
           });
       };
@@ -306,7 +350,7 @@ export default function OnlineGamePage() {
       if (arenaSocketUrl() && (taggedArena || isArenaGameId(gameId))) {
         session.serverUrl = arenaSocketUrl();
       }
-      spectate(fetchReplay());
+      void spectate(fetchReplay());
     }
 
     return () => {

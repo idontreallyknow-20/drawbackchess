@@ -148,7 +148,7 @@ export function BuffDock({ game, myColor, canAct, onStartUse, hideOpponentCards,
     const newestIndex = owner === "mine" ? mine.length - 1 : -1;
     if (liveRows.length + deadRows.length === 0) {
       return (
-        <p className="text-[12px] text-parchment-400">
+        <p className="text-[13px] text-parchment-400">
           {owner === "mine" ? "None yet." : `No ${nounPlural} revealed yet.`}
         </p>
       );

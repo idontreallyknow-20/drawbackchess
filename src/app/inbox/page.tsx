@@ -82,7 +82,7 @@ export default function InboxPage() {
           <>
             <div className="mt-5">
               <PlayerSearch className="max-w-sm" />
-              <p className="mt-1.5 text-xs text-parchment-400">
+              <p className="mt-1.5 text-sm text-parchment-400">
                 Find a player and message them from their profile.
               </p>
             </div>

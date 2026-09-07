@@ -582,14 +582,30 @@ body {
   to { opacity: 1; }
 }
 
-/* --- Ornament rules → hairline dividers --- */
+/* --- Ornament rules → hairline dividers ---
+   The label between the hairlines is a SECTION LABEL, and section 3 of
+   design-system.md retires the tracked-out allcaps device for exactly this
+   job: "A section label is a plain bold heading at the body size, not an
+   uppercase tracked-out device", and hierarchy is "weight + size + color, in
+   that order. Never letter-spacing alone."
+
+   The transform was not only a design-system violation. Chrome applies
+   `text-transform` when it computes an ACCESSIBLE NAME, and the biggest
+   consumer of this class is the tier label on a buff / nerf card, which sits
+   inside the card's own control. So every draft card announced its severity in
+   caps -- measured on a live draft, the card button's accessible name read
+   "... Tier II , EASY . Starting after your opponent's next turn ..." -- and
+   allcaps is exactly what section 11 bans ("sentence case everywhere ...
+   allcaps survive only in the LIVE badge"). scripts/check-case.ts does scan
+   CSS, but globals.css was already on its baseline, so nothing failed.
+
+   The label carries its emphasis with weight now (600 against the 500 of the
+   rules it sits between), which is the ordering section 3 asks for. */
 .rule-ornament {
   display: flex;
   align-items: center;
   gap: 1.1rem;
   color: var(--paper-dim);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   font-size: 12px;
   font-weight: 500;
   font-family: var(--font-body), system-ui, sans-serif;
@@ -604,8 +620,7 @@ body {
 }
 .rule-ornament .font-display {
   font-family: var(--font-body), system-ui, sans-serif;
-  letter-spacing: 0.22em;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* --- Card / plate --- The ONE box style: a flat panel fill, a 1px hairline
@@ -625,6 +640,36 @@ body {
 :where(.plate) {
   position: relative;
   z-index: 2;
+}
+
+/* The stretched pick target on a card face (see BuffCard). The face is a plain
+   container and THIS is the control, filling it, so a card is one big hit area
+   without being a <button> wrapped around the glossary chips in its own rule
+   text. Everything on the face paints under it except those chips, which lift
+   themselves with a z-index (see GlossaryTerm) to keep their own hit area.
+
+   `inherit` on the radius and a NEGATIVE outline offset are both load-bearing:
+   the face is `overflow: hidden`, so the default outward 2px focus ring would
+   be clipped away on all four sides and a keyboard user would see nothing. */
+.card-pick-target {
+  position: absolute;
+  inset: 0;
+  /* One rung, so the `relative` blocks that follow it on the face (the header
+     row, the flavour line) cannot paint over it and swallow the pick. The
+     glossary chips sit on the same rung and come later in the DOM, so they
+     still win; the watermark and the preview medallion never contend because
+     both are pointer-events: none. */
+  z-index: 1;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.card-pick-target:focus-visible {
+  outline-offset: -3px;
 }
 
 /* The in-game command rail: the same box as everything else. */
@@ -740,6 +785,43 @@ html[data-light] {
 .tier-8 { color: var(--tier-ink-8); }
 .tier-9 { color: var(--tier-ink-9); }
 .tier-10 { color: var(--tier-ink-10); }
+
+/* --- Achievement rarity ink: the same ink/tint split, for the same reason ---
+   The four rarity colours are consumed as REACT INLINE STYLES (see
+   src/lib/achievementTheme.ts), so until they hung off a token no stylesheet
+   could reach them and paper was being painted with the dark theme's hexes.
+   Measured on the real `/achievements` chips, with the locked chip's own
+   `opacity: 0.7` composited in and at 12px (so the 4.5:1 body floor applies):
+
+     light   common 1.43  rare 1.64  epic 2.07  legendary 1.38   (25/28/29/20 elements)
+     dark    common 4.50  rare 3.68  epic 2.72  legendary 4.38
+     midnight common 4.65 rare 3.82  epic 2.80  legendary 4.50
+
+   A rarity's identity is its hue and its chroma (parchment, verdigris, violet,
+   gold); only OKLCH L is re-set per scheme, exactly as the tier ladder above
+   does it. Dark takes the smallest lift that clears the floor and midnight
+   inherits it (its grounds are kinder on all four). Light inverts: on paper
+   the ink gets heavier, and rare and legendary give up chroma because sRGB has
+   none to give at that lightness -- a teal that dark is a bottle green, a gold
+   that dark is an olive.
+
+   The 0.7 opacity on a LOCKED chip multiplies every failure and these values
+   are solved with it composited in, so the unlocked chips clear the floor by a
+   wider margin still. Replacing that opacity with a dimmer ink would be the
+   better fix, but the opacity is an inline style in
+   src/app/achievements/page.tsx and no stylesheet can reach it either. */
+:root {
+  --rarity-ink-common: #cbc6b9;    /* parchment / silver */
+  --rarity-ink-rare: #72d9c5;      /* verdigris */
+  --rarity-ink-epic: #d9b5ff;      /* violet */
+  --rarity-ink-legendary: #f4c864; /* gold */
+}
+html[data-light] {
+  --rarity-ink-common: #3b372c;
+  --rarity-ink-rare: #014037;
+  --rarity-ink-epic: #511d78;
+  --rarity-ink-legendary: #483400;
+}
 
 /* Each tier carries its color as an rgb triple too, so glass/glow layers on a
    card face can tint themselves by severity (a tier-8 reads hotter than a

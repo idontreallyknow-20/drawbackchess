@@ -1863,7 +1863,7 @@ export function DraftOverlay({
             no longer exists (the countdown moved inline into the header), so it
             lives here in the panel body where there is room for a sentence. */}
         {deadline == null && (
-          <p className="mt-1 text-[12px] leading-snug text-parchment-400">
+          <p className="mt-1 text-[13px] leading-snug text-parchment-400">
             Your timer starts when the cards are ready.
           </p>
         )}
@@ -2391,7 +2391,7 @@ export function DraftOverlay({
             between Confirm and Skip it squeezed the commit button to two
             words on two lines. */}
         {rerollHeldBack && (
-          <p className="mt-2 text-center text-[12px] leading-snug text-parchment-400">
+          <p className="mt-2 text-center text-[13px] leading-snug text-parchment-400">
             Your {rerollBadge === "1" ? "reroll is" : "rerolls are"} saved for later drafts. The
             opening pick cannot be rerolled.
           </p>

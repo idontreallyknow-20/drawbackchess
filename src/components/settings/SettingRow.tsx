@@ -28,7 +28,7 @@ export function SettingRow({
         {label}
       </span>
       {hint && (
-        <p className="mt-0.5 text-[12px] leading-snug text-parchment-400">{hint}</p>
+        <p className="mt-0.5 text-[13px] leading-snug text-parchment-400">{hint}</p>
       )}
     </div>
   );

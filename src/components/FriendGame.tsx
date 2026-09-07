@@ -525,7 +525,7 @@ export function FriendGameSetup({ showFriends = true }: { showFriends?: boolean 
                 }
               >
                 <span className="font-mono text-base leading-none tabular-nums">{t.label}</span>
-                <span className={"text-[12px] " + (on ? "opacity-90" : "text-parchment-400")}>{t.speed}</span>
+                <span className={"text-[13px] " + (on ? "opacity-90" : "text-parchment-400")}>{t.speed}</span>
               </Button>
             );
           })}

@@ -424,7 +424,7 @@ function CardOfTheDay() {
             </span>
             <span className="min-w-0">
               <span className="block truncate text-[15px] text-parchment-50">{card.name}</span>
-              <span className="block text-[12px] text-parchment-400">
+              <span className="block text-[13px] text-parchment-400">
                 {card.kind === "nerf" ? "Nerf" : "Buff"} · Tier {TIER_ROMAN[card.tier]}
               </span>
             </span>

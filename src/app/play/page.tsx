@@ -209,7 +209,7 @@ function PlayInner() {
               <Pill selected={botMode === "nerf"} onClick={() => selectMode("nerf")}>Nerf</Pill>
               <Pill selected={botMode === "plain"} onClick={() => setPlainBot(true)}>Plain chess</Pill>
             </Group>
-            <p className="mt-2 text-[12px] text-parchment-400">
+            <p className="mt-2 text-[13px] text-parchment-400">
               {botMode === "plain"
                 ? "Ordinary chess. No cards."
                 : botMode === "buff"

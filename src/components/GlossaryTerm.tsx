@@ -141,7 +141,15 @@ export function GlossaryTerm({ term, definition }: { term: string; definition: s
   return (
     <span
       ref={ref}
-      className="relative inline"
+      // z-[1] is what keeps this chip usable on a CARD FACE. A pickable card
+      // is no longer a <button> wrapped around its own rule text (that was
+      // nested interactive semantics, and the term's stopPropagation below
+      // meant a click on the rule text reached nothing at all). The card's
+      // control is now a stretched <button> painted over the whole face, so
+      // without a z-index every glossary chip would sit UNDER it and lose its
+      // hover, its long press and its click. One rung is enough: the target is
+      // positioned with z-index auto, so any positive value clears it.
+      className="relative z-[1] inline"
       // React's onBlur is focusout under the hood, so it bubbles here from the
       // trigger AND the popover link: close only when focus leaves the chip
       // entirely, so tabbing into "read more" never slams the popover shut.
@@ -187,7 +195,14 @@ export function GlossaryTerm({ term, definition }: { term: string; definition: s
           if (e.pointerType !== "mouse" && holdTimer.current) cancelHold();
         }}
         onClick={(e) => {
-          // A tap on the term must not click through to a parent card button.
+          // Reading a word must never ACTIVATE the surface under it. That is
+          // not squeamishness: a second click on an already-chosen draft card
+          // commits the draft, on the nerf pick it starts the game, and in the
+          // dock's targeting list it spends the card on that target. A term is
+          // a hint, so it swallows its own click and lets the surface decide
+          // separately what a click on its face means (the draft overlay picks
+          // on the capture phase, before this runs, which is why tapping the
+          // rule text still selects the card without ever committing it).
           e.stopPropagation();
           cancelHold();
           // The long press already opened it; swallow the trailing click.

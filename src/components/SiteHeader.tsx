@@ -548,7 +548,7 @@ export function SiteHeader({ active }: { active?: string }) {
                     header reads as signed-out, never as a registered account. */}
                 <span className="hidden min-w-0 items-center gap-1.5 sm:inline-flex">
                   {user.isGuest && (
-                    <span className="shrink-0 text-[12px] text-parchment-400">Guest</span>
+                    <span className="shrink-0 text-[13px] text-parchment-400">Guest</span>
                   )}
                   <span className={"truncate " + (user.isGuest ? "text-parchment-200" : "")}>
                     {user.username}

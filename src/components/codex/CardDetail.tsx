@@ -136,7 +136,7 @@ function PrevNextNav({
         <Link href={prev.path} className={cell}>
           <ChevronLeft size={16} aria-hidden className="shrink-0 text-parchment-400" />
           <span className="min-w-0">
-            <span className="block text-[12px] text-parchment-400">Previous {noun}</span>
+            <span className="block text-[13px] text-parchment-400">Previous {noun}</span>
             <span className="block truncate font-display text-[14px] text-parchment-100">{prev.name}</span>
           </span>
         </Link>
@@ -146,7 +146,7 @@ function PrevNextNav({
       {next ? (
         <Link href={next.path} className={cell + " justify-end text-right sm:col-start-2"}>
           <span className="min-w-0">
-            <span className="block text-[12px] text-parchment-400">Next {noun}</span>
+            <span className="block text-[13px] text-parchment-400">Next {noun}</span>
             <span className="block truncate font-display text-[14px] text-parchment-100">{next.name}</span>
           </span>
           <ChevronRight size={16} aria-hidden className="shrink-0 text-parchment-400" />
