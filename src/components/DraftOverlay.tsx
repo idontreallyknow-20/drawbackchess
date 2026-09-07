@@ -1468,21 +1468,26 @@ export function DraftOverlay({
               collapsed here rather than covering the board. Nothing was
               discarded: the cards, any selection, rerolls, and the bank
               option all carry over untouched. */}
+          {/* 13px: these three lines are sentences, and the worst of them
+              ("your game clock is running") is the one piece of news on this
+              panel the player must not miss. 12px on this face is for the
+              tokens beside it -- the "On your clock" tag in the header row,
+              the counters -- not for the explanation. */}
           <p
             className={
-              "text-[12px] font-semibold leading-snug " +
+              "text-[13px] font-semibold leading-snug " +
               (timed ? "text-oxblood-glow" : "text-parchment-200")
             }
           >
             {timed ? "Draft pending. Your game clock is running." : "Draft pending."}
           </p>
-          <p className="mt-0.5 text-[12px] leading-snug text-parchment-400">
+          <p className="mt-0.5 text-[13px] leading-snug text-parchment-400">
             {timed
               ? "Your draft moved here; further thinking costs your own time."
               : "No clock in this game; resolve it whenever you are ready."}
           </p>
           {takeBoth && (
-            <p className="mt-1 text-[12px] font-semibold leading-snug text-gold-leaf">
+            <p className="mt-1 text-[13px] font-semibold leading-snug text-gold-leaf">
               Picking any card takes the whole offer.
             </p>
           )}

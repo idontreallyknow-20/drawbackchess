@@ -1555,21 +1555,59 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
             )}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {nerfDraft.myOptions.map((n, i) => (
-                <button
+                // A plain frame, NOT a button: the card grows its own stretched
+                // pick target (see NerfCard). Wrapping the card in a button put
+                // the rule text's glossary chips -- span[role=button] -- inside
+                // a button, and their click handler stops propagation, so a
+                // click on a glossary word selected nothing at all here. This
+                // frame only carries the selection ring and the dimming, which
+                // is why it keeps the same box the button had.
+                <div
                   key={n.id}
-                  type="button"
-                  onClick={() => (nerfSelected === i ? startDraftGame(n) : setNerfSelected(i))}
                   className={
-                    "mx-auto block w-full max-w-md sm:max-w-none text-left transition-[box-shadow,opacity] duration-200 touch-manipulation" +
+                    // self-start: as a stretched grid item this frame used to
+                    // run the full height of the tallest card in the row, so
+                    // the selection ring was drawn around empty space below a
+                    // short card. That was invisible while the frame was also
+                    // the button; now that the target is the card face, a
+                    // stretched frame would leave a dead zone INSIDE the ring.
+                    // Hugging the card keeps ring and hit area the same box.
+                    "mx-auto block w-full max-w-md self-start text-left transition-[box-shadow,opacity] duration-200 sm:max-w-none" +
                     (nerfSelected === i
                       ? " ring-2 ring-gold"
                       : nerfSelected != null
                       ? " opacity-60"
                       : "")
                   }
+                  // The glossary dead zone, closed the same way the buff draft
+                  // closes it. A term in the rule text is its own control and
+                  // its click handler stops propagation on purpose (reading a
+                  // word must never activate the surface under it -- here that
+                  // would START THE GAME), so a click on one of the five or so
+                  // underlined words on a card reached nothing: no ring, no
+                  // Confirm. Taking the pick on the CAPTURE phase, before the
+                  // term swallows it, makes every word on the card select.
+                  // Select only, never confirm: the guard below means a term
+                  // click on the already-chosen card is still inert.
+                  onClickCapture={(e) => {
+                    if (nerfSelected === i) return;
+                    const t = e.target as HTMLElement | null;
+                    if (!t?.closest('[role="button"][aria-expanded]')) return;
+                    setNerfSelected(i);
+                  }}
                 >
-                  <NerfCard nerf={n} preview ownerLabel={nerfSelected === i ? "Selected" : "Pick this nerf"} />
-                </button>
+                  <NerfCard
+                    nerf={n}
+                    preview
+                    ownerLabel={nerfSelected === i ? "Selected" : "Pick this nerf"}
+                    // First click selects, a second click on the selected card
+                    // starts the game -- the behaviour the wrapper had.
+                    onClick={() => (nerfSelected === i ? startDraftGame(n) : setNerfSelected(i))}
+                    // The gold ring is the sighted signal; aria-pressed is the
+                    // same fact for everyone else.
+                    selected={nerfSelected === i}
+                  />
+                </div>
               ))}
             </div>
             {nerfSelected != null && (
@@ -2445,8 +2483,16 @@ function GamePage({ onRematch }: { onRematch: () => void }) {
 
       {/* Board spectacles still playing when the draft arrived: a small
           status chip says so while the overlay waits its turn. The machine
-          caps this hold, so a stuck animation can never block the draft. */}
-      {myOffer && !game.result && !draftSeq.overlayVisible && <DraftResolvingChip />}
+          caps this hold, so a stuck animation can never block the draft.
+          sigBusy is in the condition because the chip claims something
+          specific -- "Resolving effects" -- and it used to appear whenever the
+          overlay was merely not up yet. At game start nothing is resolving
+          (sigBusy is false from the first frame), yet the chip still flashed
+          in the same frame as the board and vanished as the dialog mounted,
+          every run: a status line that was never true. Now it appears only
+          while the signature queue actually is busy, which is the one case it
+          describes. */}
+      {myOffer && !game.result && !draftSeq.overlayVisible && sigBusy && <DraftResolvingChip />}
       {myOffer && !game.result && draftSeq.overlayVisible && (
         <DraftOverlay
           offer={myOffer}

@@ -2268,3 +2268,63 @@ exemptions now disclosed, none of them scrolling rails.
 Stated plainly because it invalidates a number already written down: the
 round-9 sitewide `type-floor-13` counts (35 distinct, 1914 raw) are inflated by
 that second defect and have to be re-measured before anyone uses them.
+
+## 2026-09-07 13:16 EDT (round 10 continued: the nerf draft's dead words, card body copy at 13px)
+
+**C50. Clicking a glossary word on the nerf draft selected nothing**, and that
+was measured live before it was fixed: `src/app/game/page.tsx` wrapped
+`NerfCard` in its own `<button>`, so the card's rule-text terms
+(`span[role="button"]`) sat inside a button and their handler's
+`stopPropagation` swallowed the click. The buff draft has a capture-phase pick
+that works around this; the nerf draft had nothing. Fixed the C47 way: the card
+grows its own stretched `.card-pick-target` with `aria-labelledby` back at the
+face, and the external button is gone. The target is opt-in through a new
+`onClick` prop, so the codex and `OnlineMatch` are untouched rather than
+double-wrapped.
+
+The port needed one thing BuffCard did not. `.nerf-enter__line` animates a
+transform, which makes a stacking context, so the glossary chips could not
+escape it and the pick target painted over them: `elementFromPoint` over a term
+returned `.card-pick-target`, the definition popover never opened, and **a
+second click on a word started the game**, which is the exact hazard
+`GlossaryTerm`'s handler exists to prevent. That one line is now
+`relative z-[2] pointer-events-none` with `[&_span]:pointer-events-auto`, gated
+on pickable, so the prose is click-through to the target and the chips keep
+their own hit area.
+
+Verified on a re-run rather than from the handoff: nested
+`button button, button [role=button]` **0**, two pick targets at 285x290 and
+285x216, clicking the word "capture" takes `aria-pressed` false to true AND
+opens the definition AND surfaces Confirm, and a second click on that same word
+leaves you on the draft with no board. The same nested shape in
+`src/components/dock/targeting.tsx` went 2 to 0; there a term click opens the
+definition and deliberately does NOT pick, because a pick in that modal spends
+the card on that target immediately.
+
+**C52. Card body copy at 13px**: BuffCard's Tip / Note / Exclusive / flavour,
+NerfCard's Tip, NerfCard's dense codex flavour (12 to 13, to match the in-game
+13), and DraftOverlay's three "Draft pending" lines. The chips, the tier word,
+the owner label and the Progress readout stay at 12px, which is what the rule
+means by labels.
+
+The cost is real and was measured rather than waved past: **228 of 1829 buffs
+with flavour text, 12.5%, gain exactly one line** at a 268px card column, all
+1 to 2, and at 360x780 the draft overlay's scroll distance grows 328 to 353px.
+Nothing clips. A same-render A/B that forced the raised lines back to 12px left
+`scrollHeight - clientHeight` at its constant 10 to 11px watermark overhang in
+every cell, at 360 and 1440, dark and light.
+
+**C53.** The "Resolving effects" chip is now gated on `sigBusy`. Worth saying
+plainly: on today's code this is not a visible change, because C49 landed first
+and the chip already never appears at game start (3 of 3 runs, `?perf=1` shows
+`busy=0` on every opening `render:draft`). It is a correctness guard that makes
+the chip's claim true by construction.
+
+Two follow-ups fall out of this, now C56 and C57 in the backlog.
+`OnlineMatch.tsx` carries both of the defects just fixed (the nested nerf-card
+button at ~2399, the ungated chip at ~3680) and was outside the agent's file
+list; both fixes are mechanical now, but Durable Objects do not run under
+`next dev` so that surface cannot be driven end to end here. And BuffCard's
+COMPACT rule text is still 12px and sentence-shaped: raising it moves the dock,
+`MobileBuffDrawer` and the minimized draft panel at once, and C52's own numbers
+say a narrower column will wrap worse, so it wants its own round.

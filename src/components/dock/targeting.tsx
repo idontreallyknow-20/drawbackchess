@@ -266,22 +266,35 @@ export function EnemyBuffModal({
           <div className="mt-3 space-y-2">
             {target.options.map((opt) => {
               const def = BUFF_BY_ID[opt.name];
-              return (
+              // A known card carries its OWN stretched pick target (BuffCard's
+              // .card-pick-target). It used to be wrapped in this list's
+              // button instead, which put the rule text's glossary chips --
+              // span[role=button], whose click handler stops propagation so
+              // reading a word never presses the surface under it -- inside a
+              // button. Measured: a click on a glossary term in an option card
+              // reached nothing, so the target pick was simply swallowed and
+              // the modal sat there. A masked option has no card and no rule
+              // text, so it keeps its plain button.
+              return def ? (
+                <BuffCard
+                  key={opt.index}
+                  buff={def}
+                  tier={opt.tier as 1}
+                  compact
+                  onClick={() => onPick({ buffIndex: opt.index })}
+                />
+              ) : (
                 <button
                   key={opt.index}
                   onClick={() => onPick({ buffIndex: opt.index })}
                   className="block w-full text-left"
                 >
-                  {def ? (
-                    <BuffCard buff={def} tier={opt.tier as 1} compact />
-                  ) : (
-                    <span className="flex items-center justify-between border border-[color:var(--edge)] bg-white/[0.03] px-3 py-2 text-sm text-parchment">
-                      Hidden buff
-                      <span className="font-display text-xs text-parchment-400">
-                        Tier {TIER_ROMAN[opt.tier as Tier]}
-                      </span>
+                  <span className="flex items-center justify-between border border-[color:var(--edge)] bg-white/[0.03] px-3 py-2 text-sm text-parchment">
+                    Hidden buff
+                    <span className="font-display text-xs text-parchment-400">
+                      Tier {TIER_ROMAN[opt.tier as Tier]}
                     </span>
-                  )}
+                  </span>
                 </button>
               );
             })}

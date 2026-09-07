@@ -252,8 +252,13 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           below the rule text in the same quiet register as the footnotes. Full
           cards only: a dock row or a compact pick shows the rule and nothing
           else. */}
+      {/* 13px, not 12: this is real sentences, and the project rule is that a
+          12px face is for bare tokens (the Movement / Item chips, the tier
+          word in the ornament), never for body copy someone has to read while
+          deciding. Same size as the rule text above it; the colour, not the
+          size, is what keeps advice quieter than rules. */}
       {!compact && buff.tip && (
-        <p className="mt-2 text-[12px] leading-snug text-parchment-400">
+        <p className="mt-2 text-[13px] leading-snug text-parchment-400">
           <span className="text-parchment-300">Tip</span>{" "}
           <GlossaryText text={buff.tip} />
         </p>
@@ -265,7 +270,7 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           not from a rejected move. Keyed off the description so future shield
           cards inherit the note with zero per-card work. */}
       {!compact && /uncapturable|cannot be captured|can't be captured|shield|sanctuary|warded/i.test(buff.description) && (
-        <p className="mt-2 text-[12px] leading-snug text-parchment-400">
+        <p className="mt-2 text-[13px] leading-snug text-parchment-400">
           Note: a piece that cannot be captured may not capture the king while its
           protection lasts. You must expose a piece to win.
         </p>
@@ -274,15 +279,18 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           card from these families while you hold another unspent one, and the
           rule must be readable on the card face, never silent. */}
       {!compact && (COMBO_TAGS[buff.id]?.length ?? 0) > 0 && (
-        <p className="mt-2 text-[12px] leading-snug text-parchment-400">
+        <p className="mt-2 text-[13px] leading-snug text-parchment-400">
           Exclusive: {COMBO_TAGS[buff.id]!.map((t) => COMBO_TAG_LABELS[t] ?? t).join(", ")}. While
           you hold this unspent, no other card of the same family is offered to you.
         </p>
       )}
       {/* Flavor line: the card's voice, quoted and dim, TCG-style. Full cards
           only; dock rows and compact picks stay all-business. */}
+      {/* The card's voice: a whole sentence, so it rides at 13px with the rest
+          of the prose on the face. Italic and dim is what marks it as flavour;
+          shrinking it below body size only made it hard to read. */}
       {!compact && buff.flavor && (
-        <p className="relative mt-2 text-[12px] italic leading-snug text-parchment-400">
+        <p className="relative mt-2 text-[13px] italic leading-snug text-parchment-400">
           &ldquo;{buff.flavor}&rdquo;
         </p>
       )}
