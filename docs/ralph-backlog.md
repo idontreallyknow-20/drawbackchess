@@ -299,10 +299,11 @@ whether the search is wrong; grant size decides by how much; neither should
 predict anything alone. Measured (both variables read out of the engine, not
 parsed from card text):
 
-| | slope, points per granted move | sigma | n | r2 |
-|---|---|---|---|---|
-| grant outlives its turn (2+) | **-1.20 +-0.34** | **3.5** | 26 | 0.33 |
-| grant spent on its turn (1) | -0.05 +-0.09 | 0.5 | 18 | 0.02 |
+| | slope, points per granted move | sigma | n | r2 | mean residual |
+|---|---|---|---|---|---|
+| expires in 2 to 4 turns | **-1.26 +-0.28** | **4.5** | 20 | 0.53 | -6.1pt |
+| never expired in the probe | -0.38 +-1.04 | 0.4 | 6 | 0.03 | **+10.1pt** |
+| spent on the turn it fires | -0.05 +-0.09 | 0.5 | 18 | 0.02 | -1.2pt |
 
 Main effects, for contrast: duration alone **0.3 sigma**, grant size alone
 **1.2 sigma**. The signal lives entirely in the interaction, which is the shape
@@ -310,9 +311,24 @@ A6 predicts and a far harder pattern to produce by chance than either half. The
 grant>=12 threshold that peaks and decays is this same interaction seen through
 the wrong variable.
 
-Scale check: `amazon_army` grants 17 moves and lasts three turns, so 1.2 x 17 is
-about **20 points against a measured -25**. The defect accounts for most of that
+The permanent row is the third leg and it sharpens rather than muddies the
+story. A permanent grant has no expiry for the search to miss, and its holder
+gets a buffed root on **every** move of the game instead of two or three, so
+the search's wrongness never has to be cashed into a plan. **The penalty is
+worst exactly where a card demands a multi-turn plan**, which is the one thing a
+search that forgets the buff after one ply cannot build. (This three-way split
+was found by noticing that `berolina_pawns` and `twin_knights` both measure +25
+with big permanent grants, which the two-way version could not explain.)
+
+Scale check: `amazon_army` grants 17 moves and lasts three turns, so 1.26 x 17 is
+about **21 points against a measured -25**. The defect accounts for most of that
 card, and for the family behind it.
+
+Held by `scripts/test-balance-pass-2026-09.ts` section 1c: a tier FLOOR for all
+26 cards, so a later blanket wave cannot cut one on numbers that look damning
+and are not. The asymmetry is deliberate: the bias only pushes measurements
+down, so a card here that still measures well may be raised freely. Retire that
+block when A13 lands. Verified to fail when a floor is moved by one rung.
 
 One measurement trap worth recording, because it inverted the answer on the
 first attempt: probing duration by playing *quiet* moves reports a "once" card

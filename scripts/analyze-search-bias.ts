@@ -44,7 +44,19 @@
 // So the defect predicts an INTERACTION, not a main effect: duration decides
 // WHETHER the search is wrong, grant size decides BY HOW MUCH, and neither
 // should predict anything on its own. That is a much harder pattern to produce
-// by chance than either half, and it is what the data shows.
+// by chance than either half, and it is what the data shows:
+//
+//   expires in 2 to 4 turns   -1.26 +-0.28pt per granted move   4.5 sigma  n=20
+//   never expired in probe    -0.38 +-1.04                      0.4 sigma  n= 6
+//   spent on its own turn     -0.05 +-0.09                      0.5 sigma  n=18
+//
+// The permanent group is the third leg and it sharpens rather than muddies the
+// story. It has no expiry for the search to miss, and its holder gets a buffed
+// root on every move of the game instead of two or three, so the search's
+// wrongness never has to be cashed into a plan. Mean residual +10.1pt against
+// -6.1pt for the timed cards. The penalty is worst exactly where a card demands
+// a multi-turn PLAN, which is the one thing a search that forgets the buff
+// after one ply cannot build.
 //
 // Both variables are measured from the engine rather than parsed from card
 // text. The grant is `legalMoves` filtered to moves tagged with the card.
@@ -100,6 +112,9 @@ function build(cardId: string | null) {
  *  White cares about, so the probe below is measuring the card and not a
  *  developing black position. */
 const BLACK_QUIET = ["a7a6", "h7h6", "b7b6", "g7g6"];
+/** How many of White's turns the probe can reach. A card still granting on the
+ *  last one is reported as PROBE_TURNS + 1 and has not been shown to expire. */
+const PROBE_TURNS = BLACK_QUIET.length;
 
 /**
  * How many moves this card puts on the board that `generateMoves` does not
@@ -379,54 +394,76 @@ console.log(
 // MUCH. Fit the same slope in both halves: it should appear among the lasting
 // cards and be absent among the one-shots, which is a far harder pattern to
 // produce by chance than either half alone.
-const lastRows = rows.filter((r) => r.persists >= 2);
+// `persists` is capped by the probe, so a card reading PROBE_TURNS is one that
+// never expired within reach rather than one that expires exactly then. That
+// makes three groups, not two, and the third is the one that sharpens the
+// story: a permanent grant has no expiry for the search to miss, and its holder
+// gets a buffed root on every move of the game rather than two or three.
+const timedRows = rows.filter((r) => r.persists >= 2 && r.persists < PROBE_TURNS + 1);
+const permRows = rows.filter((r) => r.persists >= PROBE_TURNS + 1);
 const shotRows = rows.filter((r) => r.persists <= 1);
+
 console.log("\n  the interaction, which is what the defect actually predicts:");
-for (const [label, set] of [
-  ["lasting (2+ turns), search is wrong about these", lastRows],
-  ["one-shot (1 turn), search cannot be wrong about these", shotRows],
-] as [string, Row[]][]) {
+const fits = new Map<string, ReturnType<typeof fit>>();
+for (const [key, label, set] of [
+  ["timed", `expires in 2 to ${PROBE_TURNS} turns: the search misses the grant AND the expiry`, timedRows],
+  ["perm", "never expired in the probe: no expiry to miss, and a buffed root every move", permRows],
+  ["shot", "spent on the turn it fires: nothing left for the search to be wrong about", shotRows],
+] as [string, string, Row[]][]) {
   if (set.length < 5) {
-    console.log(`    ${label}: n=${set.length}, too few to fit`);
+    console.log(`    ${label}\n      n=${set.length}, too few to fit`);
     continue;
   }
   const fl = fit(set.map((r) => ({ x: r.grant, y: r.residual })));
+  fits.set(key, fl);
   const s = fl.seB > 0 ? Math.abs(fl.b / fl.seB) : 0;
   console.log(
     `    ${label}\n      slope ${fl.b.toFixed(2)} +-${fl.seB.toFixed(2)}pt per granted move ` +
-      `(${s.toFixed(1)} sigma, n=${fl.n}, r2 ${fl.r2.toFixed(2)})`,
+      `(${s.toFixed(1)} sigma, n=${fl.n}, r2 ${fl.r2.toFixed(2)}), ` +
+      `mean residual ${mean(set.map((r) => r.residual)).toFixed(1)}pt`,
   );
 }
 
-const fLast = lastRows.length >= 5 ? fit(lastRows.map((r) => ({ x: r.grant, y: r.residual }))) : null;
-const fShot = shotRows.length >= 5 ? fit(shotRows.map((r) => ({ x: r.grant, y: r.residual }))) : null;
-const sLast = fLast && fLast.seB > 0 ? Math.abs(fLast.b / fLast.seB) : 0;
-const sShot = fShot && fShot.seB > 0 ? Math.abs(fShot.b / fShot.seB) : 0;
-const perMove = fLast ? Math.abs(fLast.b) : 0;
+const fTimed = fits.get("timed") ?? null;
+const fShot = fits.get("shot") ?? null;
+const sig = (f: ReturnType<typeof fit> | null) => (f && f.seB > 0 ? Math.abs(f.b / f.seB) : 0);
+const sTimed = sig(fTimed);
+const sShot = sig(fShot);
+const sPerm = sig(fits.get("perm") ?? null);
+const perMove = fTimed ? Math.abs(fTimed.b) : 0;
 
-if (fLast && sLast >= 2 && fLast.b < 0 && sShot < 2) {
+if (fTimed && sTimed >= 2 && fTimed.b < 0 && sShot < 2) {
   console.log(
     "\n  READS AS: the defect leaves the fingerprint it should, and only where it should.\n" +
-      "  Among cards whose grant outlives the turn it was played on, every extra move the\n" +
-      `  search cannot see costs ${perMove.toFixed(1)} win-rate points (${sLast.toFixed(1)} sigma, n=${fLast.n}). ` +
-      "Among cards spent\n  on the turn they fire, the same slope is flat " +
-      `(${sShot.toFixed(1)} sigma, n=${fShot!.n}) -- and it has to be, because a\n` +
-      "  card that is gone by the next ply gives the search nothing to be wrong about.\n" +
+      "  Among cards that last a few turns and then expire, every extra move the search\n" +
+      `  cannot see costs ${perMove.toFixed(1)} win-rate points (${sTimed.toFixed(1)} sigma, n=${fTimed.n}, r2 ${fTimed.r2.toFixed(2)}). ` +
+      "Among cards spent on\n  the turn they fire, the same slope is flat " +
+      `(${sShot.toFixed(1)} sigma) -- and it has to be, because a card\n` +
+      "  gone by the next ply gives the search nothing to be wrong about.\n" +
       "\n" +
-      "  Neither half of that split predicts anything alone: duration on its own is " +
-      `${sigmaP.toFixed(1)}\n  sigma and grant size on its own is ${sigmaSlope.toFixed(1)} sigma. ` +
-      "The signal is in their interaction,\n  which is the shape A6 predicts and a much harder one to produce by chance than\n" +
-      "  either main effect. The grant>=12 threshold above, which peaks and then decays,\n" +
-      "  is that interaction seen through the wrong variable.\n" +
+      "  Neither variable predicts anything alone: duration on its own is " +
+      `${sigmaP.toFixed(1)} sigma, grant\n  size on its own is ${sigmaSlope.toFixed(1)} sigma. ` +
+      "The signal is in their interaction, which is the\n  shape A6 predicts and much harder to produce by chance than either main effect.\n" +
+      "  The grant>=12 threshold above, which peaks and then decays, is this same\n" +
+      "  interaction seen through the wrong variable.\n" +
       "\n" +
-      `  Scale: amazon_army grants 17 moves and lasts three turns, so ${perMove.toFixed(1)} x 17 is about\n` +
-      `  ${(perMove * 17).toFixed(0)} points against a measured -25. The defect accounts for most of that card\n` +
-      "  and for the family behind it. Do not retier anything here on win rate until A13\n" +
-      "  lands and the family is re-measured.",
+      "  The permanent grants are the third leg and they carry the mechanism further: no\n" +
+      `  expiry for the search to miss, a buffed root on every move of the game rather\n` +
+      `  than two or three, and a mean residual of ${mean(permRows.map((r) => r.residual)).toFixed(1)}pt against ` +
+      `${mean(timedRows.map((r) => r.residual)).toFixed(1)}pt for the timed ones.\n` +
+      "  So the penalty is worst exactly where a card demands a multi-turn PLAN, which is\n" +
+      "  the thing a search that forgets the buff after one ply cannot build.\n" +
+      "\n" +
+      `  Scale: amazon_army grants 17 moves over three turns, so ${perMove.toFixed(1)} x 17 is about\n` +
+      `  ${(perMove * 17).toFixed(0)} points against a measured -25. The defect accounts for most of that card.\n` +
+      "\n" +
+      "  Consequence, and note the asymmetry: no move-granting card may be retiered DOWN\n" +
+      "  on win-rate evidence until A13 lands. Retiering one UP is safe, because the bias\n" +
+      "  only pushes measurements down, so a card measuring high measures high despite it.",
   );
-} else if (fLast && sLast >= 2 && fLast.b < 0) {
+} else if (fTimed && sTimed >= 2 && fTimed.b < 0) {
   console.log(
-    `\n  READS AS: the slope is there among lasting cards (${sLast.toFixed(1)} sigma) but it is ALSO\n` +
+    `\n  READS AS: the slope is there among timed cards (${sTimed.toFixed(1)} sigma) but it is ALSO\n` +
       `  present among one-shots (${sShot.toFixed(1)} sigma), where the defect cannot reach. Something\n` +
       "  other than search blindness is making large move grants measure badly. Find it\n" +
       "  before citing this as evidence for A13.",
@@ -434,9 +471,9 @@ if (fLast && sLast >= 2 && fLast.b < 0 && sShot < 2) {
 } else {
   console.log(
     "\n  READS AS: the interaction the defect predicts is not resolvable in this sample\n" +
-      `  (lasting ${sLast.toFixed(1)} sigma, one-shot ${sShot.toFixed(1)} sigma). A6 is established from the code\n` +
-      "  either way; this says the win-rate data cannot see it, not that it is absent.\n" +
-      "  Per-card error bars run about 12 points.",
+      `  (timed ${sTimed.toFixed(1)} sigma, permanent ${sPerm.toFixed(1)} sigma, one-shot ${sShot.toFixed(1)} sigma). A6 is\n` +
+      "  established from the code either way; this says the win-rate data cannot see it,\n" +
+      "  not that it is absent. Per-card error bars run about 12 points.",
   );
 }
 
@@ -483,8 +520,9 @@ if (WRITE_JSON) {
           belowTierMean: negs,
         },
         interaction: {
-          lasting: fLast && { slope: fLast.b, se: fLast.seB, sigma: sLast, r2: fLast.r2, n: fLast.n },
+          timed: fTimed && { slope: fTimed.b, se: fTimed.seB, sigma: sTimed, r2: fTimed.r2, n: fTimed.n },
           oneShot: fShot && { slope: fShot.b, se: fShot.seB, sigma: sShot, r2: fShot.r2, n: fShot.n },
+          permanent: fits.get("perm") && { slope: fits.get("perm")!.b, se: fits.get("perm")!.seB, sigma: sPerm, n: fits.get("perm")!.n },
           durationMainEffect: { diff: diffP, se: seP, sigma: sigmaP },
         },
         rows: rows.map((r) => ({

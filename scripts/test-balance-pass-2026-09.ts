@@ -251,6 +251,87 @@ check(
 );
 check(tier("bn4_care_package") >= tier("bn4_militia_call"), "a random minor is not cheaper than a plain pawn");
 
+// --- 1c. The move-grant quarantine --------------------------------------------
+//
+// The bot's search cannot see buff-granted moves below the root. `negamax` and
+// `quiesce` take a bare `BoardState` and call `generateMoves`; only
+// `pickAIMove`'s root calls `legalMoves`, which is the only place
+// `def.augmentMoves` runs. So the bot plays a move that exists ONLY because of
+// a card and then evaluates every follow-up as if it did not hold the card.
+// `npm run test:search-buffs` pins that defect; backlog A13 is the fix.
+//
+// The consequence for THIS file is a measurement one. `scripts/sim-card-winrate.ts`
+// measures a card by having that same bot play it, so every move-granting card
+// is measured against a search that is wrong about it. The bias is real and it
+// has a size: among cards that last a few turns and then expire, each granted
+// move the search cannot see costs 1.26 +-0.28 win-rate points (4.5 sigma,
+// n=20, r2 0.53), while the same slope is flat for cards spent on the turn
+// they fire (0.5 sigma) and for permanent grants (0.4 sigma), which is exactly
+// where the defect predicts nothing. See `npm run analyze:search-bias`.
+//
+// `amazon_army` grants 17 moves over three turns, so about 21 of its measured
+// -25 points are the instrument rather than the card.
+//
+// So these cards' win rates are not evidence for cutting their tier, and this
+// table stops a later blanket wave from doing it anyway on numbers that look
+// damning and are not. It is a FLOOR, and the asymmetry is deliberate: the bias
+// only pushes measurements DOWN, so a card here that still measures well
+// measures well despite it and may be raised freely.
+//
+// RETIRE THIS BLOCK when A13 lands and the family is re-measured. It is a
+// quarantine, not a design statement: nothing here is claimed to be correctly
+// priced, only to be un-measurable at present.
+
+/** Tier at the time of the round-7 finding, for every move-granting card whose
+ *  grant outlives the turn it was played on and which has a win-rate row. */
+const MOVE_GRANT_FLOORS: Record<string, number> = {
+  bn4_stormcrossing: 6, // 26 moves x 3 turns, measured -8.3
+  bn4_dancing_master: 6, // 17 x 2, measured -12.5
+  amazon_army: 7, // 17 x 3, measured -25.0
+  triple_amazon: 7, // 16 x 2, measured -5.0
+  onslaught: 6, // 13 x 3, measured -4.2
+  rgb_keyboard: 6, // 13 x permanent, measured 0.0
+  berolina_pawns: 4, // 10 x permanent, measured +25.0
+  bn4_court_procession: 5, // 10 x 3, measured -4.2
+  half_step: 1, // 9 x 2, measured -5.0
+  overclock: 3, // 9 x 3, measured -5.0
+  twin_knights: 4, // 8 x permanent, measured +25.0
+  chimpanzini_bananini: 5, // 8 x permanent, measured +20.8
+  spring_pawn: 2, // 5 x 2, measured 0.0
+  wa_camel_rider: 2, // 5 x 2, measured -4.2
+  bn4_pathfinders: 3, // 4 x 3, measured -12.5
+  bishop_polish: 1, // 3 x 2, measured +15.0
+  little_leap: 1, // 2 x 2, measured 0.0
+  vault: 1, // 2 x 2, measured +5.0
+  ov_gravity_flip: 2, // 2 x 2, measured 0.0
+  ghost_legion: 5, // 2 x 2, measured 0.0
+  ferz_king: 1, // 1 x 2, measured +15.0
+  sentinel_pawn: 1, // 1 x 2, measured +10.0
+  bn4_crowned_strider: 2, // 1 x 4, measured 0.0
+  royal_decree: 4, // 1 x 2, measured 0.0
+  royal_ascension: 6, // 1 x permanent, measured +15.0
+  eternal_reign: 8, // 1 x permanent, measured +25.0
+};
+
+{
+  const cut: string[] = [];
+  const gone: string[] = [];
+  for (const [id, floor] of Object.entries(MOVE_GRANT_FLOORS)) {
+    const t = tier(id);
+    if (t < 0) gone.push(id);
+    else if (t < floor) cut.push(`${id} ${floor} -> ${t}`);
+  }
+  check(
+    gone.length === 0,
+    `every quarantined move-grant card still exists${gone.length ? ` (missing: ${gone.join(", ")})` : ""}`,
+  );
+  check(
+    cut.length === 0,
+    "no move-granting card was retiered DOWN while the search cannot see it" +
+      (cut.length ? ` (${cut.join(", ")}). Raise it back, or land A13 and re-measure first.` : ""),
+  );
+}
+
 // --- 2. warp_home is a free action -------------------------------------------
 
 {
