@@ -866,3 +866,106 @@ Errors:
 
 Verified with npx tsc --noEmit, npm run lint, and the emdash, rounded, and
 buttons guards.
+
+---
+
+## 2026-09-07 05:50 EDT
+
+Continuous improvement run, PR #488 (OPEN), branch
+`claude/ralph-loop-optimization-nl2902`. One commit per round; the standing
+work list lives in `docs/ralph-backlog.md`.
+
+Balance, the material ladder:
+- The tier ladder was sublinear in material: a card handing you three points
+  sat at tier 3, the third draft anyone sees, while a card handing you nine
+  sat at tier 6. Nothing had caught it because no invariant anywhere covered
+  spawn or revival material.
+- `scripts/material-model.ts` scores every active card for effective material
+  and charges a floor of half a tier per point, anchored on the two floors the
+  2026-09 pass already pinned (extra piece-class tier 4, amazon-class tier 7)
+  rather than fitted to the sim. The measurement can establish a direction and
+  a lower bound but not a rate: its buckets hold 8 to 14 cards against a median
+  error bar of 12.2 points. The script says so, and prints the fit that looks
+  authoritative (a queen at tier 43) with a do-not-use beside it.
+- 18 cards moved up. Ten of the 28 reported violations were parser bugs rather
+  than library errors, including the worst one: `apotheosis` scored 8.55
+  because "it leaves the board for a higher plane" sat past a colon, so the
+  minor it spends was never subtracted. Corrected, it does not move.
+- Pinned as section 1b of `scripts/test-balance-pass-2026-09.ts`: the ladder as
+  data plus a monotone function, tied to the existing pins, 37 hand-checked
+  cards, and ten ordering assertions stated without reference to any number so
+  they still bind if every measurement turns out wrong.
+- Recorded, not fixed: the pocket multiplier has the wrong sign. `legalMoves`
+  appends drops AFTER every nerf and effect filter, onto any empty square, and
+  counts them in `resolveNoMoves`, so a pocketed piece is strictly stronger
+  than the same piece on the board and the model charges 0.95 for it. That is
+  why `bn4_care_package` measures +41.7 at tier 3 while the model insists tier
+  3 is right. Backlog A8; it moves a whole family and wants its own round.
+
+Sound:
+- `tone()` never applied `getVolume()` while `knock()` did, so every tonal
+  voice in the app (check, game start and end, clock warnings, errors, every
+  card chime and passive cue) ignored the volume slider outright. At volume 0.2
+  a check rang at five times the move click beside it.
+- Set spread falls from 17.3x to 6.8x on peak and 13.9x to 5.4x on RMS,
+  measured with an offline WebAudio shim rather than by ear. New cues for
+  castling, promotion, premove set and fired, illegal input, draw offers and
+  outcome-aware endings, all wired to their events and verified firing by
+  instrumenting AudioContext and matching frequency signatures.
+
+Accessibility:
+- The board is now playable from the keyboard. Squares carried
+  `role="gridcell"` with no `role="grid"` parent, so the roles were orphaned
+  and invalid, and there was no tabIndex and no keydown: not one move could be
+  made without a pointer. Now a real grid with roving tabindex, a live region
+  that names card state per square, a flip control with `f`, and a `?` sheet
+  rendered from the keymap table so bindings and documentation cannot drift.
+- Modal dialogs trap focus, which `aria-modal="true"` had been promising at
+  nine dialogs without delivering. Restoring focus needed a recent-focus
+  history rather than the obvious remembered element: the settings panel's
+  opener is unmounted in the same React commit that opens the panel.
+- Every rem-based touch target was 12.5 percent short. `html` is 14px and
+  `tailwind.config.ts` never overrides `spacing`, so `h-11` is 38.5px. 24 call
+  sites converted to literal pixels, matching the 85 already using
+  `min-h-[44px]`.
+- Eight routes rendered no `h1`. `/game` lost its heading the moment a game
+  started, because the only one on the route is in the pre-game draft branch.
+
+Design system:
+- `--bg-raised` shipped a step lighter than section 1 documents, which by
+  itself moved muted text from 4.57:1 to 3.94:1 on every menu, modal and
+  hovered row. Light had the rungs out of order: raised was darker than the
+  page it rises from. Both restored, `--bg-hover` documented for the first
+  time, and the ladder now carries its measured contrast.
+- Sentence case restored in the main nav and the quick-settings section heads,
+  the last survivors of the letterspaced device section 3 retired sitewide.
+  `.allcaps` deleted (zero call sites, and an unused retired utility is how a
+  retired pattern returns). Guarded by `scripts/check-case.ts` with a
+  shrink-only baseline, which immediately found a file the manual sweep missed.
+- 301 sub-12px text sites fixed, 244 of them at once: `text-xs` resolved to
+  10.5px because the root is 14px. `parchment-500` raised to clear AA in all
+  three palettes; alpha-dimmed text retired, since the light theme's overrides
+  never matched the alpha variants and those sites measured as low as 1.34:1.
+
+Clocks:
+- Urgency now scales with the time control (one eighth of the initial time,
+  clamped 10 to 60 seconds, as lila does it) instead of a fixed 30 and 10
+  seconds. In a 1+0 game 30 seconds is half the clock, so the warning was on
+  for most of the game and meant nothing.
+- The separator blinks while a clock is charging. It matters more here than on
+  Lichess because this clock genuinely stops: a draft charges it and the
+  first-move grace shields it.
+
+Coverage:
+- `e2e/sweep.spec.ts`: 48 routes, six widths, three themes, 828 cells, 13.5
+  minutes. Infrastructure failures are excluded by construction, so an
+  OOM-killed dev server cannot enter the backlog as a product defect.
+- `docs/lichess-parity-2026-09.md`: a behaviour study read out of lila and
+  chessground source, since lichess.org is blocked by the sandbox proxy. The
+  useful half is what it says not to build.
+
+Needs an owner decision (backlog C32): the whole spacing scale is 87.5 percent
+of the px values the design system speaks in, because the root is 14px and
+Tailwind's rem scale is never overridden. `p-4` is 14px where section 4 says
+16. Correcting it centrally makes the app roughly 14 percent roomier, and
+density is valued here on purpose.
