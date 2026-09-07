@@ -37,6 +37,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/play", 0.9, "monthly"),
     entry("/lobby", 0.9, "monthly"),
     entry("/codex", 0.9, "weekly"),
+    // The daily puzzle changes every day and needs no account, so it is the
+    // strongest recurring-crawl target on the site after the lobby. Individual
+    // /puzzles/[id] pages are not listed: the corpus is regenerated in batches
+    // and those ids do not survive a regeneration.
+    entry("/puzzles", 0.9, "daily"),
     entry("/updates", 0.7, "weekly"),
     entry("/tutorial", 0.8, "monthly"),
     entry("/tutorial/walkthrough", 0.6, "monthly"),

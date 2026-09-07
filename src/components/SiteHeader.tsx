@@ -48,6 +48,9 @@ const PLAY_MENU_LINKS: NavMenuItem[] = [
   { href: "/lobby", label: "Lobby" },
   { href: "/lobby?tab=friends", label: "Challenge a friend" },
   { href: "/play", label: "Practice vs computer" },
+  // The one surface that works with nobody else online, so it belongs beside
+  // the ways of finding an opponent rather than buried under Community.
+  { href: "/puzzles", label: "Daily puzzle" },
   { href: "/tournaments", label: "Tournaments" },
 ];
 
@@ -99,7 +102,9 @@ function sectionForPath(pathname: string | null): string | null {
     pathname === "/play" ||
     pathname.startsWith("/play/") ||
     pathname === "/friend" ||
-    pathname.startsWith("/friend/")
+    pathname.startsWith("/friend/") ||
+    pathname === "/puzzles" ||
+    pathname.startsWith("/puzzles/")
   )
     return "/lobby";
   if (pathname === "/leaderboard" || pathname.startsWith("/leaderboard/")) return "/leaderboard";
@@ -435,7 +440,7 @@ export function SiteHeader({ active }: { active?: string }) {
                 <div className="flex items-center justify-between border-b border-[color:var(--edge)] px-4 py-2.5">
                   <span className="text-[12px] text-parchment-400">Notifications</span>
                   {unread > 0 && (
-                    <button onClick={markAllRead} className="text-xs text-parchment-400 hover:text-parchment-100">
+                    <button onClick={markAllRead} className="text-[13px] text-parchment-400 hover:text-parchment-100">
                       Mark all read
                     </button>
                   )}
