@@ -41,6 +41,17 @@ Working rules for every round, non-negotiable:
 - When memory does get tight, `pkill` and `pkill -9` themselves fail or return
   144 under load, and a second `pgrep` will show the processes still alive.
   `pgrep -f pat | xargs -r kill -9` works where `pkill -f pat` does not.
+- **Close a row in the same commit as the work, and keep the line numbers out
+  of the claim.** Round 7 sent a worker at six items and four of them (C10,
+  C19, E10, E11) had already been done in rounds 1 and 2 while the rows still
+  read TODO with round-0 line numbers that no longer pointed at anything. It
+  spent most of its run proving that working code works. A row's line numbers
+  are evidence for when it was written and nothing else; re-measure before
+  believing one.
+- **Give a worker the widths AND the pointer types**, not the widths alone.
+  Every touch-target defect found so far has been masked by some width query
+  standing in for a pointer query, and a probe that only varies width
+  reproduces the same blind spot it is meant to find.
 
 ---
 
@@ -55,7 +66,7 @@ Working rules for every round, non-negotiable:
 | 4 | Route sweep harness (48 routes, 6 widths, 3 themes, 828 cells, 13.5 min), touch targets fixed after it proved every rem-based one was 12.5 percent short, eight routes given the h1 they lacked |
 | 5 | The bot now simulates a card's effect before choosing its targets, which fixes a blunder that was corrupting every win-rate measurement of every activated card; changelog caught up; sweep restarted |
 | 6 | `amazon_army` root-caused: the search-depth hypothesis was measured and REFUTED, and the real defect is that `negamax` cannot see buff-granted moves below the root. `SearchStats` added to `pickAIMove`; `test:search-buffs` locks the defect. Plus the system-states round: the polled inbox was silent about a dead connection, and sub-13px interactive text went 312 to 151 |
-| 7 | A6 confirmed independently from the win-rate data via the duration x grant-size interaction (3.5 sigma where predicted, 0.5 sigma where predicted absent). Ladder checked for contamination and cleared. Board keyboard play, contrast tokens, touch-target shapes, `/settings` route |
+| 7 | A6 confirmed independently from the win-rate data via the duration x grant-size interaction (4.5 sigma where predicted, 0.4 and 0.5 where predicted absent). The 26 affected cards quarantined from downward retiers. Ladder checked for contamination and cleared. The mobile flip button that measured 0 x 0, the last `role="lead"`, contrast tokens, touch-target shapes, `/settings` route |
 
 ---
 
@@ -75,7 +86,7 @@ which is why nothing caught it.
 | A2 | Full-library win-rate sweep, 3 niced shards, `--games 10`, writing `docs/card-winrate.shard{0,1,2}.json` | L | WIP. **Restarted from zero in round 5**: the bot play policy changed, so the 220 cards measured before it are not comparable with anything measured after, and mixing the two would be worse than either alone. Suspend with `pkill -STOP -f sim-card-winrate` while workers verify, resume with `-CONT`; it flushes every 10 cards and resumes from its own shard file |
 | A3 | Apply the retiers through `hand-audit.json` + `npm run gen:retiers` + `CARD_HISTORY` | M | DONE (round 2): 18 moved, 10 of the original 28 were parser misreads and are fixed or held out |
 | A4 | Pin the material ladder as an invariant so a later blanket pass cannot undo it | S | DONE (round 2): section 1b of `scripts/test-balance-pass-2026-09.ts` |
-| A8 | The pocket discount is probably backwards: a crazyhouse drop lands anywhere, dodges every nerf filter, and breaks stalemate, so it is worth MORE than the same piece in your own half, not 0.95 of it. Measure the family, then move the multiplier | M | TODO |
+| A8 | **The pocket discount is probably backwards.** Measured in round 7 and the answer is no. The whole family, not the one card that raised it: pocket cards sit at **+1.1pt** residual against their own tier (n=13), non-pocket material cards at **+7.3pt** (n=71), a difference of **-6.3 +-5.0pt, 1.3 sigma** in the OPPOSITE direction to the hypothesis, and unresolvable either way. `bn4_care_package` +41.7 is the top of a spread running down to `legendary_forge` -16.7; those two carry the same payload class and sit 58 points apart on 12 pairs each, which is the error bar, exactly as round 1 found for `legendary_forge` against `bodyguard`. The mechanical argument (a drop lands anywhere, dodges every nerf filter, breaks stalemate) may still be right and the sweep may simply not resolve 5%, but changing a multiplier on the largest number in a noisy column is the failure mode this model exists to avoid. Multiplier stays 0.95; reasoning rewritten in the model's header | M | DROPPED (not supported) |
 | A9 | Two parser holes left, held out by name in `KNOWN_MISREAD`: a replacement (`X ... and Y returns in its place`) is a transform written the long way round (`seance`), and a later sentence re-describing an already-scored piece is a gloss, not a second body (`wc_lost_and_found`) | S | TODO |
 | A5 | Rework, not just retier, cards that are cheap AND boring (pure "+3 material, no decision") | M | TODO |
 | A6 | **`amazon_army` measured -25 points. Root-caused: the bot's search cannot see buff-granted moves below the root.** Settled in round 6, see the write-up below. Pinned by `npm run test:search-buffs`. The fix is an engine change to a hot path with a desync hazard, so it is filed separately as A13 | M | DIAGNOSED |
@@ -166,12 +177,17 @@ the parser's blind spots as design rules.
 ### The three model-versus-measurement conflicts, settled
 
 - **`bn4_care_package` +41.7 +-14.9 at M=1.90 (2.8 sigma, the only one of the
-  three that resolves).** The model is right that the tier is t3, and the power
-  it cannot see is the POCKET. `legalMoves` appends drops after every nerf and
-  effect filter, onto any empty square on the whole board, and counts them for
-  stalemate resolution: a pocketed knight can appear on a fork square with no
-  travel and nothing able to stop it. The model charges 0.95 for that, a
-  discount. That multiplier is backwards, and it is A8.
+  three that resolves).** Round 2 read this as the model under-pricing the
+  POCKET: `legalMoves` appends drops after every nerf and effect filter, onto
+  any empty square on the whole board, and counts them for stalemate
+  resolution, so a pocketed knight can appear on a fork square with no travel
+  and nothing able to stop it, and the model charges 0.95 for that. Filed as
+  A8, and **round 7 measured the family and did not support it**: the thirteen
+  pocket cards average +1.1pt against their tier while the other 71
+  material-carrying cards average +7.3pt, a 1.3 sigma difference the wrong way.
+  This row is the top of a spread that reaches -16.7 for the same payload
+  class. One 2.8 sigma row in a family that averages nothing is a row, not a
+  finding.
 - **`queens_rampage` -13.6 +-13.6 at t7 (1.00 sigma: not a measurement).** The
   card is fine and stays at t7, well above its M=3.90 floor. The sign comes from
   the bot: `aiSquareScore` ranks an enemy-occupied square at 1000+ and an empty
@@ -394,8 +410,8 @@ Measured, with file:line. These are the concrete C2 work items.
 
 | # | Item | Size | Status |
 |---|---|---|---|
-| C10 | **The board is not keyboard-operable.** Squares carry `role="gridcell"` (`Board.tsx:1719`) but the parent grid (`Board.tsx:4621`) has no `role="grid"`/`role="row"`, so the roles are orphaned, and there is no `tabIndex` and no keydown. The only keydown in the file is Escape for arrow-drag cancel. You cannot make a move without a pointer | M | TODO |
-| C11 | **No board-flip affordance.** The `flipBoard` setting exists (`settings/config.ts:180`) and is read, but there is no button on the board and no `f` shortcut. It is three levels into the Settings panel. `/analysis` has its own local flip button, so the game surface is the odd one out | S | TODO |
+| C10 | **The board was not keyboard-operable.** DONE (round 1, re-verified round 7). `role="grid"`/`role="row"`, a roving `tabIndex`, `handleGridKeyDown` and an `aria-live` region are all in `Board.tsx`. Measured rather than read: a complete move lands on board state (`sq12` white pawn to `sq28`) at 1440 fine and 390 coarse, in both orientations, and arrow keys move in SCREEN space (`ArrowRight dx=+87.1 dy=0` with either colour at the bottom), with exactly one `[tabindex="0"]` per board | M | DONE |
+| C11 | **No board-flip affordance.** DONE (round 7). `BoardTools` (flip + `f` + a shortcuts sheet) was already on `/game` and `OnlineMatch`, but the rail is `hidden sm:grid`, so at 360 the flip button measured **0.0 x 0.0**: a phone had a keyboard shortcut and no button, which is the whole of what C11 complained about. `FlipBoardButton` extracted (button only, no keymap, so a second mount cannot double-bind `useBoardKeys` and turn `f` into a no-op) and placed in the mobile player strip, exactly complementary to the rail. Now 44 x 44 coarse at 360/390/768/1024, 36 x 36 fine. `f` also bound on `/analysis`, locally, because its flip is local state and must not write the global `flipBoard` | S | DONE |
 | C12 | **No in-game eval bar.** The math already exists: `evalPercent()` and `evalLabel()` at `analysis/page.tsx:51-61`. It is not wired into `OnlineMatch`, `game/[id]`, `history/[id]` or the spectator view | M | TODO |
 | C13 | **The 768 to 1023 tablet band is unstyled.** Only 7 `md:` uses in the whole codebase (vs 563 `sm:`, 114 `lg:`), so tablets inherit the phone-derived `sm` layout with a fixed 288px rail and a fixed bottom drawer | M | TODO |
 | C14 | **301 sub-12px text violations** against the design system's own hard floor: 227 `text-[11px]`, 58 `text-[10px]`, 13 `text-[9px]`, 3 `text-[8px]`. Worst: `TurnCostBadge.tsx:57` (8px), `PlayerNerfCard.tsx:281` (8px), `Board.tsx:378` (9px), `clip/ClipModal.tsx:1538` (9px on parchment-500) | M | TODO |
@@ -403,7 +419,7 @@ Measured, with file:line. These are the concrete C2 work items.
 | C16 | **No focus trap.** `useModalChrome.ts` does scroll lock, Escape and a ghost-click guard, but does not cycle Tab, despite 9 `aria-modal="true"` dialogs and design system section 10 promising it | S | TODO |
 | C17 | **No `not-found.tsx` anywhere**, and no per-segment `error.tsx` for `/game/[id]`, `/u/[username]`, `/tournaments/[id]` | S | TODO |
 | C18 | **No `/settings` route.** Settings live only in a panel opened from the header, so they are not linkable, bookmarkable or deep-linkable | S | TODO |
-| C19 | **Invalid ARIA:** `role="lead"` reaches the DOM from `Board.tsx:4859, 4872` and `dev/plays/PlaysGallery.tsx:165`. It is a prop-name collision (the VFX API means "lead vs support") that lands as a literal invalid `role` attribute | XS | TODO |
+| C19 | **Invalid ARIA:** `role="lead"`. DONE (round 7). `Board.tsx`'s two call sites were already closed by the `SignatureCut`/`GenBurstCut` wrappers; the last one was in `src/app/dev/plays/PlaysGallery.tsx` (not `src/components/dev/...`, which does not exist) and was latent rather than live, one `{...props}` from reaching the DOM. `[role=lead]` measures 0 on `/analysis`, `/game`, `/history/[id]` and `/dev/plays` with 120 scene tiles rendered | XS | DONE |
 | C20 | **Four dead components:** `CurrentGameCard.tsx` (superseded by `profile/CurrentGameCard.tsx`, kept alive artificially by the button-audit baseline), `AccountChip.tsx`, `BuffUsedToast.tsx`, `ratings/RatingCard.tsx`. None has an importer | XS | TODO |
 | C21 | **Duplicated settings rows:** the `accessibility` section of `settings/config.ts` duplicates the `appearance` Motion rows with `-A11y`-suffixed ids, so two controls bind the same two settings and the Accessibility blurb is literally "Motion" | XS | TODO |
 | C22 | **`npm run typecheck` fails out of the box** for anyone with a stale `.next` cache: `tsconfig.json` includes `.next/types/**` and `.next/dev/types/**`, and truncated generated files there produce 7 syntax errors that have nothing to do with `src` | XS | TODO |
@@ -422,7 +438,7 @@ Measured, with file:line. These are the concrete C2 work items.
 | C35 | `/api/lobby` 404s twice per load on 8 routes under `next dev`: `lobbyClient.ts` fetches it and it is served by `worker.ts` only, with no `src/app/api/lobby` handler. Environment-shaped rather than broken in production, but it means the live strip cannot be exercised locally at all | S | TODO |
 | C36 | `Button`'s `xs` and `sm` size tokens are `min-h-[36px]`, under the documented 44px mobile minimum, and `xs` is 12px text, under the 13px interactive floor. Only `md` is correct. `/login`'s Sign in and Register tabs are a bespoke 32px button, not `<Button>` at all | S | TODO |
 | C37 | Disconnected and recovered states (section 8, states 4 and 5) are missing on 18 async routes. `ConnectionBanner` exists and is the pattern; it is simply not mounted on most of them | M | TODO |
-| C38 | **277 real touch targets under 44px at 360**, after the sweep's two false-positive classes were removed. Grouped: section "more" links at 18px tall ("Community", "Watch TV", "All updates", "Codex"), search inputs at 19.5 to 30.5px, breadcrumbs at 19.5px, guide navigation chips at 27px, and the analysis "Flip board" button at 31.5px WIDE (it clears 44 on height and misses on width). Worth attacking by pattern rather than by site: most are the same three or four shared shapes | M | TODO |
+| C38 | **277 real touch targets under 44px at 360**, after the sweep's two false-positive classes were removed. Grouped: section "more" links at 18px tall ("Community", "Watch TV", "All updates", "Codex"), search inputs at 19.5 to 30.5px, breadcrumbs at 19.5px, guide navigation chips at 27px. Worth attacking by pattern rather than by site: most are the same three or four shared shapes. The `/analysis` nav buttons are DONE (round 7): they were `h-9 w-9` = 31.5 x 31.5, rescued on phones only by a `max-width: 640px` rule in `globals.css`, so a coarse-pointer tablet got 31.5 x 31.5 and every device got a 31.5px-wide target. Now 44 x 44 with a `[@media(pointer:fine)]` step-down | M | WIP |
 | C39 | Sweep totals moved 1791 to 1387 defects and 674 to 307 high severity across the day. The remaining high-severity mass is C38. `type-floor-13` is 305 and `type-floor-12` is 330, which is the interactive-versus-caption judgement call already in flight | - | tracking |
 
 ## D. Motion and graphics
@@ -453,8 +469,8 @@ the egress proxy, so these were read out of `lichess-org/lila` and
 
 | # | Item | Size | Status |
 |---|---|---|---|
-| E10 | **Every drag paints the piece twice.** `.dragging` is defined at `globals.css:1524` and applied nowhere, so the origin square never fades under a dragged piece | XS | TODO |
-| E11 | Bind `z` (zen) on `/analysis`, `/tv` and `/history/[id]`. The hook exists and is only imported on `/game` | XS | TODO |
+| E10 | **Every drag paints the piece twice.** DONE. `.dragging` is applied at `Board.tsx:2275`; measured, the origin piece goes computed opacity 1 to **0.35** mid-drag and back to 1 after | XS | DONE |
+| E11 | Bind `z` (zen) on `/analysis`, `/tv` and `/history/[id]`. DONE (round 2), measured on all three: `data-zen` toggles null to on. Not bound on the `/history/[id]` not-found branch, which has no zen-hidden chrome to hide | XS | DONE |
 | E12 | Clock urgency relative to the time control (Lichess's formula) rather than fixed 30s and 10s thresholds | XS | TODO |
 | E13 | Blink the clock separator while a clock runs. It matters more here than on Lichess because our clock genuinely pauses for drafts | XS | TODO |
 | E14 | Wheel over the board scrubs plies | XS | TODO |

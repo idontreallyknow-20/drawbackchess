@@ -94,26 +94,36 @@
 // VIOLATIONS, because a floor computed from a number we know is wrong is not a
 // finding. Holding a card out is not a defence of its tier.
 //
-// THE OPEN QUESTION: THE POCKET DISCOUNT IS PROBABLY BACKWARDS.
+// THE POCKET DISCOUNT: ASKED, MEASURED, AND THE ANSWER IS NO (round 7).
 //
 // A pocketed piece is priced here at 0.95 of the same piece on the board, on
-// the reasoning that you still have to spend a turn placing it. In THIS engine
-// that reasoning does not survive contact with legalMoves (src/engine/game.ts,
-// the crazyhouse block): a drop lands on ANY empty square on the whole board,
-// it is appended AFTER every nerf and effect filter so no handicap can stop it,
-// and it counts as a legal move for stalemate resolution. A knight in the
-// pocket can therefore appear on a fork square, or beside the enemy king, with
-// no travel and nothing able to prevent it -- which is worth MORE than the same
-// knight standing in your own half, not five percent less.
+// the reasoning that you still have to spend a turn placing it. The argument
+// AGAINST that discount is good: in this engine a drop lands on ANY empty
+// square on the whole board, it is appended AFTER every nerf and effect filter
+// so no handicap can stop it, and it counts as a legal move for stalemate
+// resolution. A knight in the pocket can appear on a fork square with no travel
+// and nothing able to prevent it, which sounds worth MORE than the same knight
+// standing in your own half, not five percent less.
 //
-// The measurement agrees and is the strongest single row in the sweep for a
-// small card: `bn4_care_package` (a random pocket minor, M=1.90) measures +41.7
-// +-14.9, which is 2.8 sigma and the only one of this model's three
-// measurement conflicts that clears the sweep's own 2-sigma bar. Its tier is
-// not the problem -- the floor already says t3 and it is t3 -- the MULTIPLIER
-// is. Raising it moves a whole family at once (Bodyguard, Second Army,
-// Legendary Forge, Stowaway, Pretender, Grand Reset), so it wants its own
-// measured round rather than a guess folded into this one.
+// It looked settled by one row: `bn4_care_package` (a random pocket minor,
+// M=1.90) measures +41.7 +-14.9, 2.8 sigma, the strongest small card in the
+// sweep. So the whole pocket family was measured instead of that one card.
+//
+//   pocket, residual against own tier      +1.1pt   n=13
+//   non-pocket carrying material           +7.3pt   n=71
+//   difference                             -6.3 +-5.0pt   (1.3 sigma)
+//
+// The family measures slightly BELOW the rest of the material cards, not above,
+// and cannot resolve either way. `bn4_care_package` is the top of a
+// thirteen-card spread that runs down to `legendary_forge` at -16.7. Those two
+// carry the same payload class and sit 58 points apart on 12 pairs each: that
+// is the error bar, exactly as round 1 found for `legendary_forge` against
+// `bodyguard`.
+//
+// So the multiplier stays at 0.95. The mechanical argument may still be right
+// and the sweep simply cannot see a 5% difference at this sample size, but a
+// change on one row would have been generalising from the largest number in a
+// noisy column, which is the failure mode this whole file exists to avoid.
 //
 // WHERE THE LADDER COMES FROM
 //
