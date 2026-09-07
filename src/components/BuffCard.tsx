@@ -8,6 +8,7 @@ import { cardFaceIcon } from "@/lib/cardIcon";
 import { TIER_LABEL, TIER_ROMAN } from "@/lib/tiers";
 import { DraftPreview } from "@/components/DraftPreview";
 import { GlossaryText } from "@/components/GlossaryText";
+import { SrSep } from "@/components/SrSep";
 import { TurnCostBadge } from "@/components/TurnCostBadge";
 import {
   Castle,
@@ -63,6 +64,12 @@ interface Props {
   compact?: boolean;
   /** Soft accent glow: this buff can be used right now. */
   glow?: boolean;
+  /** Picker surfaces only (the draft): this card is the current selection.
+   * Emitted as `aria-pressed` on the card button, so the choice is announced
+   * as a toggle state instead of being inferable only from the commit button
+   * renaming itself. Leave undefined on cards that are not a choice (codex,
+   * dock, the opponent's viewer): they are plain buttons, not toggles. */
+  selected?: boolean;
   /** Draft picker only: stagger this card's entrance by the given delay (ms).
    * Omit to skip the entrance animation (dock / modal contexts). */
   enterDelayMs?: number;
@@ -73,7 +80,7 @@ interface Props {
   preview?: boolean;
 }
 
-export function BuffCard({ buff, tier, status, spent, nullified, onClick, compact, glow, enterDelayMs, preview }: Props) {
+export function BuffCard({ buff, tier, status, spent, nullified, onClick, compact, glow, selected, enterDelayMs, preview }: Props) {
   const t = tier ?? buff.tier;
   const dead = spent || nullified;
   // Per-card icon: every buff in the library gets a GLOBALLY UNIQUE lucide
@@ -139,6 +146,10 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
           <div className={`font-display leading-tight tier-${t} ${compact ? "text-sm" : "text-lg"}`}>
             {buff.name}
           </div>
+          {/* Name, then the meta row, then the tier badge: three adjacent runs
+              of text that a screen reader would otherwise read as one word.
+              See SrSep. */}
+          <SrSep text=". " />
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
             <span className="inline-flex items-center gap-1 text-[12px] text-parchment-400">
               {/* Chip icon: parchment tone at rest; card hover tints it in the
@@ -151,22 +162,32 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
               })}
               {CATEGORY_LABEL[buff.category]}
             </span>
+            <SrSep />
             <TurnCostBadge cost={turnCost(buff)} />
           </div>
         </div>
+        <SrSep text=". " />
         <span
           className={`shrink-0 font-display font-bold px-2 py-0.5 rounded-[1px] tier-bg-${t} tier-${t} ${compact ? "border text-[12px]" : "border-[1.5px] text-[13px]"}`}
           title={`Buff power tier ${TIER_ROMAN[t]} (${t} of 8): ${TIER_LABEL[t]}`}
         >
+          {/* "I" on its own is a letter, not a rank. The numeral stays the
+              visual, the word rides along for the announcement. */}
+          <span className="sr-only">Tier </span>
           {TIER_ROMAN[t]}
         </span>
       </div>
+      {/* Compact rows drop the tier-label ornament below, so they need the
+          separator here or the rule text runs straight into the numeral. */}
+      {compact && <SrSep text=". " />}
       {/* Difficulty ornament: the tier label between hairline rules, the same
           severity treatment nerf cards wear, so both libraries read alike.
           Dropped in the compact draft/dock cards where space is tight. */}
       {!compact && (
         <div className="rule-ornament my-2.5 text-[12px]">
+          <SrSep />
           <span className="font-display">{TIER_LABEL[t]}</span>
+          <SrSep text=". " />
         </div>
       )}
       {/* flex-1 on full cards: the description absorbs the height difference,
@@ -228,7 +249,18 @@ export function BuffCard({ buff, tier, status, spent, nullified, onClick, compac
 
   if (!onClick || dead) return body;
   return (
-    <button type="button" onClick={onClick} className="block h-full w-full touch-manipulation text-left">
+    <button
+      type="button"
+      onClick={onClick}
+      // The selection state was invisible to assistive tech: the ONLY signal a
+      // card was chosen was the commit button renaming itself from "Pick a
+      // card" to "Confirm <name>", somewhere else on the screen. The cards
+      // themselves are toggles, so they say so. Undefined (not false) on cards
+      // that are not a choice, so a plain card button is never announced as an
+      // unpressed toggle.
+      aria-pressed={selected}
+      className="block h-full w-full touch-manipulation text-left"
+    >
       {body}
     </button>
   );

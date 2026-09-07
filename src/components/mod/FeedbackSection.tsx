@@ -244,7 +244,7 @@ function FeedbackTable({
         </FilterChip>
         {tiers.length > 0 && (
           <>
-            <span className="ml-2 text-[11px] text-parchment-400">Tier</span>
+            <span className="ml-2 text-[12px] text-parchment-400">Tier</span>
             <FilterChip active={tier === "all"} onClick={() => setTier("all")}>
               Any
             </FilterChip>
@@ -260,7 +260,7 @@ function FeedbackTable({
       {/* Sorting on a phone, where there are no column headers to click. The
           four that matter; the desktop table keeps all six. */}
       <div className="flex flex-wrap items-center gap-2 sm:hidden">
-        <span className="text-[11px] text-parchment-400">Sort</span>
+        <span className="text-[12px] text-parchment-400">Sort</span>
         {(
           [
             ["score", "Score"],
@@ -296,7 +296,7 @@ function FeedbackTable({
                   {v.text}
                 </Pill>
               </div>
-              <div className="mt-1 flex items-center gap-3 font-mono text-[11px] tabular-nums">
+              <div className="mt-1 flex items-center gap-3 font-mono text-[12px] tabular-nums">
                 <span className="text-verdigris-glow">+{row.up}</span>
                 <span className="text-oxblood-glow">-{row.down}</span>
                 <span className="text-parchment-100">
@@ -319,7 +319,7 @@ function FeedbackTable({
       <div className="plate hidden overflow-x-auto sm:block">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-[11px] text-parchment-400">
+            <tr className="text-[12px] text-parchment-400">
               <Header align="left" active={sort === "name"} onClick={() => toggle("name")}>
                 {label}
                 {arrow("name")}

@@ -344,11 +344,17 @@ html[data-theme="light"] {
   --text-primary-rgb: 61 61 61;
   --text-secondary-rgb: 102 102 102;
   --board-highlight-a: 0.5;
-  /* A step deeper than the dark accent so links clear WCAG AA on white. */
+  /* A step deeper than the dark accent so links clear WCAG AA on white. The
+     `-hi` rung is the EMPHASIS step off the accent, and on paper emphasis is
+     heavier ink, so it steps DOWN in lightness. It used to step UP: light
+     carried the dark theme's base blue (#3692e7) as its hi, lighter than
+     light's own base, and every rendered --gold-leaf element failed AA (the
+     header's guest "Sign in" at 2.75:1). Mirrors BLUE_ACCENT_LIGHT in
+     src/lib/settings.ts, which is what actually reaches <html>. */
   --accent-gold: #1b78d0;
-  --accent-gold-hi: #3692e7;
+  --accent-gold-hi: #14589f;
   --accent-gold-rgb: 27 120 208;
-  --accent-gold-hi-rgb: 54 146 231;
+  --accent-gold-hi-rgb: 20 88 159;
   --accent-gold-dim-rgb: 20 92 160;
   /* The semantic three, darkened so they still clear AA as text on paper.
      Same meanings, same hues. */
@@ -666,21 +672,85 @@ html[data-light] select option {
   }
 }
 
-/* --- Tier palette: muted editorial, brass→brick gradient by severity --- */
-.tier-1 { color: #7eb59a; }   /* sage */
-.tier-2 { color: #8ba9c4; }   /* slate */
-.tier-3 { color: #d8b56e; }   /* brass */
-.tier-4 { color: #c79468; }   /* clay */
-.tier-5 { color: #c66860; }   /* brick */
-.tier-6 { color: #c65f8f; }   /* rose */
-.tier-7 { color: #a877d8; }   /* violet */
-.tier-8 { color: #e05252; }   /* blood */
-.tier-9 { color: #f4c430; }   /* apex gold: a single solid accent, no gradient or glow */
-.tier-10 { color: #22d3ee; }  /* mythic cyan: a distinct solid accent, no gradient or glow */
+/* --- Tier palette: muted editorial, brass→brick gradient by severity -------
+   A tier's IDENTITY is its hue and its chroma: the ladder runs sage, slate,
+   brass, clay, brick, rose, violet, blood, gold, cyan, and severity is carried
+   by chroma climbing with the tier (0.07 at t1 to 0.18 at t8 in OKLCH). Neither
+   of those may move per theme; design-system.md pins tier colour ("Card tiers
+   everywhere, no exceptions") and a t8 has to read as a t8 on any ground.
+
+   LIGHTNESS is the theme's business, and it was the whole of the bug: one set
+   of hexes, authored for the dark ladder, was being painted on paper as well.
+   The tier ink now hangs off a token per tier, with hue and chroma pinned to
+   the values above (gamut permitting) and only OKLCH L re-set per scheme.
+   Measured on the rendered chips: dark t8 was 3.02:1 on a raised surface and
+   light t9 was 1.31:1 on the white panel, against a 4.5 floor (every tier chip
+   is 12px, so the large-text exemption never applies).
+
+   The alternative (leaving the ink and re-tinting the .tier-bg-* washes) was
+   measured and cannot work. The wash is what a chip sits on, but the ink also
+   appears as bare text on panels and menus: #e05252 measures 3.50:1 on
+   --bg-raised with NO wash at all, so no alpha reaches 4.5 from there.
+
+   Dark takes the smallest lift that clears the floor on its worst ground (a
+   chip on --bg-raised), so the default palette moves as little as it can:
+   only t4 to t8 move at all, and t1, t2, t3, t9 and t10 are untouched.
+   Midnight inherits it (its grounds are a shade kinder, and it measures
+   higher on every tier).
+
+   Light inverts, the same way the surface ladder does: on paper the top of the
+   ladder is the HEAVIEST ink rather than the brightest, so t5 to t9 step past
+   the AA floor by a widening margin. Without that step t3 brass and t9 gold
+   both land on the floor at L 0.51 and become the same olive; with it they are
+   0.10 OKLCH-L apart. */
+:root {
+  --tier-ink-1: #7eb59a;   /* sage */
+  --tier-ink-2: #8ba9c4;   /* slate */
+  --tier-ink-3: #d8b56e;   /* brass */
+  --tier-ink-4: #cd9a6d;   /* clay */
+  --tier-ink-5: #e9877e;   /* brick */
+  --tier-ink-6: #ea80b0;   /* rose */
+  --tier-ink-7: #c08ef2;   /* violet */
+  --tier-ink-8: #ff7a75;   /* blood */
+  --tier-ink-9: #f4c430;   /* apex gold: a single solid accent, no gradient or glow */
+  --tier-ink-10: #22d3ee;  /* mythic cyan: a distinct solid accent, no gradient or glow */
+}
+html[data-light] {
+  --tier-ink-1: #3b7058;   /* sage */
+  --tier-ink-2: #4c6881;   /* slate */
+  --tier-ink-3: #826214;   /* brass */
+  --tier-ink-4: #825428;   /* clay */
+  --tier-ink-5: #953c36;   /* brick */
+  --tier-ink-6: #912e60;   /* rose */
+  --tier-ink-7: #6b3995;   /* violet */
+  --tier-ink-8: #9d001b;   /* blood */
+  /* t9 and t10 are the only two that lose chroma, and only because sRGB has
+     none to give: a yellow this dark IS an olive and a cyan this dark IS a
+     teal. Hue is exact; every other tier keeps its chroma to three decimals. */
+  --tier-ink-9: #5f4900;   /* apex gold */
+  --tier-ink-10: #006e7e;  /* mythic cyan */
+}
+.tier-1 { color: var(--tier-ink-1); }
+.tier-2 { color: var(--tier-ink-2); }
+.tier-3 { color: var(--tier-ink-3); }
+.tier-4 { color: var(--tier-ink-4); }
+.tier-5 { color: var(--tier-ink-5); }
+.tier-6 { color: var(--tier-ink-6); }
+.tier-7 { color: var(--tier-ink-7); }
+.tier-8 { color: var(--tier-ink-8); }
+.tier-9 { color: var(--tier-ink-9); }
+.tier-10 { color: var(--tier-ink-10); }
 
 /* Each tier carries its color as an rgb triple too, so glass/glow layers on a
    card face can tint themselves by severity (a tier-8 reads hotter than a
-   tier-1) using a single shared class. */
+   tier-1) using a single shared class.
+   --tier-rgb and these fills stay on the FULL-CHROMA identity hue in every
+   theme, and are deliberately not re-pointed at --tier-ink-*. They are light,
+   not text: washes, auras, particle tints and the EmpowerAura, none of which
+   carry a contrast obligation, and several of which are mirrored as literal
+   hexes elsewhere (BoardEffects.tsx, NerfCard.tsx, passive/spec.ts). Splitting
+   the ink from the tint is what lets paper darken its text without dragging
+   the whole effects layer somewhere those mirrors do not follow. */
 .tier-bg-1 { background: rgba(126,181,154,0.10); border-color: rgba(126,181,154,0.35); --tier-rgb: 126 181 154; }
 .tier-bg-2 { background: rgba(139,169,196,0.10); border-color: rgba(139,169,196,0.35); --tier-rgb: 139 169 196; }
 .tier-bg-3 { background: rgba(216,181,110,0.10); border-color: rgba(216,181,110,0.45); --tier-rgb: 216 181 110; }

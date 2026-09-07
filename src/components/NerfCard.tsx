@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { Nerf } from "@/engine/nerf";
 import { DraftPreview } from "@/components/DraftPreview";
 import { GlossaryText } from "@/components/GlossaryText";
+import { SrSep } from "@/components/SrSep";
 import { NERF_TURN_COST } from "@/engine/buff";
 import { TurnCostBadge } from "@/components/TurnCostBadge";
 import { type LucideIcon, Unlink } from "lucide-react";
@@ -42,6 +43,7 @@ export function NerfCard({ nerf, revealed = true, compact = false, dense = false
           <div className="w-12 h-12 rounded-full border border-gold/40 bg-gold/10 flex items-center justify-center font-display text-2xl text-gold font-bold">?</div>
           <div>
             <div className="text-[12px] text-parchment-400">{ownerLabel ?? "Opponent"}</div>
+            <SrSep text=". " />
             <div className="font-display text-xl text-parchment">Hidden rule</div>
           </div>
         </div>
@@ -95,21 +97,30 @@ export function NerfCard({ nerf, revealed = true, compact = false, dense = false
             <span className="text-[12px] text-parchment-400">
               {ownerLabel ?? "Your nerf"}
             </span>
+            {/* Owner label, cost chip, name, tier numeral and tier label are
+                adjacent text to the accessibility tree and were announced as
+                one run-on word. See SrSep. */}
+            <SrSep />
             <TurnCostBadge cost={NERF_TURN_COST} />
           </div>
+          <SrSep text=". " />
           <div className={`font-display leading-tight tier-${nerf.tier} ${dense ? "text-lg" : "text-2xl"}`}>
             {nerf.name}
           </div>
         </div>
+        <SrSep text=". " />
         <span
           className={`font-display font-bold text-sm px-2.5 py-0.5 rounded-[1px] border tier-bg-${nerf.tier} tier-${nerf.tier}`}
           title={`Nerf difficulty ${TIER_ROMAN[nerf.tier]} (${nerf.tier} of 8): ${TIER_LABEL[nerf.tier]}`}
         >
+          <span className="sr-only">Tier </span>
           {TIER_ROMAN[nerf.tier]}
         </span>
       </div>
       <div className={`nerf-enter__line rule-ornament text-[12px] ${dense ? "my-2.5" : "my-3"}`}>
+        <SrSep />
         <span className="font-display">{TIER_LABEL[nerf.tier]}</span>
+        <SrSep text=". " />
       </div>
       <p className={"nerf-enter__line " + (dense ? "flex-1 text-[13px] leading-snug text-parchment" : "text-[15px] leading-relaxed text-parchment")}>
         <GlossaryText text={nerf.description} />

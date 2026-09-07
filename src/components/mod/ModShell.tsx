@@ -71,13 +71,13 @@ export function ModShell({
             >
               <Search size={14} strokeWidth={1.6} aria-hidden />
               <span>Jump to…</span>
-              <kbd className="ml-auto font-mono text-[11px] text-parchment-500">Ctrl K</kbd>
+              <kbd className="ml-auto font-mono text-[12px] text-parchment-500">Ctrl K</kbd>
             </button>
           </div>
           <nav aria-label="Moderation sections" className="mt-3 hidden lg:block">
             {groups.map((group) => (
               <div key={group.title} className="mb-4">
-                <div className="px-2 text-[11px] uppercase tracking-[0.06em] text-parchment-500">{group.title}</div>
+                <div className="px-2 text-[12px] uppercase tracking-[0.06em] text-parchment-500">{group.title}</div>
                 <ul className="mt-1">
                   {group.items.map((item) => (
                     <li key={item.kind === "section" ? item.id : item.href}>
@@ -153,7 +153,7 @@ function NavEntry({
       <span>{item.label}</span>
       {item.kind === "section" && !compact && <CountBadge n={badge} />}
       {item.kind === "section" && compact && badge > 0 && (
-        <span className="bg-oxblood px-1 font-mono text-[11px] text-white">{badge}</span>
+        <span className="bg-oxblood px-1 font-mono text-[12px] text-white">{badge}</span>
       )}
     </>
   );
@@ -265,7 +265,7 @@ function Palette({
             placeholder="Section or player name"
             className="min-h-[44px] w-full bg-transparent text-[14px] text-parchment-50 placeholder:text-parchment-500 focus:outline-none"
           />
-          <kbd className="font-mono text-[11px] text-parchment-500">Esc</kbd>
+          <kbd className="font-mono text-[12px] text-parchment-500">Esc</kbd>
         </div>
         <ul className="max-h-[50vh] overflow-y-auto py-1">
           {rows.length === 0 && <li className="px-3 py-3 text-[13px] text-parchment-400">Nothing matches.</li>}
@@ -281,7 +281,7 @@ function Palette({
                 }
               >
                 <span>{r.label}</span>
-                <span className="text-[11px] uppercase tracking-[0.05em] text-parchment-500">{r.hint}</span>
+                <span className="text-[12px] uppercase tracking-[0.05em] text-parchment-500">{r.hint}</span>
               </button>
             </li>
           ))}

@@ -156,7 +156,7 @@ export function PlayersSection({
       </div>
 
       {!query.trim() && (
-        <p className="text-[11px] text-parchment-400">Recent players</p>
+        <p className="text-[12px] text-parchment-400">Recent players</p>
       )}
 
       {users.length === 0 ? (

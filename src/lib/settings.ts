@@ -97,11 +97,25 @@ const BLUE_ACCENT_MIDNIGHT: AccentDef = {
   rgbDim: "51 118 186",
 };
 
+// `accentHi` is the EMPHASIS step off `accent` (hover, the active label, the
+// `text-gold-leaf` ramp). On a dark ground emphasis means brighter; on paper it
+// means heavier ink, so light's hi has to step DOWN in lightness, not up. It
+// stepped up: light shipped the dark theme's base blue (#3692e7) as its hi,
+// which is LIGHTER than light's own base (#1b78d0). Measured over 21 routes,
+// every one of the 23 rendered `--gold-leaf` elements failed AA in light:
+// the header's guest "Sign in" at 2.75:1 on the page and 2.51:1 on a Buff chip.
+// This value is the same OKLCH hue at L 0.46, the step that clears 4.5:1 on the
+// worst ground the accent actually lands on (the #cbd9e5 filter chip).
+// applyUiPrefs writes accentHi onto <html> as an inline --accent-hi/--gold-leaf,
+// so this file, not CSS, is the only place it can be fixed; keep it in step with
+// --accent-gold-hi in the html[data-theme="light"] block of globals.css.
 const BLUE_ACCENT_LIGHT: AccentDef = {
   accent: "#1b78d0",
-  accentHi: "#3692e7",
+  accentHi: "#14589f",
   rgb: "27 120 208",
-  rgbHi: "54 146 231",
+  rgbHi: "20 88 159",
+  // Nothing reads --accent-dim-rgb today (it is defined and aliased and never
+  // consumed), which is why this rung has never been re-pointed for paper.
   rgbDim: "20 92 160",
 };
 

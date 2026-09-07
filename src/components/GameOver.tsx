@@ -19,6 +19,7 @@ import { ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { TIER_LABEL, TIER_ROMAN } from "@/lib/tiers";
 import { GlossaryText } from "@/components/GlossaryText";
+import { SrSep } from "@/components/SrSep";
 import { Button } from "@/components/ui/Button";
 import { LinkButton } from "@/components/ui/Button";
 
@@ -378,6 +379,11 @@ function RuleReveal({
       )}
       <div className="flex items-center justify-between gap-2">
         <span>{label}</span>
+        {/* This whole row is one live-region announcement when it is THE
+            reveal, and label, tier and name are adjacent text to the
+            accessibility tree: without separators the payoff of the entire
+            mode is read as "Opponent ruleTrivialWalking Pace". See SrSep. */}
+        <SrSep />
         <span
           className={`inline-flex items-center gap-1 border px-1.5 py-0.5 font-display text-[12px] font-bold leading-none tier-bg-${nerf.tier} tier-${nerf.tier}`}
           title={`Difficulty ${nerf.tier}: ${TIER_LABEL[nerf.tier]}`}
@@ -386,6 +392,7 @@ function RuleReveal({
           <span>{TIER_LABEL[nerf.tier]}</span>
         </span>
       </div>
+      <SrSep text=". " />
       <div
         className={
           `mt-1 font-display text-base font-semibold leading-tight tier-${nerf.tier}` +
@@ -394,6 +401,7 @@ function RuleReveal({
       >
         {nerf.name}
       </div>
+      <SrSep text=". " />
       <p className="mt-1 text-xs leading-snug text-parchment-200">
         {/* Glossary terms in the revealed rule get the tap/hover definition
             popover, so the reveal explains itself to new players. */}
@@ -908,7 +916,16 @@ export function GameOver({
       ref={attachDialog}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="game-over-title"
+      // The panel used to be named by the outcome word alone ("Victory"), and
+      // the draft overlay is also a bare role="dialog" over the same board, so
+      // the two were indistinguishable: a screen reader heard "Victory,
+      // dialog" with nothing saying an ending had arrived, and a harness
+      // reaching for `[role="dialog"]` mistook the ending for a draft and
+      // waited for cards that would never deal. The kicker joins the label so
+      // the name reads "Game over, Victory", and `data-dialog` gives anything
+      // automating the page a handle that does not depend on wording.
+      data-dialog="game-over"
+      aria-labelledby="game-over-kicker game-over-title"
       aria-describedby="game-over-reason"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -971,7 +988,7 @@ export function GameOver({
         )}
 
         <div className="flex items-center justify-center gap-2">
-          <p>Game over</p>
+          <p id="game-over-kicker">Game over</p>
           {modeChip && (
             <span
               className={

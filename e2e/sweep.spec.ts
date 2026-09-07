@@ -130,6 +130,16 @@ function routes(): Route[] {
     { url: "/leaderboard", slug: "leaderboard" },
     { url: "/lobby", slug: "lobby" },
     { url: "/login", slug: "login" },
+    // The moderator shell. Added round 8: its content is behind auth, but the
+    // SHELL renders for a guest and it is where the last of the sub-12px text
+    // lives (six 11px rail labels repeated across four routes were 24 of 24
+    // rendered violations per theme). A surface the sweep does not visit is a
+    // surface with no ratchet under it, which is how those survived four
+    // rounds of type-floor work.
+    { url: "/mod", slug: "mod" },
+    { url: "/mod/cards", slug: "mod-cards" },
+    { url: "/mod/house", slug: "mod-house" },
+    { url: "/mod/stats", slug: "mod-stats" },
     { url: "/play", slug: "play" },
     { url: "/privacy-policy", slug: "privacy-policy" },
     { url: "/profile", slug: "profile" },

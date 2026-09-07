@@ -386,7 +386,11 @@ test.describe("board feel", () => {
         const j = Math.floor(Math.random() * (i + 1));
         [mine[i], mine[j]] = [mine[j], mine[i]];
       }
-      for (const from of mine.slice(0, 12)) {
+      // Every piece, not a sample. Twelve of sixteen shuffled was enough to
+      // stall a game at six moves when a handicap narrowed the move set, and a
+      // harness that gives up early reports a session share computed over a
+      // 17-second session, which is a different and much noisier number.
+      for (const from of mine) {
         const fb = await square(page, from.name).boundingBox();
         if (!fb) continue;
         await page.mouse.click(fb.x + fb.width / 2, fb.y + fb.height / 2);
@@ -432,7 +436,13 @@ test.describe("board feel", () => {
         }
       }
 
-      if (!(await tryMove())) break;
+      if (!(await tryMove())) {
+        // One retry after a beat: a draft closing, a card animation finishing
+        // or the bot still moving can all leave a frame where nothing is
+        // selectable, and giving up there ends the session early.
+        await page.waitForTimeout(900);
+        if (!(await tryMove())) break;
+      }
       plies++;
       // Give the bot its turn. 3s is generous against a measured 807ms.
       await page.waitForTimeout(700);

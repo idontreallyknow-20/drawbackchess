@@ -18,7 +18,7 @@ export function StatCard({
         {value.toLocaleString()}
         {suffix && <span className="text-sm text-parchment-400">{suffix}</span>}
       </div>
-      <div className="mt-1 text-[11px] uppercase tracking-[0.05em] text-parchment-400">{label}</div>
+      <div className="mt-1 text-[12px] uppercase tracking-[0.05em] text-parchment-400">{label}</div>
     </div>
   );
 }

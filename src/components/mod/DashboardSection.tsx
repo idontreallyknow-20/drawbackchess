@@ -200,7 +200,7 @@ export function DashboardSection({
                         <Pill tone={v.tone === "warn" ? "warn" : "neutral"}>{v.text}</Pill>
                       </span>
                     </div>
-                    <div className="mt-0.5 font-mono text-[11px] tabular-nums text-parchment-400">
+                    <div className="mt-0.5 font-mono text-[12px] tabular-nums text-parchment-400">
                       {t.played} games · {t.won} / {t.drawn} / {t.lost}
                     </div>
                   </li>
@@ -215,7 +215,7 @@ export function DashboardSection({
                 safety net for a long "Reading" verdict. */}
             <div className="mt-3 hidden overflow-x-auto sm:block">
               <table className="w-full text-left text-[13px]">
-                <thead className="text-[11px] text-parchment-400">
+                <thead className="text-[12px] text-parchment-400">
                   <tr>
                     <th className="py-1.5 pr-3">Tier</th>
                     <th className="py-1.5 pr-3">Games</th>
@@ -275,7 +275,7 @@ export function DashboardSection({
               ] as const
             ).map(([label, rows]) => (
               <div key={label}>
-                <div className="text-[11px] text-parchment-400">{label}</div>
+                <div className="text-[12px] text-parchment-400">{label}</div>
                 <ul className="plate mt-1.5 divide-y divide-[color:var(--edge)]">
                   {rows.map((r) => (
                     <li key={r.id} className="px-3 py-2 text-[13px]">
@@ -297,7 +297,7 @@ export function DashboardSection({
         </section>
       )}
 
-      <p className="text-[11px] text-parchment-500">
+      <p className="text-[12px] text-parchment-500">
         Generated {new Date(data.generatedAt).toISOString()}.
       </p>
     </div>

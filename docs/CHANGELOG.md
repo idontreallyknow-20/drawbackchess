@@ -1781,3 +1781,143 @@ Guards: `test:desync` (sample hash `5579b1a5`, unchanged), `test:snapshot`,
 Still invisible below the root and out of scope: nerf filters, shields, walls
 and zone effects. `analyzeBoard` stays buff-free, since it is deliberately
 plain-chess analysis over a bare board.
+
+### The draft: a third of the session, and two things that were simply broken
+
+Whole-game arc, three runs each, legacy constants restored for the control:
+
+| | per draft | share of session |
+|---|---|---|
+| before | 5.0 / 4.8 / 4.5 -> **4.8s** | 38 / 39 / 39% -> **39%** |
+| after | 3.9 / 3.8 / 3.1 -> **3.8s** | 36 / 31 / 25% -> **31%** |
+
+A single opening draft, hydration to the board being touchable: **4259ms to
+2826ms** in normal motion, 1419ms with animation off. The choreography's own
+share (overlay up to the decision timer arming, which is the draft contract's
+"dealt and clickable") went 3433ms to 2427ms.
+
+Where it came from, and what was deliberately left alone:
+
+- The sealed vault sat doing **nothing** for 1150ms before opening itself, in
+  front of a board nobody is allowed to touch. Now 640ms. The vault's own 920ms
+  opening is untouched: the ceremony is the opening, not the pause in front of
+  it.
+- `DEAL_TOTAL_MS` was a flat 900ms whatever the offer size, so every two-card
+  draft (which is every opening pick) waited 100ms after its last card had
+  finished turning. It is now computed from the real end of the last flip.
+- Cards turn over **as they land** rather than after arriving and pausing 40ms.
+- The pick waited on an invisible card: the pocket flight's opacity hits zero at
+  78% of its length and commit fired at 100%, so the last ~121ms animated
+  nothing while the board stayed blocked.
+- **`data-anim="fast"` never reached the draft at all.** `globals.css` clamps
+  `transition-duration`, which touches nothing in a choreography made of
+  keyframes, framer transitions and timeouts, so a player who asked for fast
+  animations sat through the identical 2.8s opening. Fast now scales the beats
+  this component owns.
+
+**Two things that were not slow, they were broken.**
+
+Every underlined term in a card's rule text is a `span[role="button"]` that
+calls `stopPropagation`, nested inside the card's own `<button>`. So clicking
+the middle of a draft card, which is the rule text you are reading while you
+decide, left `aria-pressed=false` and the commit button disabled. Cards carry
+one to five such terms. This is why the whole-game harness needed four retries
+on the card click, and it was written off there as a deal-animation race. Fixed
+with a capture-phase pick on the card wrapper, select-only and never confirm, so
+reading a definition on your chosen card cannot lock the draft in.
+
+And **Reroll on the opening pick was a lie.** `rerollOffer` refuses
+`offer.index === 0` by design, but the overlay showed a live "Reroll (1)".
+Pressing it played the full 480ms shuffle, faded the cards to nothing, and left
+an empty panel with the clock running until a 4s un-shuffle fuse recovered it.
+Measured: the cards never change and the count never decrements; online, the
+server answers "That draft cannot be rerolled". The control is gone, replaced by
+one line saying where the reroll went.
+
+Also B9, B10 and B13: `aria-pressed` on the draft card at both call sites
+(undefined on non-picker surfaces, so a codex card is never announced as an
+unpressed toggle), `sr-only` separators at the badge level so a card announces
+as `"Spice Run . Item , Free action . Tier I , TRIVIAL . Use once..."` instead
+of `"Bricklayer Item Free action I TRIVIAL Use once..."`, and both dialogs now
+carry a name and a `data-dialog` handle.
+
+Left alone on purpose: the board is still not live behind the offer. Making it
+playable during a forced decision changes the game rather than the animation
+(clocks are paused, and you would be moving before your buff applies); Hide and
+Escape already cover "let me look".
+
+### Tier colour: a per-theme palette, because the alternative is arithmetically dead
+
+The two candidate fixes for the tier chips were a per-theme palette or a change
+to the `.tier-bg-*` wash alphas. The wash was measured first and ruled out:
+`.tier-N` is also bare text on panels and menus, where `#e05252` measures
+**3.50:1 with no wash at all**, so no alpha can reach 4.5 from there. On paper
+it is worse: carrying `#f4c430` at 4.5:1 would need a near-black wash, which is
+not a wash.
+
+A tier's identity is its hue and its chroma (the ladder is a hue sequence with
+chroma climbing by severity, 0.070 at t1 to 0.178 at t8 in OKLCH). Both are
+pinned exactly, gamut permitting; only OKLCH **L** is re-set per scheme. Dark
+takes the smallest lift that clears the floor on its worst ground, so **only
+t4 to t8 move** and t1, t2, t3, t9 and t10 are byte-identical. Light inverts the
+way the surface ladder already does, so the top of the ladder becomes the
+heaviest ink.
+
+That inversion is load-bearing rather than decorative. A flat "everything to the
+AA floor" light palette puts t3 brass at `#826213` and t9 gold at `#7f6200`:
+**0.0101 apart in OKLab, the same olive.** With the ramp they are **0.0961**
+apart.
+
+**0 AA failures out of 60 combinations per theme, 180/180 overall.** On the real
+`/codex` chips: dark t8 **3.26 to 4.91** across 32 elements, light t9 **1.42 to
+7.32** across 18. Chroma is preserved to three decimals on t1 to t8 in both
+schemes; only light t9 and t10 lose it, because sRGB has no chroma to give at
+that lightness (a yellow that dark *is* an olive). The tightest pair in the
+ladder was already 0.0571 (t5/t8) and is now 0.0426, so it is 25% tighter than
+the tightest pair the ladder already shipped, and every chip prints its own
+Roman numeral besides.
+
+`--tier-rgb` and the `.tier-bg-*` fills are deliberately untouched. They are
+washes, auras and particle tints with no contrast obligation, and they are
+mirrored as literal hexes in three files outside the change. Splitting ink from
+tint is what let paper darken its text without dragging the effects layer
+somewhere those mirrors do not follow.
+
+### Sub-12px text sitewide: 24 to zero
+
+The six `ModShell` rail labels really were the whole of it. 31 `text-[11px]`
+sites across `src/components/mod/**` went to 12px, and the sitewide rendered
+count over 46 routes and three themes went **24 per theme to 0 in all three**.
+Two alpha spellings (`text-parchment-400/60`, `text-parchment-300/60`) now name
+their rung and drop the modifier, and have zero non-placeholder call sites left.
+
+### The light accent was stepping the wrong way
+
+`accentHi` is the emphasis step off `accent`, and on paper emphasis is heavier
+ink, so it has to step DOWN in lightness. Light was carrying the DARK theme's
+base blue `#3692e7`, which is lighter than light's own base `#1b78d0`. Now
+`#14589f`, the same OKLCH hue at L 0.46.
+
+Over 21 routes in light: **23 of 23 rendered `--gold-leaf` elements failed AA
+before, 2 of 20 after.** The guest "Sign in" link went 2.75 to 6.04. Dark and
+midnight are untouched and measured unchanged.
+
+Sitewide AA failures, measured before and after **in the same page visit**
+(tokens reverted on the root, measured, restored, measured) so live content
+cannot move the number: **dark 160 to 123, light 237 to 145, midnight 148 to
+110.** No element class regressed.
+
+### Creator-play captions, and a reduced-motion bug found in passing
+
+The five sub-12px caption rules are now 12px, which needed a real layout pass
+because a `.cpl-stage` is one board square: **44.8px at a 360px viewport**, and
+"CHAT DECIDES" is 104px on one line at 12px. Total clipped pixels on a
+phone-sized square: **81.6 to 19.4**, nothing regressed at 87.1px, and the two
+residuals are physical rather than fixable (seven glyphs of 12px bold display
+do not fit in 44.8px).
+
+Found while in there: `html[data-anim="off"]` sets `transform: none` on
+everything inside a `.cpl-stage`, so any caption centred with
+`translateX(-50%)` **was not centred at all** in the reduced-motion still frame
+(the ROOK stamp sat 41px off the right edge of a 44.8px crop). Those captions
+now centre with width plus a negative margin, which survives it.

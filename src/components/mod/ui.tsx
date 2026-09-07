@@ -195,7 +195,7 @@ export function CountBadge({ n, tone = "warn" }: { n: number; tone?: "warn" | "n
   return (
     <span
       className={
-        "ml-auto shrink-0 px-1.5 py-px font-mono text-[11px] tabular-nums " +
+        "ml-auto shrink-0 px-1.5 py-px font-mono text-[12px] tabular-nums " +
         (tone === "warn" ? "bg-oxblood text-white" : "bg-[color:var(--bg-raised)] text-parchment-200")
       }
     >
@@ -221,7 +221,7 @@ export function Pill({
           : tone === "gold"
             ? "text-brag"
             : "text-parchment-300";
-  return <span className={`shrink-0 text-[11px] uppercase tracking-[0.05em] ${style}`}>{children}</span>;
+  return <span className={`shrink-0 text-[12px] uppercase tracking-[0.05em] ${style}`}>{children}</span>;
 }
 
 export type StatItem = {
@@ -240,8 +240,8 @@ export function StatCard({ label, value, sub, tone }: StatItem) {
   return (
     <div className="px-3.5 py-3">
       <div className={"font-display text-[22px] leading-none tabular-nums " + valueTone(tone)}>{value}</div>
-      <div className="mt-1 text-[11px] uppercase tracking-[0.05em] text-parchment-400">{label}</div>
-      {sub && <div className="mt-0.5 text-[11px] leading-snug text-parchment-400">{sub}</div>}
+      <div className="mt-1 text-[12px] uppercase tracking-[0.05em] text-parchment-400">{label}</div>
+      {sub && <div className="mt-0.5 text-[12px] leading-snug text-parchment-400">{sub}</div>}
     </div>
   );
 }
@@ -258,7 +258,7 @@ export function StatGrid({ items, cols = 4 }: { items: StatItem[]; cols?: 3 | 4 
             <span className="min-w-0 text-[12px] leading-tight text-parchment-400">{it.label}</span>
             <span className="shrink-0 text-right">
               <span className={"font-display text-lg tabular-nums " + valueTone(it.tone)}>{it.value}</span>
-              {it.sub && <span className="block text-[11px] leading-tight text-parchment-400">{it.sub}</span>}
+              {it.sub && <span className="block text-[12px] leading-tight text-parchment-400">{it.sub}</span>}
             </span>
           </div>
         ))}
