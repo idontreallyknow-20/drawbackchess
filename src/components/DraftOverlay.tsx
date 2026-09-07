@@ -386,14 +386,60 @@ function bankDelta(cardEl: HTMLElement | null, bankEl: HTMLElement | null): { dx
   };
 }
 
-// Deal choreography budget: three cards fully dealt and flipped in under
-// ~900ms. Cards fly from a face-down stack at the bottom center of the
-// panel to their slots with a stagger, then flip face-up; higher tiers flip
-// a touch later so the best card is the last reveal.
+// --- The motion vocabulary, mirrored for framer -----------------------------
+// globals.css owns the canonical --ease-*/--dur-* tokens (design-system.md §6)
+// and JS cannot hand a CSS custom property to a JS animation as a timing
+// function, so the three curves are restated here ONCE, by name. Every framer
+// transition in this file pulls from this table instead of retyping an
+// anonymous bezier at the call site — which is exactly the "retyped-bezier AI
+// default" the token block in globals.css was written to stop. Keep in sync
+// with :root.
+type Bezier = [number, number, number, number];
+const EASE_OUT: Bezier = [0.2, 0.8, 0.2, 1]; // entrances and hovers
+const EASE_IO: Bezier = [0.45, 0.03, 0.52, 0.96]; // movement between states
+const EASE_SPRING: Bezier = [0.2, 1.4, 0.4, 1]; // reveal, seal, victory ONLY
+const DUR_1 = 0.12;
+const DUR_2 = 0.2;
+const DUR_3 = 0.32;
+
+// Deal choreography budget: every card dealt, turned over and settled inside
+// DEAL_TOTAL_MS. Cards fly out of the vault's light at the top of the grid
+// into their slots, then turn face-up.
+//
+// The offer is dealt and turned over WEAKEST FIRST, so the beat builds to the
+// card that matters. That was always the stated intent ("higher tiers flip a
+// touch later so the best card is the last reveal") but the implementation was
+// a `tier * 12` nudge added to a slot-ordered delay, which only biased the
+// order and routinely lost: a tier-1 card in the last slot flipped at 480ms
+// while a tier-10 in the first slot flipped at 440ms, so the worst card got
+// the payoff position. The reveal order is now computed outright (see
+// revealOrder) and the slot index no longer touches the timing at all.
 const DEAL_STAGGER_MS = 80;
+const FLIP_STAGGER_MS = 100;
 const DEAL_MS = 280;
 const FLIP_MS = 300;
+// The headline card — last in the reveal order, the best in the offer — takes
+// a beat longer to turn, so it reads as the payoff rather than one more card.
+const FLIP_HEADLINE_MS = 380;
 const DEAL_TOTAL_MS = 900;
+
+/** Each card's position in the reveal order: weakest first, ties by slot. The
+ *  grid layout is untouched — only the deal and flip timing follow it. */
+function revealOrder(cards: { tier: number }[]): number[] {
+  const order = new Array<number>(cards.length).fill(0);
+  cards
+    .map((c, i) => ({ tier: c.tier, i }))
+    .sort((a, b) => a.tier - b.tier || a.i - b.i)
+    .forEach(({ i }, position) => {
+      order[i] = position;
+    });
+  return order;
+}
+
+// The confirmed card's flight to the pocket. Unchanged in length (it always
+// ran 550ms and the pick commits when it lands); what changed is that it is
+// now actually visible for all of it — see the .draft-flight layer.
+const FLIGHT_MS = 550;
 // Pack opening: how long the sealed pack sits before tearing itself, and how
 // long the tear runs before the cards deal out of it.
 const PACK_HOLD_MS = 1150;
@@ -401,9 +447,29 @@ const PACK_HOLD_MS = 1150;
 // (a reroll always earns its box) but tears itself almost immediately.
 const PACK_HOLD_MINIMIZED_MS = 450;
 // The vault-opening sequence: spin-up -> faces shear away -> core blooms ->
-// flash and shockwave. The cards deal out of the flash.
-const PACK_TEAR_MS = VAULT_OPEN_MS;
-const flipDelayMs = (i: number, tier: number) => i * DEAL_STAGGER_MS + DEAL_MS + 40 + tier * 12;
+// flash and shockwave. The cards are supposed to deal OUT OF THAT LIGHT, and
+// the vault's own stylesheet says so ("520 - 920ms flash + shockwave; the
+// cards deal out of the light").
+//
+// They did not. Waiting the full VAULT_OPEN_MS put the deal a beat AFTER the
+// vault had finished: the prism burned out around 760ms, the core and flash
+// faded to nothing by 940ms, and then the stage sat completely empty — measured
+// at roughly a quarter of a second of a panel with nothing in it — before the
+// first card appeared. The single most expensive moment in the draft ended on
+// a void.
+//
+// So the deal now starts while the light is still burning. By 760ms every hard
+// edge of the vault is gone (faces sheared, caps flown, rings flared out) and
+// what remains is the core, the flash and the shockwave — three soft glows
+// mid-fade, which the .draft-deal-bloom seam picks up and carries as the cards
+// fly out of it. Nothing is cut that has an edge to notice.
+const DEAL_OVERLAP_MS = 160;
+const PACK_TEAR_MS = Math.max(0, VAULT_OPEN_MS - DEAL_OVERLAP_MS);
+/** When card at reveal position `pos` starts turning over: after it has flown
+ *  to its slot, staggered by its place in the reveal order. With three cards
+ *  the last flip ends at 200 + 280 + 40 + 380 = 900ms, exactly the deal
+ *  budget, so the decision countdown still arms the frame the deal settles. */
+const flipDelayMs = (pos: number) => pos * FLIP_STAGGER_MS + DEAL_MS + 40;
 
 // Accidental-double-click guard: a click on the already-selected card only
 // confirms once this much time has passed since it was selected. The explicit
@@ -552,9 +618,28 @@ export function DraftOverlay({
   const [packStage, setPackStage] = useState<"sealed" | "tearing" | "open">(() =>
     reduceMotion || alreadyRevealed(offerRevealKey(offer.index, offer.rerolled)) ? "open" : "sealed",
   );
-  // Measured flight path from the chosen card to the dock, captured at
-  // confirm time (measuring during render would thrash layout).
-  const [pocket, setPocket] = useState<{ dx: number; dy: number } | null>(null);
+  // THE FLIGHT INTO THE POCKET. Everything the confirmed card needs to fly on
+  // its own, captured in one measurement at confirm time (measuring during
+  // render would thrash layout): where the card is on screen right now, and
+  // how far it has to travel to the buff dock.
+  //
+  // It has to fly on its own because the panel is a scroll box. `.plate` sets
+  // `overflow-y: auto` for short viewports, which forces the browser to
+  // compute `overflow-x` as `auto` too, so a card animated inside the grid was
+  // hard-clipped at the panel's edge: the flight — the beat that tells you
+  // where your card just went — was a slide that vanished a third of the way
+  // across, every single time. The card is now handed to a fixed-position
+  // layer OUTSIDE the panel (see .draft-flight below) and the in-grid copy is
+  // dropped in the same frame, so the handoff is invisible and the whole
+  // journey is on screen.
+  const [flight, setFlight] = useState<{
+    index: number;
+    tier: BuffOffer["cards"][number]["tier"];
+    /** The card's viewport rect at the instant it was confirmed. */
+    rect: { x: number; y: number; w: number; h: number };
+    dx: number;
+    dy: number;
+  } | null>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const bankBtnRef = useRef<HTMLButtonElement | null>(null);
   const bankTimer = useRef<number | null>(null);
@@ -756,7 +841,7 @@ export function DraftOverlay({
     setDealtKey(dealKey);
     setSelected(null);
     setChosen(null);
-    setPocket(null);
+    setFlight(null);
     setBanking(false);
     setBankDeltas(null);
     setHidden(false);
@@ -951,7 +1036,22 @@ export function DraftOverlay({
       commit(i);
       return;
     }
-    setPocket(pocketDelta(cardRefs.current[i]));
+    // One measurement, one frame: where the card sits and where it is going.
+    const el = cardRefs.current[i];
+    const r = el?.getBoundingClientRect();
+    if (!r || r.width < 8) {
+      // Nothing to fly (the card is not on screen). The flight is decoration;
+      // the pick is not, so commit rather than wait for a beat that cannot run.
+      setChosen(i);
+      commit(i);
+      return;
+    }
+    setFlight({
+      index: i,
+      tier: offer.cards[i]?.tier ?? 1,
+      rect: { x: r.left, y: r.top, w: r.width, h: r.height },
+      ...pocketDelta(el),
+    });
     setChosen(i);
   };
 
@@ -986,6 +1086,16 @@ export function DraftOverlay({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minimized, chosen]);
+
+  // Motion switched off mid-flight — which is exactly what the low-time hold
+  // does the moment either clock drops under 20 seconds — unmounts the flight
+  // layer, and its completion callback dies with it. Commit on the spot rather
+  // than making the player wait out the fallback timer below: an animation
+  // that has been cancelled must not hold authoritative state hostage.
+  useEffect(() => {
+    if (reduceMotion && chosen != null && !committedRef.current) commit(chosen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduceMotion, chosen]);
 
   // Belt and braces: a confirmed pick always commits within a fixed budget,
   // even if the flight's completion callback is lost some other way (rAF
@@ -1384,6 +1494,9 @@ export function DraftOverlay({
   }
 
   const mid = (offer.cards.length - 1) / 2;
+  // Weakest first. Cheap (two or three cards) and needed before the grid.
+  const order = revealOrder(offer.cards);
+  const flightDef = flight ? BUFF_BY_ID[offer.cards[flight.index]?.id ?? ""] : undefined;
 
   return (
     <>
@@ -1405,6 +1518,76 @@ export function DraftOverlay({
             </span>
             {deadline != null && <ChipCountdown deadline={deadline} />}
           </button>
+        </div>
+      )}
+      {/* THE FLIGHT INTO THE POCKET, in its own layer above the overlay and
+          outside the panel's scroll box, so the whole journey is visible.
+          Decorative and inert (pointer-events-none, aria-hidden): the pick
+          state is already settled, and the layer only carries the picture of
+          it across the screen. It commits when it lands, exactly as the
+          in-grid flight used to; the 900ms COMMIT_FALLBACK_MS backstop still
+          covers a lost completion callback. */}
+      {flight && flightDef && !reduceMotion && (
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-[56]">
+          <motion.div
+            data-tier={flight.tier}
+            data-cat={flightDef.category}
+            className="draft-fx draft-flight"
+            style={{
+              left: flight.rect.x,
+              top: flight.rect.y,
+              width: flight.rect.w,
+              height: flight.rect.h,
+            }}
+            initial={{ x: 0, y: 0, scale: 1, rotate: 0, opacity: 1 }}
+            // The card is picked up before it is thrown: it swells for a
+            // tenth of a second, then travels. Horizontal runs on --ease-out
+            // (front-loaded) while vertical runs on --ease-io (slow off the
+            // mark), so the two axes fall out of step and the path BOWS
+            // instead of sliding down a straight diagonal — a throw, not a
+            // drag. Both curves come from the vocabulary; nothing bespoke.
+            animate={{
+              x: flight.dx,
+              y: flight.dy,
+              scale: [1, 1.06, 0.16],
+              rotate: -7,
+              opacity: [1, 1, 0],
+            }}
+            transition={{
+              duration: FLIGHT_MS / 1000,
+              x: { duration: FLIGHT_MS / 1000, ease: EASE_OUT },
+              y: { duration: FLIGHT_MS / 1000, ease: EASE_IO },
+              rotate: { duration: FLIGHT_MS / 1000, ease: EASE_IO },
+              scale: {
+                duration: FLIGHT_MS / 1000,
+                times: [0, 0.18, 1],
+                ease: [EASE_OUT, EASE_IO],
+              },
+              opacity: { duration: FLIGHT_MS / 1000, times: [0, 0.78, 1], ease: "linear" },
+            }}
+            onAnimationComplete={() => commit(flight.index)}
+          >
+            {/* The same face, the same tier edge and the same foil the card
+                had a frame ago, so the handoff is invisible. */}
+            <span className="draft-fx__glow" />
+            <BuffCard buff={flightDef} tier={flight.tier} preview />
+            {flight.tier >= 7 && <span className="draft-holo" />}
+            {/* The flare and its mote trail ride along, as they always meant
+                to: the card sheds gold the whole way to the dock. */}
+            <span className="pick-dissolve">
+              <span className="pick-dissolve__flare" />
+              {Array.from({ length: 10 }).map((_, m) => (
+                <i
+                  key={m}
+                  style={{
+                    ["--ang" as string]: `${(m * 36 + 12) % 360}deg`,
+                    ["--pd" as string]: `${30 + ((m * 31) % 40)}px`,
+                    ["--pdelay" as string]: `${(m % 5) * 45}ms`,
+                  }}
+                />
+              ))}
+            </span>
+          </motion.div>
         </div>
       )}
       <div
@@ -1607,7 +1790,10 @@ export function DraftOverlay({
               <button
                 type="button"
                 onClick={() => setPackStage("open")}
-                className="min-h-[36px] px-3 py-1 text-[12px] text-parchment-400 transition-colors hover:text-parchment-100"
+                // 44px on a touchscreen, the desktop 36px floor only where the
+                // pointer is actually fine. `sm:` was never a proxy for "has a
+                // mouse": a touchscreen laptop at 1440 still needs 44.
+                className="min-h-[44px] px-3 py-1 text-[12px] text-parchment-400 transition-colors hover:text-parchment-100 [@media(pointer:fine)]:min-h-[36px]"
               >
                 Skip
               </button>
@@ -1658,10 +1844,27 @@ export function DraftOverlay({
         <div
           className={`draft-deal-grid mt-5 grid items-stretch gap-3 lg:gap-4 ${offer.cards.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
         >
+          {/* The seam: the vault's light, handed to the cards. It sits at the
+              grid's mouth (where the vault's core just was), starts at the
+              brightness the vault left off at, and decays as the cards fly out
+              of it. First in DOM so it paints behind them. */}
+          {!reduceMotion && (
+            <span
+              key={`bloom-${dealKey}`}
+              aria-hidden
+              data-tier={maxTier}
+              className="draft-deal-bloom"
+            />
+          )}
           {offer.cards.map((card, i) => {
             const def = BUFF_BY_ID[card.id];
             if (!def) return null;
-            const flipDelay = flipDelayMs(i, card.tier);
+            // Weakest first: this card's place in the reveal order drives both
+            // its flight into the slot and the moment it turns over.
+            const pos = order[i];
+            const headline = pos === offer.cards.length - 1;
+            const flipDelay = flipDelayMs(pos);
+            const flipMs = headline ? FLIP_HEADLINE_MS : FLIP_MS;
             return (
               <motion.div
                 // Key by the offer index AND reroll count so a fresh draft (or
@@ -1675,14 +1878,18 @@ export function DraftOverlay({
                 data-cat={def.category}
                 // The one-shot shine pass (CSS) waits for this card's own flip
                 // to finish before it crosses.
-                style={{ ["--reveal-delay" as string]: `${flipDelay + FLIP_MS + 80}ms` }}
+                style={{ ["--reveal-delay" as string]: `${flipDelay + flipMs + 80}ms` }}
                 className={
                   "draft-fx mx-auto h-full w-full max-w-md sm:max-w-none " +
                   (selected === i && chosen == null && !banking ? "draft-fx--selected" : "")
                 }
-                // Deal from the chest: the card starts face-down where the
-                // chest's open mouth sat (top center of the grid), then fans
-                // out and down into its slot as if lifted from the hoard.
+                // Deal out of the vault's light: the card starts face-down and
+                // invisible where the vault's mouth just was (top center of the
+                // grid), then fades up as it fans out and down into its slot.
+                // It starts at opacity 0, not 1, so the cards materialise one
+                // at a time in the reveal order instead of sitting as a
+                // pre-formed stack that only the stagger separates — the deal
+                // is now something you can actually count.
                 initial={
                   reduceMotion
                     ? { opacity: 0 }
@@ -1691,28 +1898,18 @@ export function DraftOverlay({
                         y: "-42%",
                         rotate: (i - mid) * 2,
                         scale: 0.58,
-                        opacity: 1,
+                        opacity: 0,
                       }
                 }
                 animate={
                   chosen === i
-                    ? // Into the pocket: the confirmed card arcs toward the
-                      // dock (measured at confirm time), shrinking as it goes,
-                      // and fades just before it lands. Under reduced motion it
-                      // simply fades: this and the bank flight below are the
-                      // LARGEST movements in the app (a full cross-viewport
-                      // arc) and were the only two branches here with no
-                      // reduced-motion check, while their immediate siblings
-                      // all had one.
-                      reduceMotion
-                      ? { opacity: 0 }
-                      : {
-                          x: pocket?.dx ?? -180,
-                          y: pocket?.dy ?? 220,
-                          scale: 0.18,
-                          rotate: -5,
-                          opacity: [1, 1, 0.85, 0],
-                        }
+                    ? // The confirmed card has been handed to the fixed flight
+                      // layer, which carries it the rest of the way; this copy
+                      // simply stops existing in the same frame (see the
+                      // zero-duration transition below), so the handoff cannot
+                      // double-draw. Reduced motion never sets `flight` and
+                      // commits on the spot, so this is just the fade there.
+                      { opacity: 0 }
                     : chosen != null
                     ? // The unpicked card bows out: it sinks and fades while
                       // the chosen one lifts away (fade only, reduced motion).
@@ -1760,29 +1957,38 @@ export function DraftOverlay({
                 }
                 transition={
                   chosen === i
-                    ? { duration: 0.55, ease: [0.3, 0.05, 0.2, 1], opacity: { times: [0, 0.6, 0.85, 1] } }
+                    ? // Handoff, not an animation: the flight layer takes over
+                      // on the same frame. Under reduced motion the pick is
+                      // already committed, so this fade has nothing to gate.
+                      { duration: reduceMotion ? DUR_1 : 0 }
                     : chosen != null
-                    ? { duration: 0.3, ease: "easeIn" }
+                    ? // The unpicked card clears the stage on --ease-io so the
+                      // flying card is alone with the eye almost at once.
+                      { duration: DUR_3, ease: EASE_IO }
                     : rerolling && !reduceMotion
-                    ? { delay: i * 0.05, duration: 0.52, ease: [0.4, 0, 0.3, 1], opacity: { times: [0, 0.6, 0.85, 1] } }
+                    ? {
+                        delay: (pos * DEAL_STAGGER_MS) / 1000,
+                        duration: 0.52,
+                        ease: EASE_IO,
+                        opacity: { times: [0, 0.6, 0.85, 1] },
+                      }
                     : banking
                     ? {
                         delay: 0.14 + i * 0.06,
                         duration: 0.4,
-                        ease: [0.3, 0.05, 0.2, 1],
+                        ease: EASE_IO,
                         opacity: { times: [0, 0.5, 0.8, 1] },
                       }
                     : dealt
-                    ? { duration: 0.18, ease: "easeOut" }
+                    ? // Settled: selection dimming and undimming only.
+                      { duration: DUR_2, ease: EASE_OUT }
                     : {
-                        delay: (i * DEAL_STAGGER_MS) / 1000,
+                        // Weakest card first, so the deal builds.
+                        delay: (pos * DEAL_STAGGER_MS) / 1000,
                         duration: DEAL_MS / 1000,
-                        ease: [0.2, 0.8, 0.2, 1],
+                        ease: EASE_OUT,
                       }
                 }
-                onAnimationComplete={() => {
-                  if (chosen === i) commit(i);
-                }}
                 // Belt and braces for the pick click: if ANY decorative layer
                 // (holo, sheen, glow, a future overlay) ever swallows the
                 // click before it reaches the card's button, the shell catches
@@ -1820,30 +2026,48 @@ export function DraftOverlay({
                 }}
               >
                 <span aria-hidden className="draft-fx__glow" />
-                {/* Selection seal: an unmistakable gold check on the selected
-                    card, over and above the brighter border, so "which card
-                    am I about to confirm" never needs a second look. */}
                 {selected === i && chosen == null && !banking && (
-                  <span aria-hidden className="draft-sel-check">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 6 9 17l-5-5" />
-                    </svg>
-                  </span>
+                  <>
+                    {/* Seating the pick: one ring closes onto the card the
+                        instant it is chosen. Selection used to arrive with no
+                        motion at all — the gold ring and the check badge just
+                        WERE there on the next frame — so a click felt like it
+                        had toggled a checkbox rather than laid a card down.
+                        The ring is a one-shot flourish over persistent state
+                        (the ring, the badge, the named Confirm button), so it
+                        is the part that stands down when motion is off. */}
+                    <span aria-hidden className="draft-sel-seat" />
+                    {/* Selection seal: an unmistakable gold check on the
+                        selected card, over and above the brighter border, so
+                        "which card am I about to confirm" never needs a second
+                        look. A seal, so it lands on --ease-spring. */}
+                    <span aria-hidden className="draft-sel-check">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6 9 17l-5-5" />
+                      </svg>
+                    </span>
+                  </>
                 )}
                 {/* 3D flip: the back faces the viewer while dealing, then the
-                    wrapper rotates to reveal the face (higher tier flips a
-                    touch later). Banking rotates it face-down again. */}
+                    wrapper rotates to reveal the face. This is THE reveal in
+                    the draft, so it is one of the three places the system
+                    sanctions --ease-spring: the card turns a few degrees past
+                    flat and rocks back, which is what gives the deal its
+                    settle. (It used to run on an anonymous bezier that stopped
+                    dead on the face, so three cards landed with no weight at
+                    all.) Banking rotates it face-down again, a plain state
+                    change on --ease-io. */}
                 <motion.div
                   className="draft-flip"
                   initial={reduceMotion ? false : { rotateY: 180 }}
                   animate={{ rotateY: (banking || rerolling) && !reduceMotion ? 180 : 0 }}
                   transition={
                     banking || rerolling
-                      ? { duration: 0.22, ease: "easeIn" }
+                      ? { duration: DUR_2, ease: EASE_IO }
                       : {
                           delay: reduceMotion || dealt ? 0 : flipDelay / 1000,
-                          duration: FLIP_MS / 1000,
-                          ease: [0.3, 0.1, 0.3, 1],
+                          duration: flipMs / 1000,
+                          ease: EASE_SPRING,
                         }
                   }
                 >
@@ -1888,26 +2112,9 @@ export function DraftOverlay({
                   </div>
                 </motion.div>
                 <span aria-hidden className="draft-fx__sheen" />
-                {/* Pick confirmation: the chosen card flares once and sheds a
-                    stream of gold motes as it dissolves toward the dock (the
-                    layer rides the wrapper's pocket flight, so the motes trail
-                    the card the whole way). Reduced motion commits instantly
-                    with no flight, so this never renders there. */}
-                {chosen === i && !reduceMotion && (
-                  <span aria-hidden className="pick-dissolve">
-                    <span className="pick-dissolve__flare" />
-                    {Array.from({ length: 10 }).map((_, m) => (
-                      <i
-                        key={m}
-                        style={{
-                          ["--ang" as string]: `${(m * 36 + 12) % 360}deg`,
-                          ["--pd" as string]: `${30 + ((m * 31) % 40)}px`,
-                          ["--pdelay" as string]: `${(m % 5) * 45}ms`,
-                        }}
-                      />
-                    ))}
-                  </span>
-                )}
+                {/* The pick's flare and mote trail moved to the flight layer
+                    with the card itself: rendered here they were clipped at
+                    the panel edge along with everything else. */}
               </motion.div>
             );
           })}
@@ -1967,7 +2174,7 @@ export function DraftOverlay({
                   type="button"
                   onClick={() => setBankArmed(false)}
                   disabled={banking}
-                  className="shrink-0 touch-manipulation rounded-[1px] border border-[color:var(--edge)] bg-white/[0.03] px-3 py-3 font-display text-[14px] sm:text-[13px] font-semibold tracking-wide text-parchment-200 transition hover:border-[color:var(--edge-strong)] hover:text-parchment-100 disabled:opacity-40"
+                  className="min-h-[44px] shrink-0 touch-manipulation rounded-[1px] border border-[color:var(--edge)] bg-white/[0.03] px-3 py-3 font-display text-[14px] sm:text-[13px] font-semibold tracking-wide text-parchment-200 transition hover:border-[color:var(--edge-strong)] hover:text-parchment-100 disabled:opacity-40 [@media(pointer:fine)]:min-h-[36px]"
                 >
                   Keep looking
                 </button>
@@ -1978,7 +2185,7 @@ export function DraftOverlay({
                 disabled={chosen != null || banking}
                 // Quiet secondary (arm step, not a commit): glass stays with
                 // the lock-in buttons only.
-                className="w-full touch-manipulation rounded-[1px] border border-[color:var(--edge)] bg-white/[0.03] px-6 py-3 font-display text-sm font-semibold tracking-wide text-parchment-200 transition hover:border-[color:var(--edge-strong)] hover:text-parchment-100 disabled:opacity-40 sm:w-auto"
+                className="min-h-[44px] w-full touch-manipulation rounded-[1px] border border-[color:var(--edge)] bg-white/[0.03] px-6 py-3 font-display text-sm font-semibold tracking-wide text-parchment-200 transition hover:border-[color:var(--edge-strong)] hover:text-parchment-100 disabled:opacity-40 sm:w-auto [@media(pointer:fine)]:min-h-[36px]"
                 title="Skip this draft; your next one pulls from a tier higher"
               >
                 Skip &amp; bank <span className="ml-1 text-parchment-400">+1 tier next draft</span>

@@ -323,9 +323,59 @@ function DraftedGroup({
 
 // A single revealed rule row for the post game summary. Both players' rules are
 // shown once the game is over, so the "secret" finally pays off.
-function RuleReveal({ label, nerf, children }: { label: string; nerf: Nerf; children?: ReactNode }) {
+//
+// `unseal` marks THE reveal: the opponent's rule, the one thing you did not
+// know for the whole game, at the moment you break its seal. It used to arrive
+// with no motion at all — a React conditional swapped the sealed button for
+// this box between one frame and the next, which is a strange way to deliver
+// what the roadmap calls the game's most shareable moment. It now plays the
+// same three beats the in-game nerf reveal plays (a band sweeps down, the card
+// arrives, the rule's NAME stamps last), scaled from that effect's two seconds
+// to 480ms because this one sits in a panel, not over the board. See
+// .nerf-unseal in globals.css.
+function RuleReveal({
+  label,
+  nerf,
+  unseal,
+  announce,
+  onUnsealed,
+  children,
+}: {
+  label: string;
+  nerf: Nerf;
+  unseal?: boolean;
+  /** This rule is the reveal, motion or no motion: announce it. Deliberately
+   *  separate from `unseal`, which is only the visual beat — a player with
+   *  animations off must still HEAR the reveal, and tying the live region to
+   *  the animation would have silenced exactly the people who cannot see it. */
+  announce?: boolean;
+  /** Fired once the unseal beat has finished, so it never plays twice. */
+  onUnsealed?: () => void;
+  children?: ReactNode;
+}) {
   return (
-    <div className={`border p-3 text-left tier-bg-${nerf.tier}`}>
+    <div
+      className={`relative border p-3 text-left tier-bg-${nerf.tier}` + (unseal ? " nerf-unseal" : "")}
+      {...(announce ? { role: "status" as const, "aria-live": "polite" as const } : null)}
+      onAnimationEnd={
+        unseal
+          ? (e) => {
+              // The name is the LAST beat to finish (it starts at 160ms and
+              // runs to 480ms), so disarming on it can never cut the
+              // choreography short the way disarming on the card's own
+              // arrival at 320ms would.
+              if (e.animationName === "nerf-unseal-name") onUnsealed?.();
+            }
+          : undefined
+      }
+    >
+      {/* The seal breaking: one tier-tinted band sweeping down the card. Its
+          wrapper clips it, and it is inert and invisible to assistive tech. */}
+      {unseal && (
+        <span aria-hidden className="nerf-unseal__seal">
+          <i />
+        </span>
+      )}
       <div className="flex items-center justify-between gap-2">
         <span>{label}</span>
         <span
@@ -336,7 +386,12 @@ function RuleReveal({ label, nerf, children }: { label: string; nerf: Nerf; chil
           <span>{TIER_LABEL[nerf.tier]}</span>
         </span>
       </div>
-      <div className={`mt-1 font-display text-base font-semibold leading-tight tier-${nerf.tier}`}>
+      <div
+        className={
+          `mt-1 font-display text-base font-semibold leading-tight tier-${nerf.tier}` +
+          (unseal ? " nerf-unseal__name" : "")
+        }
+      >
         {nerf.name}
       </div>
       <p className="mt-1 text-xs leading-snug text-parchment-200">
@@ -359,16 +414,45 @@ function SummaryFold({
   label,
   count,
   hint,
+  onOpenChange,
   children,
 }: {
   label: string;
   count?: number;
   hint?: string;
+  /** Whether the fold is open, reported on every change. */
+  onOpenChange?: (open: boolean) => void;
   children: ReactNode;
 }) {
+  // The fold is CONTROLLED rather than a plain native <details>, and it has to
+  // be. Measured: a closed <details> in Chromium still runs the animations of
+  // the content inside it, so the reveal beat on the opponent's rule played
+  // itself out, invisibly, seconds before anyone opened the fold; by the time
+  // the player looked, the card was sitting in its finished state. Letting the
+  // browser toggle and adding the class from a React state update a frame
+  // later would be no better: the settled card would paint for one frame and
+  // then jump back to nothing to animate in.
+  //
+  // Intercepting the press (mouse and keyboard alike: Enter and Space both
+  // arrive on <summary> as a click) puts the open state and the beat in the
+  // same commit, so the animation starts on the first frame the card is
+  // actually on screen.
+  const [open, setOpen] = useState(false);
+  const toggle = (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+    const next = !open;
+    setOpen(next);
+    onOpenChange?.(next);
+  };
   return (
-    <details className="group mt-5 border border-[color:var(--edge)] bg-ink-900/40 text-left">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 outline-none focus-visible:text-gold-leaf [&::-webkit-details-marker]:hidden">
+    <details
+      open={open}
+      className="group mt-5 border border-[color:var(--edge)] bg-ink-900/40 text-left"
+    >
+      <summary
+        onClick={toggle}
+        className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 outline-none focus-visible:text-gold-leaf [&::-webkit-details-marker]:hidden"
+      >
         <span className="flex min-w-0 items-baseline gap-2">
           <span>{label}</span>
           {count != null && (
@@ -613,6 +697,26 @@ export function GameOver({
     };
   }, [spectator]);
   const [oppRevealed, setOppRevealed] = useState(!opponentHidden);
+  // THE REVEAL. Armed for exactly one player: the one sitting at the board who
+  // spent the whole game not knowing what the other side was playing under. It
+  // disarms itself the moment the beat has played (see onAnimationEnd on the
+  // rule card), so re-opening the fold does not replay it, and a spectator —
+  // who never had a secret to keep — never arms it at all.
+  //
+  // There are two ways in and both are the same moment: most players reach it
+  // by opening the "Rules this game" fold (the default: the opponent's rule is
+  // simply printed there, with no beat of any kind before this change), and a
+  // player who turned on "Keep opponent's rule hidden" reaches it by pressing
+  // the sealed card. Arming from render rather than from the click is what
+  // makes the fold path work: the card sits inside a closed <details>, so it is
+  // display:none and its animation cannot start until the fold opens, which is
+  // precisely when the player first lays eyes on the rule.
+  const [unsealArmed, setUnsealArmed] = useState(!spectator);
+  // The beat only exists once the rule is actually on screen. Chromium runs the
+  // animations of content inside a CLOSED <details>, so arming from render
+  // alone played the whole reveal invisibly and left the settled card waiting
+  // behind an unopened fold; SummaryFold reports its open state instead.
+  const [rulesOpen, setRulesOpen] = useState(false);
   const primaryRef = useRef<HTMLButtonElement | null>(null);
   const reduceMotion = useReducedMotion();
   const draw = result.winner === "draw";
@@ -934,7 +1038,14 @@ export function GameOver({
           <SummaryFold
             label="Rules this game"
             count={(myNerf ? 1 : 0) + (opponentNerf ? 1 : 0)}
+            // Deliberately left alone. A hint naming what is inside ("their
+            // secret rule") would draw the eye to the payoff, but it is only
+            // true online: against a bot the opponent's rule is printed in the
+            // rail from move one, and nothing passed down here can tell the
+            // two apart. Copy that is wrong half the time is worse than no
+            // copy, so the beat carries the moment instead.
             hint={!spectator && opponentNerf && !oppRevealed ? "opponent's still sealed" : undefined}
+            onOpenChange={setRulesOpen}
           >
           <div className="grid gap-2 sm:grid-cols-2">
             {myNerf && (
@@ -950,11 +1061,19 @@ export function GameOver({
                 <RuleReveal
                   label={spectator ? `${names[oppColor]} (${sideLabel(oppColor)})` : "Opponent rule"}
                   nerf={opponentNerf}
+                  unseal={unsealArmed && rulesOpen && !reduceMotion}
+                  announce={unsealArmed}
+                  onUnsealed={() => setUnsealArmed(false)}
                 />
               ) : (
                 <button
                   type="button"
-                  onClick={() => setOppRevealed(true)}
+                  onClick={() => {
+                    // The one moment the whole mode is built around. The beat
+                    // is already armed; this just breaks the seal.
+                    haptic("medium");
+                    setOppRevealed(true);
+                  }}
                   className="flex min-h-[6.5rem] flex-col items-center justify-center gap-2 border border-[color:var(--edge)] bg-ink-900/40 p-3 text-parchment-200 transition hover:border-gold/50 hover:bg-gold/10 hover:text-gold-leaf"
                 >
                   <span

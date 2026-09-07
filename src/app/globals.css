@@ -2166,6 +2166,87 @@ html[data-anim="off"] .nerf-reveal-cell {
   opacity: 0 !important;
 }
 
+/* --- BREAKING THE SEAL (the game-over reveal) -------------------------------
+   The payoff of an entire game of Nerf. For thirty or sixty moves you did not
+   know what your opponent was playing under; this is the click where you find
+   out, and the roadmap calls it the game's most shareable moment.
+
+   It used to be a React conditional. The sealed "?" button was replaced by the
+   rule card between one frame and the next, with no transition of any kind —
+   the single flattest moment in the product sat on top of its best material.
+
+   So it now speaks the same language as the in-game nerf reveal directly above
+   (a band descends, then the rule's name stamps), compressed from that
+   effect's two seconds to 480ms because this one lands inside a panel rather
+   than over the board. A choreographed game effect with its own declared
+   budget, which design-system.md §6 allows past --dur-3; three beats, all of
+   them transform and opacity:
+
+     0-320ms    the card arrives: rises 8px and fades up      (--dur-3, --ease-out)
+     0-260ms    the seal breaks: one tier-tinted band sweeps
+                DOWN the card and is gone                     (--ease-io)
+     160-480ms  the rule's NAME lands last, dropping in and
+                settling — the word you waited a game for     (--ease-spring)
+
+   Reduced motion and animations-off never reach here: GameOver only sets the
+   class when motion is on, and the rule card itself — permanent, legible, and
+   announced through role="status" — is the feedback in every mode. */
+@keyframes nerf-unseal-in {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.nerf-unseal {
+  /* Deliberately NOT overflow:hidden. The rule text carries GlossaryText
+     popovers that open past the card's edge; the sweep is clipped by its own
+     wrapper instead. */
+  animation: nerf-unseal-in var(--dur-3, 320ms) var(--ease-out, ease-out) both;
+}
+.nerf-unseal__seal {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.nerf-unseal__seal > i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 42%;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgb(var(--tier-rgb, 181 70 65) / 0.28) 55%,
+    rgba(255, 244, 214, 0.14) 80%,
+    transparent
+  );
+  opacity: 0;
+  animation: nerf-unseal-seal 260ms var(--ease-io, ease-in-out) both;
+}
+@keyframes nerf-unseal-seal {
+  0% { opacity: 0; transform: translateY(-110%); }
+  15% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(260%); }
+}
+/* The name lands last and lands hardest: it is the answer to the question the
+   whole game asked. --ease-spring is sanctioned here — this is the reveal. */
+.nerf-unseal .nerf-unseal__name {
+  animation: nerf-unseal-name 320ms var(--ease-spring, ease-out) 160ms both;
+}
+@keyframes nerf-unseal-name {
+  0% { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+html[data-anim="off"] .nerf-unseal,
+html[data-anim="off"] .nerf-unseal .nerf-unseal__name {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+html[data-anim="off"] .nerf-unseal__seal > i { animation: none; opacity: 0; }
+
 /* Subtle running-clock pulse (under 30s). Clock urgency is one of the few
    effects allowed to loop (see design-system.md motion rules). Opacity-only so
    it never shifts layout, and dropped entirely under reduced motion / anim-off

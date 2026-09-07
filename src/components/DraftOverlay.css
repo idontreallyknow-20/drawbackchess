@@ -24,9 +24,21 @@
 }
 
 /* Draft faces keep the calm base .draft-face treatment from globals; only the
-   corners are squared here. */
+   corners are squared here.
+
+   The bottom padding is a reserved strip for the animation-preview medallion.
+   The medallion (.dpv, 2.75rem) is pinned bottom-2 right-2 by BuffCard, which
+   put a 39px opaque-ish disc directly ON the card's closing lines: measured
+   overlap of up to 27x15px of the flavour quote at 360px and 28x15px at 768px,
+   and on a card with no flavour line it lands on the RULE TEXT itself, which is
+   the one thing a player is reading when they choose between two cards. The
+   medallion spans 7px to 45.5px above the card's bottom border, so 3.25rem of
+   bottom padding drops the text clear of it at every width and turns the
+   overlap into a deliberate footer strip. Text is never decoration's problem to
+   dodge. */
 .draft-fx .draft-face {
   border-radius: 1px;
+  padding-bottom: 3.25rem;
 }
 
 /* Border-first hover: a solid tier-colored outline and a hard dark drop.
@@ -78,6 +90,33 @@ html[data-anim="off"] .draft-fx:hover .draft-fx__glow {
     0 16px 30px -14px rgba(0, 0, 0, 0.9);
 }
 
+/* Seating the pick: one ring closes onto the card at the moment of selection.
+   Selection used to arrive with no motion whatsoever — the gold ring and the
+   check badge simply existed on the next frame — so choosing a card read like
+   ticking a checkbox instead of laying a card down. 320ms (--dur-3), on
+   --ease-out because it is an arrival, transform + opacity only.
+
+   It is a flourish OVER persistent state (the gold ring on .draft-fx__glow,
+   the check badge, and a Confirm button that names the card), which is why it
+   is the layer that stands down when animations are off: the feedback that
+   tells you what you picked never depends on it. */
+.draft-sel-seat {
+  position: absolute;
+  inset: -3px;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px rgb(var(--accent-hi-rgb, 216 181 110) / 0.9);
+  opacity: 0;
+  animation: draft-sel-seat var(--dur-3, 320ms) var(--ease-out, ease-out) both;
+}
+@keyframes draft-sel-seat {
+  0% { opacity: 0; transform: scale(1.06); }
+  40% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1); }
+}
+html[data-anim="off"] .draft-sel-seat { animation: none; opacity: 0; }
+
 /* Selection seal: gold check badge pinned to the selected card's top-right
    corner (paired with the brighter ring above). */
 .draft-sel-check {
@@ -94,7 +133,10 @@ html[data-anim="off"] .draft-fx:hover .draft-fx__glow {
   background: rgb(var(--accent-hi-rgb, 216 181 110));
   color: #191309;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  animation: draft-sel-check-in 0.16s ease-out both;
+  /* A seal, so it lands on --ease-spring (one of the three uses the system
+     reserves it for) at --dur-2, instead of the off-vocabulary 160ms ease-out
+     it used to snap in on. */
+  animation: draft-sel-check-in var(--dur-2, 200ms) var(--ease-spring, ease-out) both;
   pointer-events: none;
 }
 @keyframes draft-sel-check-in {
@@ -140,12 +182,50 @@ html[data-anim="off"] .draft-expire-pulse::after { animation: none; }
    quiet ink panel: thin gold border, hairline inner frame, tier numeral
    watermark. No gradients. */
 .draft-deal-grid {
+  position: relative;
   perspective: 1200px;
   /* Headroom for the hover lift (-3px): without it the raised card clips
      against the panel edge on the first row and collides with the row above
      in the stacked mobile layout. */
   padding-top: 12px;
 }
+
+/* THE SEAM: the vault's light, handed to the cards.
+   The vault used to burn out completely and the stage then sat empty for about
+   a quarter of a second before the first card appeared — the deal did not come
+   out of the light, it came out of a dead pause. DraftOverlay now starts the
+   deal DEAL_OVERLAP_MS early, while the core, flash and shockwave are still
+   fading, and this bloom picks that light up at the grid's mouth and decays as
+   the cards clear it. One shot per deal, transform + opacity only, behind
+   everything. */
+.draft-deal-bloom {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  z-index: 0;
+  width: 260px;
+  height: 260px;
+  margin: -96px 0 0 -130px;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgb(var(--bloom-rgb, 216 181 110) / 0.42),
+    rgb(var(--bloom-rgb, 216 181 110) / 0.1) 45%,
+    transparent 70%
+  );
+  opacity: 0;
+  animation: draft-deal-bloom 0.42s var(--ease-out, ease-out) both;
+}
+/* The tint follows the vault's material band, same table the edge pulse uses. */
+.draft-deal-bloom[data-tier="7"] { --bloom-rgb: 168 119 216; }
+.draft-deal-bloom[data-tier="8"] { --bloom-rgb: 224 82 82; }
+.draft-deal-bloom[data-tier="9"] { --bloom-rgb: 244 196 48; }
+.draft-deal-bloom[data-tier="10"] { --bloom-rgb: 34 211 238; }
+@keyframes draft-deal-bloom {
+  0% { opacity: 1; transform: scale(0.85); }
+  100% { opacity: 0; transform: scale(1.75); }
+}
+html[data-anim="off"] .draft-deal-bloom { animation: none; opacity: 0; }
 @media (max-width: 639px) {
   /* Stacked cards on phones: open the row gap so a card's hover lift and
      its neighbor's hover/select ring never share pixels. */
@@ -828,9 +908,29 @@ html[data-anim="off"] .dock-pocket-flash { animation: none; }
    and never added to the list. Anything new with `position: absolute` belongs
    here too. */
 .draft-fx
-  > :not(.draft-fx__glow):not(.draft-fx__sheen):not(.pick-dissolve):not(.draft-sel-check) {
+  > :not(.draft-fx__glow):not(.draft-fx__sheen):not(.pick-dissolve):not(.draft-sel-check):not(.draft-sel-seat) {
   position: relative;
   z-index: 1;
+}
+
+/* ---------------------------------------------------------------------------
+   THE FLIGHT INTO THE POCKET.
+
+   The confirmed card leaves the panel and flies to the buff dock. It cannot do
+   that from inside the grid: `.plate` carries `overflow-y: auto` for short
+   viewports, and `overflow-y: auto` with `overflow-x: visible` makes the
+   browser compute overflow-x as `auto` too — so the card was hard-clipped at
+   the panel's edge and the beat that tells you where your card went was a
+   quarter-second slide that vanished a third of the way across. Every time.
+
+   So the card is handed to a fixed-position clone in a layer above the overlay
+   (DraftOverlay.tsx measures the rect at confirm time and drops the in-grid
+   copy in the same frame). Nothing here animates: framer owns the transform,
+   and this rule only takes the clone out of flow at the measured rect. */
+.draft-flight {
+  position: fixed;
+  z-index: 1;
+  transform-origin: 50% 50%;
 }
 
 /* Animations off in Settings: drop every shine and pulse. The structure (edges,
