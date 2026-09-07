@@ -242,6 +242,8 @@ Measured, with file:line. These are the concrete C2 work items.
 | C35 | `/api/lobby` 404s twice per load on 8 routes under `next dev`: `lobbyClient.ts` fetches it and it is served by `worker.ts` only, with no `src/app/api/lobby` handler. Environment-shaped rather than broken in production, but it means the live strip cannot be exercised locally at all | S | TODO |
 | C36 | `Button`'s `xs` and `sm` size tokens are `min-h-[36px]`, under the documented 44px mobile minimum, and `xs` is 12px text, under the 13px interactive floor. Only `md` is correct. `/login`'s Sign in and Register tabs are a bespoke 32px button, not `<Button>` at all | S | TODO |
 | C37 | Disconnected and recovered states (section 8, states 4 and 5) are missing on 18 async routes. `ConnectionBanner` exists and is the pattern; it is simply not mounted on most of them | M | TODO |
+| C38 | **277 real touch targets under 44px at 360**, after the sweep's two false-positive classes were removed. Grouped: section "more" links at 18px tall ("Community", "Watch TV", "All updates", "Codex"), search inputs at 19.5 to 30.5px, breadcrumbs at 19.5px, guide navigation chips at 27px, and the analysis "Flip board" button at 31.5px WIDE (it clears 44 on height and misses on width). Worth attacking by pattern rather than by site: most are the same three or four shared shapes | M | TODO |
+| C39 | Sweep totals moved 1791 to 1387 defects and 674 to 307 high severity across the day. The remaining high-severity mass is C38. `type-floor-13` is 305 and `type-floor-12` is 330, which is the interactive-versus-caption judgement call already in flight | - | tracking |
 
 ## D. Motion and graphics
 
