@@ -14,9 +14,18 @@ import {
 } from "lucide-react";
 import { Board } from "@/components/Board";
 import { SiteHeader } from "@/components/SiteHeader";
+import { EVAL_LADDER_ANALYSIS, EvalBar, evalLabel, useBoardEval } from "@/components/EvalBar";
+import {
+  CLASS_LABEL,
+  CLASS_TONE,
+  MoveMark,
+  reviewTally,
+  useLineReview,
+  type ReviewRow,
+  type ReviewState,
+} from "@/components/MoveReview";
 import { useZenHotkey } from "@/lib/useZenMode";
 import { typingInField } from "@/lib/boardKeymap";
-import { BoardAnalysis, analyzeBoard } from "@/engine/ai";
 import { generateMoves, makeMove, moveToSAN, movesToSAN, moveToUCI } from "@/engine/board";
 import { initialBoard } from "@/engine/board";
 import { BoardState, Color, Move } from "@/engine/types";
@@ -50,19 +59,9 @@ function replayFrom(start: BoardState, moves: Move[], ply: number): BoardState {
   return b;
 }
 
-function evalPercent(cpWhite: number): number {
-  // Sigmoid squash: 0cp = 50%, +400cp ≈ 73%, mate scores pin to the edge.
-  if (cpWhite >= 90000) return 100;
-  if (cpWhite <= -90000) return 0;
-  return 50 + 50 * (2 / (1 + Math.exp(-cpWhite / 400)) - 1);
-}
-
-function evalLabel(cpWhite: number): string {
-  if (cpWhite >= 90000) return "#";
-  if (cpWhite <= -90000) return "#";
-  const pawns = cpWhite / 100;
-  return (pawns > 0 ? "+" : "") + pawns.toFixed(1);
-}
+// evalPercent / evalLabel used to live here. They moved to components/EvalBar
+// with the rest of the scale, because three other surfaces needed them and a
+// second copy of a sigmoid is how two eval bars start disagreeing.
 
 function AnalysisInner() {
   const params = useSearchParams();
@@ -75,13 +74,11 @@ function AnalysisInner() {
   const [viewPly, setViewPly] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [engineOn, setEngineOn] = useState(true);
-  const [analysis, setAnalysis] = useState<(BoardAnalysis & { board: BoardState }) | null>(null);
   const [fenInput, setFenInput] = useState("");
   const [fenError, setFenError] = useState(false);
   // Ply count at which a ?moves= deep link stopped replaying (a move the
   // plain board could not reproduce), or null when the whole line loaded.
   const [truncatedAt, setTruncatedAt] = useState<number | null>(null);
-  const analysisTimer = useRef<number | null>(null);
 
   // Deep links: ?fen= loads a position, ?moves= replays a UCI list.
   useEffect(() => {
@@ -152,24 +149,13 @@ function AnalysisInner() {
     [moves, viewPly],
   );
 
-  // Turning the engine off clears any shown line; adjusted during render so the
-  // effect below only schedules searches.
-  if (!engineOn && analysis !== null) setAnalysis(null);
-
-  // The engine runs synchronously on the main thread; the timeout lets the
-  // board paint the new move before the ~300ms search blocks.
-  useEffect(() => {
-    if (analysisTimer.current) window.clearTimeout(analysisTimer.current);
-    if (!engineOn) {
-      return;
-    }
-    analysisTimer.current = window.setTimeout(() => {
-      setAnalysis({ board, ...analyzeBoard(board, 300) });
-    }, 120);
-    return () => {
-      if (analysisTimer.current) window.clearTimeout(analysisTimer.current);
-    };
-  }, [board, engineOn]);
+  // The engine still runs on the main thread, but no longer in one block. The
+  // old call here was `analyzeBoard(board, 300)` behind a 120ms timeout, which
+  // measured at ~600ms of blocked main thread after every move: negamax aborts
+  // at `budget * 2`, and the deepening loop only checks the clock once a whole
+  // depth has finished. useBoardEval climbs a ladder of short searches in idle
+  // callbacks instead, publishing each rung as it lands.
+  const current = useBoardEval(board, engineOn, EVAL_LADDER_ANALYSIS);
 
   // Arrow-key navigation through the line, plus `f` for the flip button beside
   // it. `f` is bound here rather than through useBoardKeys because this board's
@@ -196,13 +182,20 @@ function AnalysisInner() {
     return () => window.removeEventListener("keydown", onKey);
   }, [moves.length]);
 
-  // A result belongs to the position it was searched from. Between a move
-  // and the next search the held line is stale: re-signing its side-to-move
-  // score against the new board would flip the eval, and its best move may
-  // not even be legal here, so it shows as pending instead.
-  const current = analysis && analysis.board === board ? analysis : null;
-  const cpWhite = current ? current.scoreCp * (board.turn === "w" ? 1 : -1) : 0;
-  const bestSan = current?.move ? moveToSAN(current.move, board) : null;
+  // A result belongs to the position it was searched from; useBoardEval
+  // withholds a reading taken from any other board rather than re-signing it.
+  const cpWhite = current ? current.cpWhite : 0;
+  const bestSan = current?.best ? moveToSAN(current.best, board) : null;
+
+  // Move classification (blunder / mistake / inaccuracy / good / best) over the
+  // whole line. Explicitly started, because it is N+1 searches and the user
+  // should decide when to spend them.
+  const { state: review, start: startReview, reset: resetReview } = useLineReview(startBoard, moves);
+  const rowByIndex = useMemo(() => {
+    const map = new Map<number, ReviewRow>();
+    for (const r of review.rows) map.set(r.index, r);
+    return map;
+  }, [review.rows]);
 
   const orientation: Color = flipped ? "b" : "w";
   const fen = boardToFen(board);
@@ -218,7 +211,6 @@ function AnalysisInner() {
     setCustomStart(boardToFen(b) !== START_FEN);
     setMoves([]);
     setViewPly(0);
-    setAnalysis(null);
     setTruncatedAt(null);
   };
 
@@ -257,23 +249,16 @@ function AnalysisInner() {
     <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="mx-auto flex w-full max-w-[640px] gap-3">
-          {/* Eval bar */}
-          <div className="relative hidden w-6 shrink-0 overflow-hidden border border-[color:var(--edge)] bg-[#1a1917] sm:block">
-            <div
-              className="absolute inset-x-0 bottom-0 bg-parchment-100 transition-[height] duration-300"
-              style={{ height: `${engineOn && current ? evalPercent(cpWhite) : 50}%` }}
-            />
-            {engineOn && current && (
-              <span
-                className={
-                  "absolute inset-x-0 text-center font-mono text-[12px] leading-4 " +
-                  (cpWhite >= 0 ? "bottom-0 text-black" : "top-0 text-parchment-100")
-                }
-              >
-                {evalLabel(cpWhite).replace(/^[+-]/, "")}
-              </span>
-            )}
-          </div>
+          {/* Eval bar. The analysis board is the one surface where the number
+              is honest without qualification: there are no nerfs, no buffs and
+              no pocket here, so the position on screen really is the position
+              the engine searched. `rules` is empty for exactly that reason. */}
+          <EvalBar
+            result={engineOn ? current : null}
+            rules={[]}
+            orientation={orientation}
+            className="hidden sm:block"
+          />
 
           <div className="min-w-0 flex-1">
             <Board
@@ -286,8 +271,8 @@ function AnalysisInner() {
               visual={
                 statusDemo
                   ? STATUS_DEMO_VISUAL
-                  : engineOn && current?.move
-                    ? { highlightSquares: [current.move.from, current.move.to] }
+                  : engineOn && current?.best
+                    ? { highlightSquares: [current.best.from, current.best.to] }
                     : undefined
               }
             />
@@ -340,19 +325,36 @@ function AnalysisInner() {
           <div className="plate p-4">
             <h1 className="font-display text-lg text-parchment-50">Analysis board</h1>
             {engineOn ? (
-              <p className="mt-1 text-sm text-parchment-300">
-                <span className="font-mono text-parchment-50">{current ? evalLabel(cpWhite) : "…"}</span>
-                {bestSan && (
-                  <span className="text-parchment-400">
-                    {" "}
-                    · best {bestSan} · depth {current?.depth}
-                  </span>
-                )}
-              </p>
+              <>
+                <p className="mt-1 text-sm text-parchment-300">
+                  <span className="font-mono text-parchment-50">{current ? evalLabel(cpWhite) : "…"}</span>
+                  {bestSan && (
+                    <span className="text-parchment-400">
+                      {" "}
+                      · best {bestSan} · depth {current?.depth}
+                      {current && !current.settled ? " (deepening)" : ""}
+                    </span>
+                  )}
+                </p>
+                <p className="mt-1 text-[12px] leading-snug text-parchment-500">
+                  Plain chess. No nerfs, buffs or pocket drops here, so the number means what it
+                  says. It will not, on a board that has rules on it.
+                </p>
+              </>
             ) : (
               <p className="mt-1 text-sm text-parchment-400">Engine off.</p>
             )}
           </div>
+
+          <MoveReviewPanel
+            moves={moves}
+            sans={sans}
+            moveNums={moveNums}
+            review={review}
+            onStart={startReview}
+            onReset={resetReview}
+            onJump={(i) => setViewPly(i + 1)}
+          />
 
           <div className="plate min-h-[120px] p-4">
             <div className="text-[12px] tracking-[0.04em] text-parchment-400">Moves</div>
@@ -370,6 +372,7 @@ function AnalysisInner() {
               <div className="mt-2 max-h-64 overflow-y-auto font-mono text-sm leading-7">
                 {sans.map((san, i) => {
                   const isWhiteMove = moves[i].color === "w";
+                  const row = rowByIndex.get(i);
                   return (
                     <span key={i}>
                       {(isWhiteMove || i === 0) && (
@@ -380,12 +383,14 @@ function AnalysisInner() {
                       )}
                       <button
                         onClick={() => setViewPly(i + 1)}
+                        title={row ? `${CLASS_LABEL[row.cls]} (depth ${row.depth})` : undefined}
                         className={
                           "mr-2 px-1 transition-colors hover:bg-[color:var(--bg-raised)] " +
                           (viewPly === i + 1 ? "bg-[color:var(--bg-raised)] text-gold-leaf" : "text-parchment-100")
                         }
                       >
                         {san}
+                        <MoveMark cls={row?.cls} />
                       </button>
                     </span>
                   );
@@ -434,6 +439,132 @@ function AnalysisInner() {
         </aside>
       </div>
     </section>
+  );
+}
+
+// Lichess's post-game accuracy report, with the two things it is not allowed to
+// pretend. First: it is the same plain-chess search as the bar, so it is only
+// offered here, on the one board that genuinely has no rules on it. Second: at
+// the depth this reaches, "best" and "inaccuracy" are claims a 4-ply search
+// cannot always support, so those grades are withheld below depth 3 and the
+// panel says which grades it stood behind.
+function MoveReviewPanel({
+  moves,
+  sans,
+  moveNums,
+  review,
+  onStart,
+  onReset,
+  onJump,
+}: {
+  moves: Move[];
+  sans: string[];
+  moveNums: number[];
+  review: ReviewState;
+  onStart: () => void;
+  onReset: () => void;
+  onJump: (index: number) => void;
+}) {
+  const flagged = review.rows.filter(
+    (r) => r.cls === "blunder" || r.cls === "mistake" || r.cls === "inaccuracy",
+  );
+  const white = reviewTally(review.rows, moves, "w");
+  const black = reviewTally(review.rows, moves, "b");
+  const pct = review.total > 0 ? Math.round((review.scored / review.total) * 100) : 0;
+
+  return (
+    <div className="plate p-4">
+      <div className="text-[12px] tracking-[0.04em] text-parchment-400">Move review</div>
+      {moves.length === 0 ? (
+        <p className="mt-2 text-sm text-parchment-400">
+          Play a line, or paste one in with ?moves=, then review it.
+        </p>
+      ) : !review.running && !review.done ? (
+        <>
+          <p className="mt-2 text-[13px] leading-snug text-parchment-400">
+            Scores every position in the line and grades each move by how much of the win it gave
+            away. {moves.length + 1} searches, run in idle time.
+          </p>
+          <Button tone="ghost" onClick={onStart} className="mt-3 px-3 py-1.5 text-sm">
+            Review {moves.length} move{moves.length === 1 ? "" : "s"}
+          </Button>
+        </>
+      ) : review.running ? (
+        <>
+          <p className="mt-2 text-sm text-parchment-300" role="status" aria-live="polite">
+            Scoring position {review.scored} of {review.total}
+          </p>
+          <div className="mt-2 h-1.5 w-full overflow-hidden border border-[color:var(--edge)] bg-[color:var(--bg-base)]">
+            <div
+              className="h-full bg-gold-leaf transition-[width] duration-150"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <dl className="mt-2 grid grid-cols-[auto_1fr_1fr] gap-x-3 gap-y-1 text-[13px]">
+            <dt className="text-parchment-500" />
+            <dd className="text-parchment-400">White</dd>
+            <dd className="text-parchment-400">Black</dd>
+            {(["blunder", "mistake", "inaccuracy", "best"] as const).map((k) => (
+              <TallyRow key={k} kind={k} white={white[k]} black={black[k]} />
+            ))}
+          </dl>
+          {flagged.length > 0 && (
+            <ul className="mt-3 space-y-1">
+              {flagged.slice(0, 6).map((r) => (
+                <li key={r.index}>
+                  <button
+                    onClick={() => onJump(r.index)}
+                    className="flex min-h-[44px] w-full items-baseline gap-2 px-1 text-left text-[13px] transition-colors hover:bg-[color:var(--bg-raised)] [@media(pointer:fine)]:min-h-0"
+                  >
+                    <span className="font-mono text-parchment-300">
+                      {moveNums[r.index]}
+                      {moves[r.index].color === "w" ? "." : "..."} {sans[r.index]}
+                    </span>
+                    <span className={CLASS_TONE[r.cls]}>{CLASS_LABEL[r.cls]}</span>
+                    <span className="ml-auto shrink-0 font-mono text-[12px] text-parchment-500">
+                      -{r.lossPct.toFixed(0)}%
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-[12px] leading-snug text-parchment-500">
+            Graded from the same plain-chess search as the bar, at depth 2 with capture sequences
+            resolved. That finds hung pieces, losing trades and a takeable king; it does not judge
+            quiet positional moves, so &ldquo;best&rdquo; here means the move that wins the tactics,
+            not that no better move exists. Loss is win chance given away, not centipawns
+            {white.unclear + black.unclear > 0
+              ? `; ${white.unclear + black.unclear} of ${moves.length} moves came back at mismatched depths and are left ungraded.`
+              : "."}
+          </p>
+          <Button tone="ghost" onClick={onReset} className="mt-3 px-3 py-1.5 text-sm">
+            Clear review
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function TallyRow({
+  kind,
+  white,
+  black,
+}: {
+  kind: "blunder" | "mistake" | "inaccuracy" | "best";
+  white: number;
+  black: number;
+}) {
+  return (
+    <>
+      <dt className={"text-[13px] " + CLASS_TONE[kind]}>{CLASS_LABEL[kind]}</dt>
+      <dd className="font-mono text-parchment-100">{white}</dd>
+      <dd className="font-mono text-parchment-100">{black}</dd>
+    </>
   );
 }
 

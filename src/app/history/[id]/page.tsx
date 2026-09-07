@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Board } from "@/components/Board";
 import { BoardPlayerRow } from "@/components/BoardPlayerRow";
+import { BoardEvalStrip, matchRulePhrases } from "@/components/EvalBar";
 import { Logo } from "@/components/Logo";
 import { MoveList } from "@/components/MoveList";
 import { boardAtPly, replayUci } from "@/lib/gameReview";
@@ -96,6 +97,20 @@ function Replay({ game }: { game: CompletedGame }) {
   const outcomeLabel =
     game.outcome === "win" ? "You won" : game.outcome === "loss" ? "You lost" : "Draw";
 
+  // The eval bar, and everything it cannot see. A saved game records both
+  // players' handicaps by name, so the caption can name them instead of waving
+  // at "rules"; a line containing a pocket drop is flagged separately, because
+  // that is a position plain chess could not have reached at all.
+  const evalRules = useMemo(
+    () =>
+      matchRulePhrases({
+        whiteNerf: game.myColor === "w" ? game.myNerf?.name : game.opponentNerf?.name,
+        blackNerf: game.myColor === "w" ? game.opponentNerf?.name : game.myNerf?.name,
+        hasDrops: history.some((m) => m.drop),
+      }),
+    [game.myColor, game.myNerf, game.opponentNerf, history],
+  );
+
   // Export the replayed game. The analysis board and the result screen both
   // offer PGN and this surface did not, which made a saved game the one place
   // where the moves were visible but not takeable. Nerfs ride along as
@@ -183,6 +198,7 @@ function Replay({ game }: { game: CompletedGame }) {
               name="You"
               className="min-w-0 !px-0 !py-1"
             />
+            <BoardEvalStrip board={displayBoard} rules={evalRules} className="w-full max-w-[720px]" />
             <div className="mt-2 space-y-1.5">
               {game.myNerf && <RuleLine label="Your rule" nerf={game.myNerf} />}
               {game.opponentNerf && <RuleLine label="Opponent rule" nerf={game.opponentNerf} />}

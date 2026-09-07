@@ -52,6 +52,7 @@ import { MobileMatchStack } from "@/components/MobileMatchStack";
 import { BoardTools, FlipBoardButton } from "@/components/board/BoardTools";
 import { FxToggleButton } from "@/components/FxToggleButton";
 import { MoveList } from "@/components/MoveList";
+import { BoardEvalStrip, matchRulePhrases } from "@/components/EvalBar";
 import { NerfCard } from "@/components/NerfCard";
 import { Pocket } from "@/components/Pocket";
 import { PlayerNerfCard } from "@/components/PlayerNerfCard";
@@ -3307,6 +3308,28 @@ export function OnlineMatch({ session, start, subtitle, onExit }: Props) {
                   className={"zen-hide shrink-0 sm:hidden " + TABLET_STACK_SHOW}
                 />
               </div>
+              {/* Eval bar, AFTER the result and not one move before it.
+                  A live engine readout beside your own board in a rated game is
+                  engine assistance, whatever it is labelled: lichess disables
+                  computer analysis during play for exactly this reason, and
+                  there is no setting on this site to turn one off. Gating it on
+                  game.result also means the search costs a player nothing while
+                  their clock is running, because it never runs. Spectators and
+                  replays get the bar throughout; they are not the ones moving.
+                  See docs handoff: a live bar needs a settings flag and a rated
+                  policy before it can ship. */}
+              {game.result && (
+                <BoardEvalStrip
+                  board={boardForDisplay}
+                  rules={matchRulePhrases({
+                    mode: isDraft ? (isBuffMode ? "buff" : "nerf") : "nerf",
+                    whiteNerf: game.white.nerf.name,
+                    blackNerf: game.black.nerf.name,
+                    hasDrops: game.board.history.some((m) => m.drop),
+                  })}
+                  className={`zen-hide mx-auto sm:mx-0 ${boardFitClass}`}
+                />
+              )}
               <MobileMatchStack
                 actions={historyActions}
                 moves={game.board.history}

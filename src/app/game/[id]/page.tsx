@@ -11,6 +11,7 @@ import { stashGamblingOutcome } from "@/components/effects/gamblingOutcome";
 import { useSignatureQueue } from "@/components/effects/useSignatureQueue";
 import { BoardPlayerRow } from "@/components/BoardPlayerRow";
 import { ClockPill } from "@/components/ClockPill";
+import { BoardEvalStrip, matchRulePhrases } from "@/components/EvalBar";
 import { ModeBadge } from "@/components/ModeBadge";
 import { ProvisionalMark } from "@/components/ratings/ProvisionalMark";
 import { ConnectionBanner } from "@/components/ConnectionBanner";
@@ -1522,6 +1523,23 @@ function GameShell({
   reviewingHistory?: boolean;
   rail?: React.ReactNode;
 }) {
+  // Nerf ids arrive only once the rules are public (game over, or a voluntary
+  // reveal). Before that the handicaps still exist, so the caption says they
+  // exist rather than going quiet, which would be a confident bar over the
+  // least-known position.
+  const whiteNerfName = nerfs?.w ? IMPLEMENTED_BY_ID[nerfs.w]?.name : null;
+  const blackNerfName = nerfs?.b ? IMPLEMENTED_BY_ID[nerfs.b]?.name : null;
+  const evalRules = useMemo(
+    () =>
+      matchRulePhrases({
+        mode,
+        whiteNerf: whiteNerfName,
+        blackNerf: blackNerfName,
+        hidden: mode === "nerf" && !nerfs,
+        hasDrops: history.some((m) => m.drop),
+      }),
+    [mode, whiteNerfName, blackNerfName, nerfs, history],
+  );
   const stateBadge =
     headerState === "live" ? (
       <span className="inline-flex items-center gap-1.5 rounded-[1px] border border-[rgb(var(--pos-rgb)/0.4)] bg-[rgb(var(--pos-rgb)/0.12)] px-2 py-0.5 text-[12px] font-semibold text-[rgb(var(--pos-rgb))]">
@@ -1612,6 +1630,11 @@ function GameShell({
               />
               {clockEnabled && <ClockPill ms={whiteMs} active={activeColor === "w"} compact />}
             </div>
+            {/* Plain-chess eval, on a board that is very often not plain chess.
+                The strip carries its own caption naming what it cannot see, so
+                the qualification travels with the number rather than living in
+                a legend somewhere else on the page. */}
+            <BoardEvalStrip board={board} rules={evalRules} className="w-full max-w-[720px]" />
             {/* Rules show only once known (end of game or a voluntary
                 reveal); until then no placeholder plates take up space.
                 Buff mode games carry the "none" rule, which never shows. */}
