@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { formatClock } from "@/lib/clockFormat";
+import { emergencyMs, formatClock } from "@/lib/clockFormat";
 import { LOW_TIME_MOTION_MS, releaseLowTime, reportLowTime } from "@/lib/lowTimeMotion";
 import { useSettingsValue } from "@/lib/useSettingsValue";
 import { playLowTime, playUrgentTick } from "@/lib/sounds";
@@ -20,6 +20,8 @@ function warnClockOnce(play: () => void) {
 // React; re-exported here because this is where callers expect to find it.
 export { formatClock } from "@/lib/clockFormat";
 
+export { emergencyMs } from "@/lib/clockFormat";
+
 export function ClockPill({
   ms,
   active,
@@ -29,11 +31,20 @@ export function ClockPill({
   draftRunning = false,
   seat = null,
   ended = false,
+  initialMs,
 }: {
   ms: number;
   active: boolean;
   compact?: boolean;
   startDelayMs?: number;
+  /** The time control's starting time, used to scale the urgency thresholds
+   *  (see `emergencyMs`). Optional: when a caller does not pass it the pill
+   *  falls back to the first `ms` it was ever handed, which IS the initial
+   *  time for anyone who was present at the start of the game. A spectator
+   *  who joins mid-game gets a smaller base and so a slightly later warning,
+   *  which is the safe direction to be wrong in for someone who is not
+   *  playing. */
+  initialMs?: number;
   /** Engine color of the seat this pill times, stamped as data-clock-seat so
    * the clock-raid overlay can find and aim at the on-screen pill. Mobile and
    * desktop copies share the seat; the overlay picks whichever is visible. */
@@ -53,6 +64,13 @@ export function ClockPill({
   const [displayMs, setDisplayMs] = useState(ms);
   const lowFiredRef = useRef(false);
   const urgentFiredRef = useRef(false);
+  // First value ever seen, kept as the fallback base for the urgency scale
+  // when the caller does not name the time control. Captured once at mount
+  // rather than tracked as a running maximum: an increment pushes `ms` above
+  // the starting time, so a maximum would creep upward all game and slowly
+  // widen the warning band.
+  const [firstMs] = useState(ms);
+  const emergMs = emergencyMs(initialMs ?? firstMs);
   // First-move grace: milliseconds of free time left before this clock
   // actually starts charging (startDelayMs counting down to zero).
   const [graceMs, setGraceMs] = useState(() => (active ? startDelayMs : 0));
@@ -93,14 +111,17 @@ export function ClockPill({
       setGraceMs(grace);
 
       // Low-time warnings only for the local player's own running clock, and
-      // never while the first-move grace timer is still shielding it.
+      // never while the first-move grace timer is still shielding it. The two
+      // thresholds ride the same time-control-relative scale as the colours,
+      // so in a bullet game the first warning is not shouting from move one.
       if (warnLowTime && grace <= 0) {
-        if (remaining > 10000) lowFiredRef.current = false;
+        if (remaining > emergMs) lowFiredRef.current = false;
         else if (!lowFiredRef.current) {
           lowFiredRef.current = true;
           warnClockOnce(playLowTime);
         }
-        if (remaining > 5000) urgentFiredRef.current = false;
+        const urgentAt = emergMs / 2;
+        if (remaining > urgentAt) urgentFiredRef.current = false;
         else if (remaining > 0 && !urgentFiredRef.current) {
           urgentFiredRef.current = true;
           warnClockOnce(playUrgentTick);
@@ -125,7 +146,7 @@ export function ClockPill({
       window.cancelAnimationFrame(raf);
       window.clearTimeout(timer);
     };
-  }, [active, base, startDelayMs, warnLowTime]);
+  }, [active, base, startDelayMs, warnLowTime, emergMs]);
 
   // Low-time animation hold: while this seat's clock reads under 20s every
   // animation stands down (src/lib/lowTimeMotion.ts), for either seat, and
@@ -140,13 +161,14 @@ export function ClockPill({
     return () => releaseLowTime(seat);
   }, [seat]);
 
-  // Urgency ramp: under 30s the running clock breathes a subtle pulse (gold),
-  // under 10s it pulses stronger and tints oxblood. Border stays 2px across
-  // every active tier so switching urgency never shifts layout; the countdown
-  // text is always tabular-nums so digits never jitter.
+  // Urgency ramp, scaled to the time control (see `emergencyMs`): the clock
+  // tints gold at twice the emergency point and oxblood at the point itself.
+  // Border stays 2px across every active tier so switching urgency never
+  // shifts layout; the countdown text is always tabular-nums so digits never
+  // jitter.
   const { clockTenths: tenths } = useSettingsValue();
-  const low = displayMs < 30000;
-  const critical = displayMs < 10000;
+  const low = displayMs < emergMs * 2;
+  const critical = displayMs < emergMs;
   return (
     <div
       data-clock-seat={seat ?? undefined}
@@ -173,7 +195,32 @@ export function ClockPill({
             : "text-parchment")
         }
       >
-        {formatClock(displayMs, tenths)}
+        {/* The separator blinks while the clock is actually running.
+            Lichess does this and it reads as decoration there; here it
+            carries real information, because this clock genuinely stops. A
+            draft pauses it, the first-move grace shields it, and a paused
+            clock and a running one otherwise look identical for the whole
+            second between digit changes. A player glancing down needs to know
+            whether their time is going.
+
+            Split rather than restyled so `formatClock` keeps returning one
+            plain string (scripts/test-clock-format.ts asserts on it). The
+            colon stays in the accessible text rather than being aria-hidden:
+            hiding it would leave a screen reader reading "205" for 2:05.
+            Ambient loops are otherwise banned by design-system.md section 6;
+            clock urgency is the sanctioned exception. */}
+        {(() => {
+          const text = formatClock(displayMs, tenths);
+          const at = text.indexOf(":");
+          if (at < 0 || !active || graceMs > 0) return text;
+          return (
+            <>
+              {text.slice(0, at)}
+              <span className="clock-sep">:</span>
+              {text.slice(at + 1)}
+            </>
+          );
+        })()}
       </span>
       {draftRunning && (
         <span

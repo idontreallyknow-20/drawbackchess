@@ -2707,3 +2707,33 @@ html[data-anim="off"] .nerf-enter__line,
 html[data-anim="off"] .nerf-enter__seal,
 html[data-anim="off"] .nerf-enter__seal-half { animation: none; }
 html[data-anim="off"] .nerf-enter__seal { opacity: 0; }
+
+/* ---------------------------------------------------------------------------
+   Running-clock separator.
+
+   The colon fades while a clock is actually charging. It is the only always-on
+   signal that a clock is running: between digit changes a paused clock and a
+   running one are otherwise identical for a whole second, and this clock
+   really does pause (an unresolved draft charges it, the first-move grace
+   shields it), so "is my time going" is a question a player here genuinely
+   asks. Lichess blinks the same separator; there it is decoration, here it
+   carries information.
+
+   Opacity only, and the digits are untouched so nothing about the layout or
+   the tabular figures moves. Section 6 of the design system bans forever-loops
+   apart from the three ambients and clock urgency: this is the latter.
+--------------------------------------------------------------------------- */
+.clock-sep {
+  animation: clock-sep-pulse 1s steps(1, end) infinite;
+}
+@keyframes clock-sep-pulse {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0.28; }
+}
+/* Never fully transparent even at rest, so a reader who freezes motion still
+   sees a well-formed time rather than "2 05". */
+html[data-anim="off"] .clock-sep,
+html[data-anim="fast"] .clock-sep { animation: none; opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .clock-sep { animation: none; opacity: 1; }
+}
