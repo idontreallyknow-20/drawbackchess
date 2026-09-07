@@ -309,6 +309,15 @@ const NOUN_SRC =
   "(?:pawns?|knights?|bishops?|rooks?|queens?|minor pieces?|minors?|major pieces?|majors?|pieces?)(?!['’]s)";
 const MENTION = new RegExp(`\\b${NOUN_SRC}\\b`, "g");
 
+/** A fresh scanner for the replacement post-pass. `MENTION` is a global regex
+ *  the parser drives statefully with `lastIndex`, so borrowing it mid-parse
+ *  would move a cursor somebody else is holding. */
+const NOUN_SCAN = new RegExp(`\\b(${NOUN_SRC})\\b`, "g");
+
+/** "X ... and Y returns IN ITS PLACE" is a transform written the long way
+ *  round: the card is worth Y minus X, not Y. */
+const REPLACEMENT = /\b(?:in its place|in place of|in their place|replacing it|takes its place)\b/;
+
 /** A copy is worth whatever it copies. `clone` ("place an exact copy on an
  *  empty square beside it") and `wc_double_trouble` ("place its exact twin")
  *  spawn a whole piece and never name one, so the noun scanner alone scored
@@ -1276,6 +1285,71 @@ function parseCard(description: string, kind: string): Parse {
     terms.push(t);
   }
 
+  // --- Two post-passes, each retiring a KNOWN_MISREAD hold-out ------------
+
+  // 1. A REPLACEMENT is a transform written the long way round.
+  //
+  // "Send one of your knights or bishops across to the other side, and one of
+  // your captured rooks returns IN ITS PLACE" (`seance`) is worth the
+  // DIFFERENCE, 5 - 3, not the rook. The parser read the minor as scenery
+  // because "send across to the other side" is not a verb it bills for, and
+  // charged the full rook.
+  //
+  // Deliberately narrow: it fires only when the replacement phrase is present,
+  // exactly one term was scored, and the sentence carrying that phrase names a
+  // second, CHEAPER piece that nothing scored. Two candidate antecedents and
+  // it does nothing, on the same principle as the `pending` logic above: a
+  // card with an ambiguous referent should be held out, not guessed at.
+  if (REPLACEMENT.test(whole) && terms.length === 1 && terms[0].sign > 0) {
+    const sentence = sentences(whole).find((x) => REPLACEMENT.test(x.text.toLowerCase()));
+    if (sentence) {
+      const spent = [...sentence.text.toLowerCase().matchAll(NOUN_SCAN)]
+        .map((mm) => ({ word: mm[1], value: nounValue(mm[1]) }))
+        .filter((x) => x.value > 0 && x.value < terms[0].value);
+      const cheapest = spent.length
+        ? spent.reduce((a, b) => (a.value <= b.value ? a : b))
+        : null;
+      if (cheapest && new Set(spent.map((x) => x.value)).size === 1) {
+        const t = terms[0];
+        terms.push({
+          noun: cheapest.word,
+          value: cheapest.value,
+          count: 1,
+          sign: -1,
+          permanence: t.permanence,
+          conditionality: t.conditionality,
+          m: -bias * cheapest.value * t.permanence * t.conditionality,
+          estimated: t.estimated,
+          note: "replaced, so the card is worth the difference",
+        });
+        notes.push(`replacement: minus the ${cheapest.word} it spends`);
+      }
+    }
+  }
+
+  // 2. A LATER SENTENCE RE-DESCRIBING THE SAME PIECE IS A GLOSS.
+  //
+  // `wc_lost_and_found` says "a captured piece other than the queen will
+  // return" and then "The heaviest lost piece comes back first". That is one
+  // piece described twice, and the parser scored both (2.6 + 3.25). The engine
+  // revives exactly one: `['r','b','n','p'].find(revivable)`.
+  //
+  // The tell is that one of the two carries `best-of`, which is the parser's
+  // own mark for "this sentence tells me WHICH one", i.e. it is a refinement
+  // of an earlier claim rather than a second claim. So when two terms share a
+  // noun, a count and a sign and one is a best-of, the best-of wins and the
+  // generic one goes.
+  const bestOf = terms.filter((t) => t.note.includes("best-of"));
+  for (const b of bestOf) {
+    const dupe = terms.find(
+      (t) => t !== b && !t.note.includes("best-of") && t.noun === b.noun && t.count === b.count && t.sign === b.sign,
+    );
+    if (dupe) {
+      terms.splice(terms.indexOf(dupe), 1);
+      notes.push(`gloss: "${dupe.noun}" described twice, scored once`);
+    }
+  }
+
   if (repeat > 1) notes.push(`repeats ${repeat}x`);
   if (cond.v !== 1) notes.push(cond.note);
   const m = terms.reduce((s, t) => s + t.m, 0);
@@ -1544,6 +1618,9 @@ const PARSE_EXPECTATIONS: { id: string; m: number; why: string }[] = [
   { id: "hw3_wrong_foot", m: 0.0, why: "'every piece they move must land on' is a movement rule, not a spawn" },
   { id: "bn4_field_hospital", m: 1.0, why: "the two-turn shield is not the pawn's lifespan" },
   { id: "apotheosis", m: 5.7, why: "a pocket queen (8.55) MINUS the minor it spends (2.85), not a free queen" },
+  // The two round-8 parser fixes, pinned rather than held out.
+  { id: "seance", m: 1.3, why: "a REPLACEMENT: the rook returns in the minor's place, so (5 - 3) x 0.65 gate" },
+  { id: "wc_lost_and_found", m: 3.25, why: "a GLOSS: 'the heaviest lost piece comes back first' re-describes the one piece already scored, it is not a second body" },
   { id: "wc_sacrificial_bishop", m: 0.0, why: "a bishop fed to the volcano for a minor: the trade nets nothing" },
   { id: "promotion_storm", m: 2.6, why: "'promote to knights' names its target: two pawns to minors, not to queens" },
   { id: "bw3_heir_apparent", m: 1.6, why: "'that same kind of piece' is unstated, so it is priced at a minor" },
@@ -1592,22 +1669,18 @@ const MATERIAL_CATEGORIES = new Set(["pieces", "attack"]);
  * below cites the line of the buff that settles it.
  */
 const KNOWN_MISREAD: Record<string, { real: number; why: string }> = {
-  seance: {
-    real: 1.3,
-    why:
-      "src/engine/buffs/mystic/occult.ts removePiece(sq) then place(sq, 'r'): the rook stands where the " +
-      "minor did, so the card is worth the DIFFERENCE (5 - 3 = 2, x 0.65 for the gate). The parser reads " +
-      "'send one of your knights or bishops across to the other side' as scenery and bills nothing for it. " +
-      "Fix: a replacement ('X ... and Y returns in its place') is a transform written the long way round.",
-  },
-  wc_lost_and_found: {
-    real: 3.25,
-    why:
-      "src/engine/buffs/wild/chaos.ts revives ONE piece: ['r','b','n','p'].find(revivable) places a single " +
-      "type. 'a captured piece ... will return' and 'the heaviest lost piece comes back first' are the same " +
-      "piece described twice, and the parser scored both (2.6 + 3.25). Fix: a later sentence that re-describes " +
-      "the piece an earlier one already scored is a gloss, not a second body.",
-  },
+  // Both original entries were retired in round 8 when the parser learned the
+  // two shapes that produced them. `seance` was a REPLACEMENT ("X ... and Y
+  // returns in its place"), which is a transform written the long way round
+  // and worth the difference; `wc_lost_and_found` was a GLOSS (a later
+  // sentence re-describing the piece an earlier one already scored). Both now
+  // score their hand-checked value and are pinned in PARSE_EXPECTATIONS
+  // instead, which is a stronger statement than being held out: a hold-out
+  // says "we know this is wrong", a pin says "we know this is right".
+  //
+  // Empty is the goal state, not an oversight. A card belongs here only while
+  // its M has been checked against the engine and found wrong, with the line
+  // of the buff that settles it and the parser fix that would retire it.
 };
 
 interface Scored {
