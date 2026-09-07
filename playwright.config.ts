@@ -46,10 +46,38 @@ export default defineConfig({
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
     viewport: { width: 1440, height: 900 },
-    // Reduced motion makes the flow deterministic: the draft pack opens
-    // pre-torn, cards deal instantly, and a confirmed pick commits without
-    // waiting on the pocket-flight animation.
+    // Reduced motion alone no longer makes the flow deterministic, and the
+    // comment that used to sit here claiming it did was stale.
+    //
+    // `applyUiPrefs` honours the OS prefers-reduced-motion flag ONLY when the
+    // player has opted in via `followSystemMotion`, which defaults to FALSE:
+    // card plays are gameplay information, so they stay on by default (see
+    // src/lib/settings.ts). So this context option, on its own, left every
+    // test running the full draft choreography while the config promised the
+    // opposite.
+    //
+    // It is kept because it is still the honest description of the emulated
+    // device, and paired with a storage seed below that actually reaches the
+    // app's own switch.
     contextOptions: { reducedMotion: "reduce" },
+    // Seed the app's own motion setting, which is what `data-anim` is read
+    // from. `storageState` runs before any page script, so the very first
+    // render is already in the off state; setting it from a fixture would
+    // race the first paint.
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: "http://localhost:3000",
+          localStorage: [
+            {
+              name: "dc:settings-v1",
+              value: JSON.stringify({ animationSpeed: "off", followSystemMotion: true }),
+            },
+          ],
+        },
+      ],
+    },
   },
   projects: [
     {
