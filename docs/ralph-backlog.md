@@ -31,13 +31,23 @@ Working rules for every round, non-negotiable:
   verify, then resumed. `sim-card-winrate.ts` flushes every 10 cards and
   resumes from its own shard file, so stopping it never costs more than the
   current batch.
+- **`scripts/dev-supervisor.sh` keeps `next dev` alive; run it for any long
+  session.** The dev server has died twice in two different ways, and both times
+  the failure was invisible to whatever was using it: a browser test reads a
+  dead port as a broken page rather than a missing server, which is a bad hour
+  to spend. The supervisor polls, checks twice ten seconds apart (a single
+  failed request during a slow first compile is not a dead server), restarts,
+  and prints one line only when it has actually done something.
 - **Restart `next dev` between rounds.** It leaks: after about seven hours of
   HMR and route compiles the dev server sat at **9.1 GB resident**, which is 57
   percent of the box on its own. That single process was the whole of a
   near-OOM in round 7 (1.1 GB available, load average 74); killing it took
   available memory from 1.1 GB to 12.9 GB in three seconds, before anything
   else was touched. Check `ps -eo rss,args --sort=-rss | head` before blaming
-  the workers.
+  the workers. The second way it dies is a Turbopack abort: "an internal panic
+  occurred outside the per-task panic boundary" out of
+  `turbo-tasks-backend/.../operation/mod.rs`, which is a Next bug rather than
+  anything in this repo and kills the process outright.
 - When memory does get tight, `pkill` and `pkill -9` themselves fail or return
   144 under load, and a second `pgrep` will show the processes still alive.
   `pgrep -f pat | xargs -r kill -9` works where `pkill -f pat` does not.
