@@ -43,6 +43,7 @@ Working rules for every round, non-negotiable:
 | 2 | Clock urgency scaled to the time control, running-separator blink, the new sound cues wired to their events, zen on analysis and TV and the replay, PGN on the replay |
 | 3 | Surface ladder restored to its documented values, sentence case in the nav and settings menu plus `scripts/check-case.ts` to hold it, the material ladder applied (18 cards) and pinned as an invariant |
 | 4 | Route sweep harness (48 routes, 6 widths, 3 themes, 828 cells, 13.5 min), touch targets fixed after it proved every rem-based one was 12.5 percent short, eight routes given the h1 they lacked |
+| 5 | The bot now simulates a card's effect before choosing its targets, which fixes a blunder that was corrupting every win-rate measurement of every activated card; changelog caught up; sweep restarted |
 
 ---
 
@@ -59,15 +60,15 @@ which is why nothing caught it.
 | # | Item | Size | Status |
 |---|---|---|---|
 | A1 | `scripts/material-model.ts`: score every active card for effective material, fit a tier floor against measured win rate, report violations | M | DONE (round 1) |
-| A2 | Full-library win-rate sweep, 3 niced shards, `--games 10`, writing `docs/card-winrate.shard{0,1,2}.json` | L | WIP (running; suspend with `pkill -STOP -f sim-card-winrate` while workers verify, resume with `-CONT`. It flushes every 10 cards and resumes from its own shard file, so stopping never costs more than the current batch) |
+| A2 | Full-library win-rate sweep, 3 niced shards, `--games 10`, writing `docs/card-winrate.shard{0,1,2}.json` | L | WIP. **Restarted from zero in round 5**: the bot play policy changed, so the 220 cards measured before it are not comparable with anything measured after, and mixing the two would be worse than either alone. Suspend with `pkill -STOP -f sim-card-winrate` while workers verify, resume with `-CONT`; it flushes every 10 cards and resumes from its own shard file |
 | A3 | Apply the retiers through `hand-audit.json` + `npm run gen:retiers` + `CARD_HISTORY` | M | DONE (round 2): 18 moved, 10 of the original 28 were parser misreads and are fixed or held out |
 | A4 | Pin the material ladder as an invariant so a later blanket pass cannot undo it | S | DONE (round 2): section 1b of `scripts/test-balance-pass-2026-09.ts` |
 | A8 | The pocket discount is probably backwards: a crazyhouse drop lands anywhere, dodges every nerf filter, and breaks stalemate, so it is worth MORE than the same piece in your own half, not 0.95 of it. Measure the family, then move the multiplier | M | TODO |
 | A9 | Two parser holes left, held out by name in `KNOWN_MISREAD`: a replacement (`X ... and Y returns in its place`) is a transform written the long way round (`seance`), and a later sentence re-describing an already-scored piece is a gloss, not a second body (`wc_lost_and_found`) | S | TODO |
 | A5 | Rework, not just retier, cards that are cheap AND boring (pure "+3 material, no decision") | M | TODO |
-| A6 | `amazon_army` t7 measures -25 points: a play-policy bug, not a tier problem. Root cause in `/dev/lab` | S | TODO |
+| A6 | `amazon_army` t7 measured -25 points, the same family as A11 and possibly the same cause. The activation policy now simulates before it picks, so RE-MEASURE before investigating further: the number may simply be gone | S | TODO (re-measure first) |
 | A7 | Work the `pending-review` backlog in `docs/card-audit.md`: 266 duplicate-signature, 211 near-duplicate, 90 dominated | L | TODO |
-| A11 | **`queens_rampage` is a play-policy bug, not a tier problem** (measured -13.6, which is 1.0 sigma and so not a measurement by the sweep's own 2-sigma bar). `lineSweep` offers every enemy piece down the line as a landing square, and `aiSquareScore` ranks an occupied square at `1000 + value*20` against 7 or less for an empty one, so the sweep always ends ON the most valuable enemy piece. The activation path never consults move safety the way `pickHouseMove` does for a real move, and the gate only asks for a minor. So the bot trades a queen for a knight onto a defended square and hands over the turn, since the card is not a free action. Same family as A6 | S | TODO |
+| A11 | **`queens_rampage` was a play-policy bug, not a tier problem.** FIXED (round 5) by `refineLastSquarePick` in `src/engine/game.ts`: the bot now re-picks a card's last square by simulating the activation on a detached copy of the game and scoring the resulting position, instead of ranking squares by the piece standing on them. Pinned by `npm run test:ai-activation`, which fails on two of three assertions without the fix | S | DONE |
 | A12 | **Material is one axis of power and the model only sees that one.** Twelve cards measure above +30 win-rate points at M=0: `mirror_of_souls` +50.0 (piece-swap), `bn4_ascension_small` +45.8 (promotion-grant), `detonate` +44.4 (forced-sacrifice), `smurf_account` +41.7 (capture-denial), `giants_maul` +41.7 (mass-freeze), `piece_parole` +40.0 (single-piece-shield), `bn4_endless_militia` +35.0 and `total_atomic` +33.3 and `atomic_captures` +31.8 (mass-removal). Either a second model for those categories, or an explicit statement that they are priced by hand and why | M | TODO |
 
 ### The ladder the model settled on (round 1)
