@@ -134,6 +134,14 @@ export default function ThreadPage() {
     <main className="min-h-screen">
       <SiteHeader />
       <section className="max-w-2xl mx-auto px-5 sm:px-6 py-6">
+        {/* This route had no h1 at all. The visible header is a breadcrumb
+            (Inbox / name) rather than a heading, which reads correctly on
+            screen but leaves the page unidentifiable to a screen reader and
+            unnamed in a heading outline. Hidden rather than shown so the
+            breadcrumb stays the visual treatment, and it carries the
+            correspondent's name, which is the one thing that distinguishes
+            this page from every other thread. */}
+        <h1 className="sr-only">Conversation with {thread?.peer.username ?? username}</h1>
         <div className="mb-4 flex min-w-0 items-center gap-3">
           <Link href="/inbox" className="text-sm text-parchment-400 hover:text-parchment-100">
             Inbox

@@ -279,7 +279,7 @@ export function SiteHeader({ active }: { active?: string }) {
   };
 
   const iconButton =
-    "nav-icon-btn relative grid h-11 w-11 place-items-center text-parchment-400 hover:bg-[color:var(--bg-hover)] hover:text-parchment-50";
+    "nav-icon-btn relative grid h-[44px] w-[44px] place-items-center text-parchment-400 hover:bg-[color:var(--bg-hover)] hover:text-parchment-50";
 
   // Lichess's tall header: 60px, the wordmark and nav left, the icon cluster
   // right, one hairline underneath.

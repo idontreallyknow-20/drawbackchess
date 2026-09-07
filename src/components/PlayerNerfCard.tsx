@@ -248,7 +248,7 @@ export function PlayerNerfCard({
       ) : (
         <>
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-gold/40 bg-gold/10 font-display text-2xl font-bold text-gold">
+            <div className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full border border-gold/40 bg-gold/10 font-display text-2xl font-bold text-gold">
               ?
             </div>
             <div className="min-w-0">

@@ -21,7 +21,7 @@ export function KeyTerms({ slugs, title = "key terms" }: { slugs: string[]; titl
             key={e.slug}
             href={glossaryHref(e)}
             title={e.def}
-            className="rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-3 py-1 font-display text-sm text-parchment-200 hover:border-coral/60 hover:text-coral motion-safe:transition-colors"
+            className="inline-flex min-h-[44px] items-center rounded-none border border-[color:var(--edge)] bg-[color:var(--bg-zebra)] px-3 py-1 font-display text-sm text-parchment-200 hover:border-coral/60 hover:text-coral motion-safe:transition-colors"
           >
             {e.term}
           </Link>

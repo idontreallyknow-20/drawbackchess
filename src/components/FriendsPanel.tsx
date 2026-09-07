@@ -294,7 +294,7 @@ export function FriendsPanel({ bounded = false }: { bounded?: boolean } = {}) {
                   onClick={() => void act("accept", f.username)}
                   disabled={busy}
                   aria-label={`Accept ${f.username}`}
-                  className="grid h-11 w-11 place-items-center rounded-none border border-verdigris-glow/50 bg-verdigris/20 text-verdigris-glow transition hover:bg-verdigris/30 disabled:opacity-40"
+                  className="grid h-[44px] w-[44px] place-items-center rounded-none border border-verdigris-glow/50 bg-verdigris/20 text-verdigris-glow transition hover:bg-verdigris/30 disabled:opacity-40"
                 >
                   <Check size={16} strokeWidth={2.4} aria-hidden />
                 </button>
@@ -302,7 +302,7 @@ export function FriendsPanel({ bounded = false }: { bounded?: boolean } = {}) {
                   onClick={() => void act("decline", f.username)}
                   disabled={busy}
                   aria-label={`Decline ${f.username}`}
-                  className="grid h-11 w-11 place-items-center rounded-none border border-[color:var(--edge)] text-parchment-400 transition hover:border-oxblood-glow/50 hover:text-oxblood-glow disabled:opacity-40"
+                  className="grid h-[44px] w-[44px] place-items-center rounded-none border border-[color:var(--edge)] text-parchment-400 transition hover:border-oxblood-glow/50 hover:text-oxblood-glow disabled:opacity-40"
                 >
                   <X size={16} strokeWidth={2.4} aria-hidden />
                 </button>
@@ -410,7 +410,7 @@ export function FriendsPanel({ bounded = false }: { bounded?: boolean } = {}) {
                 onClick={() => void act("decline", f.username)}
                 disabled={busy}
                 aria-label={`Cancel request to ${f.username}`}
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-none text-parchment-500 transition hover:text-oxblood-glow disabled:opacity-40"
+                className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-none text-parchment-500 transition hover:text-oxblood-glow disabled:opacity-40"
               >
                 <X size={16} strokeWidth={2.2} aria-hidden />
               </button>
@@ -508,7 +508,7 @@ function FriendRow({
             onClick={onRemove}
             disabled={busy}
             aria-label={`Remove ${f.username}`}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-none text-parchment-500 transition hover:text-oxblood-glow disabled:opacity-40"
+            className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-none text-parchment-500 transition hover:text-oxblood-glow disabled:opacity-40"
           >
             <X size={16} strokeWidth={2.2} aria-hidden />
           </button>
@@ -569,7 +569,7 @@ function RowMenu({ username, busy, onRemove }: { username: string; busy: boolean
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`More actions for ${username}`}
-        className="grid h-11 w-11 place-items-center rounded-none text-parchment-500 transition hover:text-parchment-200 disabled:opacity-40"
+        className="grid h-[44px] w-[44px] place-items-center rounded-none text-parchment-500 transition hover:text-parchment-200 disabled:opacity-40"
       >
         <MoreHorizontal size={16} strokeWidth={2.2} aria-hidden />
       </button>

@@ -926,7 +926,7 @@ function OverflowMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`More actions for ${username}`}
-        className="grid h-11 w-11 place-items-center rounded-none border border-[color:var(--edge)] text-parchment-400 transition hover:border-[color:var(--edge-strong)] hover:text-parchment-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]"
+        className="grid h-[44px] w-[44px] place-items-center rounded-none border border-[color:var(--edge)] text-parchment-400 transition hover:border-[color:var(--edge-strong)] hover:text-parchment-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]"
       >
         <MoreHorizontal size={18} strokeWidth={2.2} aria-hidden />
       </button>

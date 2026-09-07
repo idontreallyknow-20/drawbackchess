@@ -241,7 +241,7 @@ export default function ClubsPage() {
               <ul className="divide-y divide-[color:var(--edge)]" aria-hidden>
                 {Array.from({ length: 4 }).map((_, i) => (
                   <li key={i} className="flex items-center gap-4 px-5 py-4">
-                    <div className="h-11 w-11 shrink-0 bg-[color:var(--bg-raised)] animate-pulse" />
+                    <div className="h-[44px] w-[44px] shrink-0 bg-[color:var(--bg-raised)] animate-pulse" />
                     <div className="min-w-0 flex-1">
                       <div className="h-3.5 w-40 bg-white/[0.07] animate-pulse" />
                       <div className="mt-2 h-3 w-56 max-w-full bg-[color:var(--bg-raised)] animate-pulse" />

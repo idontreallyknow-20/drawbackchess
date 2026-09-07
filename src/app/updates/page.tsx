@@ -93,7 +93,10 @@ export default function UpdatesPage() {
             <p className="mt-1.5 text-[13px] leading-snug text-parchment-300">{u.summary}</p>
             {(BODY[u.anchor] || (u.bullets && u.bullets.length > 0)) && (
               <details className="mt-3 text-[13px] leading-relaxed text-parchment-200 [&_p+p]:mt-2">
-                <summary className="cursor-pointer select-none text-[13px] text-[color:var(--accent)] hover:underline">
+                {/* inline-flex plus a min-height rather than padding: a <summary> is the
+                    disclosure control, and this one was 21px tall. The negative
+                    margin keeps the card's spacing where it was. */}
+                <summary className="-my-2 inline-flex min-h-[44px] cursor-pointer select-none items-center text-[13px] text-[color:var(--accent)] hover:underline">
                   Read more
                 </summary>
                 {BODY[u.anchor] && <div className="mt-2">{BODY[u.anchor]}</div>}

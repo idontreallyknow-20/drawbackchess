@@ -179,7 +179,7 @@ export function MobileNavMenu({
         aria-expanded={open}
         aria-label={open ? "Close menu" : "Open menu"}
         onClick={() => setOpen((v) => !v)}
-        className="h-11 w-11">
+        className="h-[44px] w-[44px]">
         {open ? <X size={18} /> : <Menu size={18} />}
       </Button>
       {open && panelPos &&

@@ -297,7 +297,7 @@ function OwnerFriends() {
                       type="button"
                       onClick={() => void act("decline", f.username)}
                       disabled={busy}
-                      className="grid h-11 w-11 shrink-0 place-items-center rounded text-parchment-500 transition hover:text-oxblood-glow disabled:opacity-40"
+                      className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded text-parchment-500 transition hover:text-oxblood-glow disabled:opacity-40"
                       title={`Cancel request to ${f.username}`}
                       aria-label={`Cancel request to ${f.username}`}
                     >
@@ -397,7 +397,7 @@ function RowMenu({ username, busy, onRemove }: { username: string; busy: boolean
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`More actions for ${username}`}
-        className="grid h-11 w-11 place-items-center rounded border border-[color:var(--edge)] text-parchment-400 transition hover:border-[color:var(--edge-strong)] hover:text-parchment-200"
+        className="grid h-[44px] w-[44px] place-items-center rounded border border-[color:var(--edge)] text-parchment-400 transition hover:border-[color:var(--edge-strong)] hover:text-parchment-200"
       >
         <MoreVertical size={16} strokeWidth={2.2} aria-hidden />
       </button>

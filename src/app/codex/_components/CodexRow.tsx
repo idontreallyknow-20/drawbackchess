@@ -60,7 +60,7 @@ export function CodexRow({
   return (
     <div
       style={rowStyle}
-      className={`group flex min-h-[44px] items-center gap-2.5 rounded-none border px-2.5 py-2 transition ${
+      className={`group flex min-h-[44px] items-stretch gap-2.5 rounded-none border px-2.5 transition ${
         expanded
           ? "border-[color:var(--edge-strong)] bg-[color:var(--bg-zebra)]"
           : "border-[color:var(--edge)] bg-[color:var(--bg-zebra)] hover:bg-[color:var(--surface-hover)]"
@@ -70,7 +70,17 @@ export function CodexRow({
         href={path}
         onClick={onRowClick}
         aria-expanded={expanded}
-        className="flex min-w-0 flex-1 items-center gap-2.5 rounded-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]"
+        // The link fills the row's full height rather than just wrapping its
+        // text, which measured 24.5px inside a 44px row: half the row looked
+        // clickable and was not. Section 10: "interactive rows are fully
+        // clickable, not just their text."
+        //
+        // Stretching alone was not enough. The wrapper's own py-2 shrank the
+        // content box the link stretches INTO, so the link topped out at 28px
+        // and the padding stayed dead space inside a row that measured 44.
+        // The vertical padding therefore moves off the wrapper and onto the
+        // link, where it is part of the hit area instead of a moat around it.
+        className="flex min-w-0 flex-1 items-center gap-2.5 self-stretch rounded-none py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]"
       >
         <span
           aria-hidden
@@ -99,7 +109,7 @@ export function CodexRow({
         type="button"
         onClick={onCopy}
         aria-label={`Copy link to ${card.name}`}
-        className="hidden h-8 shrink-0 items-center gap-1 rounded-none px-2 text-[12px] text-parchment-400 hover:bg-[color:var(--bg-raised)] hover:text-parchment-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)] sm:inline-flex"
+        className="hidden h-8 shrink-0 self-center items-center gap-1 rounded-none px-2 text-[12px] text-parchment-400 hover:bg-[color:var(--bg-raised)] hover:text-parchment-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)] sm:inline-flex"
       >
         <Link2 size={14} aria-hidden />
         {copied ? "Copied" : "Copy"}
@@ -107,7 +117,7 @@ export function CodexRow({
       <ChevronRight
         size={16}
         aria-hidden
-        className={`shrink-0 text-parchment-400 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
+        className={`shrink-0 self-center text-parchment-400 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
       />
     </div>
   );

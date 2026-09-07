@@ -24,7 +24,7 @@ export default function Loading() {
             <div className="divide-y divide-[color:var(--edge)]">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-4 px-5 py-4">
-                  <div className="skeleton h-11 w-11 shrink-0 rounded-none" style={{ borderRadius: 1 }} />
+                  <div className="skeleton h-[44px] w-[44px] shrink-0 rounded-none" style={{ borderRadius: 1 }} />
                   <div className="min-w-0 flex-1">
                     <div className="skeleton h-5 w-40 max-w-full rounded-none" style={{ borderRadius: 1 }} />
                     <div className="skeleton mt-2 h-3.5 w-3/5 rounded-none" style={{ borderRadius: 1 }} />

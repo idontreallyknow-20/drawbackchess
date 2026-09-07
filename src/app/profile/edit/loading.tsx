@@ -14,7 +14,7 @@ export default function Loading() {
       <SkeletonHeader />
       <section className="mx-auto max-w-3xl px-6 py-8">
         <div className="flex items-center gap-3">
-          <div className="skeleton h-11 w-11 shrink-0" />
+          <div className="skeleton h-[44px] w-[44px] shrink-0" />
           <div className="skeleton h-8 w-44" />
         </div>
         {Array.from({ length: 3 }).map((_, i) => (

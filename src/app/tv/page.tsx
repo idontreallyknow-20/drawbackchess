@@ -641,7 +641,7 @@ function TvView() {
             type="button"
             onClick={() => setFullscreen(false)}
             aria-label="Exit fullscreen"
-            className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-none border border-[color:var(--edge-strong)] bg-[color:var(--bg-base)] text-parchment-100 transition-colors hover:border-[color:var(--edge-strong)] hover:text-gold-leaf"
+            className="absolute right-4 top-4 grid h-[44px] w-[44px] place-items-center rounded-none border border-[color:var(--edge-strong)] bg-[color:var(--bg-base)] text-parchment-100 transition-colors hover:border-[color:var(--edge-strong)] hover:text-gold-leaf"
           >
             <X size={20} aria-hidden />
           </button>

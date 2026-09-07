@@ -176,7 +176,7 @@ function PlayInner() {
         >
           <span
             aria-hidden
-            className="grid h-11 w-11 shrink-0 place-items-center border border-mode-buff/50 bg-mode-buff/10 text-mode-buffGlow"
+            className="grid h-[44px] w-[44px] shrink-0 place-items-center border border-mode-buff/50 bg-mode-buff/10 text-mode-buffGlow"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <circle cx="12" cy="12" r="10" />

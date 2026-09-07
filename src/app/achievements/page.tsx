@@ -206,7 +206,7 @@ function AchievementCard({ a }: { a: AchievementView }) {
             ring and soft glow; locked = dimmed embossed disc with a small
             lock badge on the corner. */}
         <div
-          className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full border"
+          className="relative grid h-[44px] w-[44px] shrink-0 place-items-center rounded-full border"
           style={
             a.unlocked
               ? {

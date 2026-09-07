@@ -462,7 +462,7 @@ export function PlayerSearch({ className = "", autoFocus = false }: { className?
                   type="button"
                   aria-label={`Remove ${item.username} from recent searches`}
                   onClick={() => removeRecent(item.username)}
-                  className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-none text-parchment-500 transition-colors hover:bg-[color:var(--bg-raised)] hover:text-parchment-200"
+                  className="absolute right-1 top-1/2 flex h-[44px] w-[44px] -translate-y-1/2 items-center justify-center rounded-none text-parchment-500 transition-colors hover:bg-[color:var(--bg-raised)] hover:text-parchment-200"
                 >
                   <svg viewBox="0 0 20 20" width={14} height={14} aria-hidden fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
                     <path d="M5 5l10 10M15 5L5 15" />

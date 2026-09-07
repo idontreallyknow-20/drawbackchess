@@ -289,7 +289,7 @@ export default function EditProfilePage() {
           {account && (
             <LinkButton tone="ghost"
               href={`/u/${encodeURIComponent(account.username)}`}
-              className="h-11 w-11 shrink-0 rounded-none text-parchment-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]" aria-label="Back to your profile">
+              className="h-[44px] w-[44px] shrink-0 rounded-none text-parchment-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]" aria-label="Back to your profile">
               <ArrowLeft className="h-5 w-5" strokeWidth={2} />
             </LinkButton>
           )}
