@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 // given its own canonical so it does not inherit the root "/".
 export const metadata: Metadata = {
   title: "Inbox",
+  description: "Direct messages, challenges, and notifications from other Nerf Chess players.",
   robots: { index: false, follow: true },
   alternates: { canonical: "/inbox" },
 };

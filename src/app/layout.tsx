@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { JetBrains_Mono, Noto_Sans } from "next/font/google";
 import { AchievementToast } from "@/components/AchievementToast";
 import { SettingsBootstrap } from "@/components/SettingsBootstrap";
@@ -38,6 +39,15 @@ const jetbrainsMono = JetBrains_Mono({
 
 /** Every face variable, for the <html> class list. */
 const FONT_VARS = [notoSans, jetbrainsMono].map((f) => f.variable).join(" ");
+
+// Site analytics: Cloudflare Web Analytics. Chosen because it is cookieless and
+// keeps no per-visitor identifier, so the privacy policy's "one essential
+// cookie, no tracking cookies" promise stays true and no consent banner is
+// owed. The beacon only renders when a token is baked in at build time
+// (NEXT_PUBLIC_CF_BEACON_TOKEN, from the Cloudflare dashboard's Web Analytics
+// page), so a build without one ships exactly what shipped before. The CSP in
+// next.config.mjs allow-lists the beacon's script and report origins.
+const CF_BEACON_TOKEN = (process.env.NEXT_PUBLIC_CF_BEACON_TOKEN ?? "").trim();
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nerfchess.com"),
@@ -212,6 +222,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         {/* Site-wide, desktop-only unlock popups (bottom right). */}
         <AchievementToast />
+        {CF_BEACON_TOKEN && (
+          <Script
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={JSON.stringify({ token: CF_BEACON_TOKEN })}
+            strategy="afterInteractive"
+          />
+        )}
       </body>
     </html>
   );

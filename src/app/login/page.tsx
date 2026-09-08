@@ -169,7 +169,14 @@ function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
+              required
+              // Register mirrors the server's rule (3-20 chars, letters, digits,
+              // underscores) so the browser refuses a bad name before a round
+              // trip; sign-in also takes an email, so it only requires a value.
+              minLength={tab === "login" ? 1 : 3}
               maxLength={tab === "login" ? 254 : 20}
+              pattern={tab === "register" ? "[A-Za-z0-9_]{3,20}" : undefined}
+              title={tab === "register" ? "3-20 characters: letters, digits, underscores." : undefined}
               className="w-full bg-[color:var(--bg-base)] border border-[color:var(--edge)] px-4 py-3 focus:border-[color:var(--edge-strong)] text-parchment placeholder:text-parchment-500"
               placeholder="knight_rider"
             />
@@ -209,6 +216,9 @@ function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={tab === "login" ? "current-password" : "new-password"}
+              required
+              // Same floor the register route enforces (see api/auth/register).
+              minLength={tab === "register" ? 8 : 1}
               className="w-full bg-[color:var(--bg-base)] border border-[color:var(--edge)] px-4 py-3 focus:border-[color:var(--edge-strong)] text-parchment"
               placeholder={tab === "register" ? "at least 8 characters" : ""}
             />

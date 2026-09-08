@@ -45,6 +45,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/updates", 0.7, "weekly"),
     entry("/tutorial", 0.8, "monthly"),
     entry("/tutorial/walkthrough", 0.6, "monthly"),
+    entry("/tutorial/first-game", 0.6, "monthly"),
+    entry("/analysis", 0.5, "monthly"),
     // The guide: evergreen explainer pages written for search and AI answers.
     entry("/guide", 0.8, "monthly"),
     entry("/guide/how-to-play", 0.8, "monthly"),
@@ -66,7 +68,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/tv", 0.4, "daily"),
     entry("/codex/suggest", 0.4, "yearly"),
     entry("/contact", 0.3, "yearly"),
+    entry("/guidelines", 0.3, "yearly"),
     entry("/privacy-policy", 0.2, "yearly"),
+    entry("/terms-of-service", 0.2, "yearly"),
     ...cardEntries,
   ];
 }

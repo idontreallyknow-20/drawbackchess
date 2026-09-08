@@ -50,8 +50,11 @@ export default function HomePage() {
           </div>
 
           <div className="mt-2 flex flex-col gap-2">
-            <LinkButton tone="default" href="/lobby" block size="lg" align="start">
-              <Users size={22} strokeWidth={1.6} aria-hidden className="shrink-0 text-parchment-300" />
+            {/* The one primary action on the page. The other two ways in stay
+                in the default material so a first-time visitor's eye lands
+                on a single button. */}
+            <LinkButton tone="primary" href="/lobby" block size="lg" align="start">
+              <Users size={22} strokeWidth={1.6} aria-hidden className="shrink-0" />
               Create a game
             </LinkButton>
             <LinkButton tone="default" href="/lobby?tab=friends" block size="lg" align="start">
