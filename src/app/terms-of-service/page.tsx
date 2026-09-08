@@ -3,7 +3,9 @@ import Link from "next/link";
 import { InfoPageLayout, InfoSection } from "@/components/InfoPageLayout";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Nerf Chess",
+  title: "Terms of service",
+  description: "The rules for using nerfchess.com: accounts, fair play, acceptable conduct, content you post, and how the free service is provided.",
+  alternates: { canonical: "/terms-of-service" },
 };
 
 function ContactLink({ children }: { children: React.ReactNode }) {

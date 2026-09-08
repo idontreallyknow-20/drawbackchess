@@ -4,7 +4,9 @@ import { InfoPageLayout, InfoSection } from "@/components/InfoPageLayout";
 import { LinkButton } from "@/components/ui/Button";
 
 export const metadata: Metadata = {
-  title: "Contact | Nerf Chess",
+  title: "Contact",
+  description: "Reach the Nerf Chess team on Discord, Instagram, TikTok, or YouTube with feedback, bug reports, and rule ideas.",
+  alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {

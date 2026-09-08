@@ -3,7 +3,9 @@ import Link from "next/link";
 import { InfoPageLayout, InfoSection } from "@/components/InfoPageLayout";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Nerf Chess",
+  title: "Privacy policy",
+  description: "What Nerf Chess collects (a username, hashed password, and game records), the single essential cookie it sets, and how to delete your account.",
+  alternates: { canonical: "/privacy-policy" },
 };
 
 function ContactLink({ children }: { children: React.ReactNode }) {
@@ -98,6 +100,12 @@ export default function PrivacyPolicyPage() {
           you signed in to your account. It is set when you sign in and removed
           when you sign out. We do not use tracking, advertising, or third-party
           analytics cookies.
+        </p>
+        <p>
+          To understand which pages are visited and how the site performs, we may
+          use Cloudflare Web Analytics. It is cookieless: it does not set any
+          cookie, does not fingerprint your device, and does not build a profile
+          of you. It records only aggregate page views and performance timings.
         </p>
         <p>
           We also use your browser&apos;s local storage to save preferences on

@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 // layout's canonical "/".
 export const metadata: Metadata = {
   title: "Game history",
+  description: "Your finished Nerf Chess games: replay any game move by move and see how the cards played out.",
   robots: { index: false, follow: true },
   alternates: { canonical: "/history" },
 };

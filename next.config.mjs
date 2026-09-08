@@ -30,9 +30,13 @@ if (process.env.NODE_ENV === "development") {
   initOpenNextCloudflareForDev();
 }
 
-// Content Security Policy. The only third-party origin is Cloudflare Turnstile
-// (challenges.cloudflare.com) on the signup form: its api.js script, its widget
-// iframe, and the XHRs it makes each need to be allow-listed below.
+// Content Security Policy. Two third-party origins: Cloudflare Turnstile
+// (challenges.cloudflare.com) on the signup form (its api.js script, its widget
+// iframe, and the XHRs it makes), and Cloudflare Web Analytics (the beacon
+// script from static.cloudflareinsights.com, which reports to
+// cloudflareinsights.com). The beacon is only rendered when
+// NEXT_PUBLIC_CF_BEACON_TOKEN is set (see src/app/layout.tsx); the grant is
+// unconditional so flipping analytics on never needs a CSP edit.
 // Fonts come from Google Fonts (see src/app/layout.tsx).
 // 'unsafe-inline' for styles is needed because tailwind + next inject style tags;
 // 'unsafe-inline' for scripts is required by Next's hydration boot script.
@@ -47,11 +51,11 @@ const devEval = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
 const arenaUrl = (process.env.NEXT_PUBLIC_ARENA_URL || "https://arena.nerfchess.com").trim().replace(/\/$/, "");
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${devEval}`,
+  `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com${devEval}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob:",
   "font-src 'self' data: https://fonts.gstatic.com",
-  `connect-src 'self' ws: wss: https://challenges.cloudflare.com${arenaUrl ? ` ${arenaUrl}` : ""}`,
+  `connect-src 'self' ws: wss: https://challenges.cloudflare.com https://cloudflareinsights.com${arenaUrl ? ` ${arenaUrl}` : ""}`,
   "frame-src https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
@@ -94,6 +98,10 @@ const nextConfig = {
     // same `arenaUrl` fallback so the origin the client calls is always the
     // origin the CSP allows.)
     NEXT_PUBLIC_ARENA_URL: arenaUrl,
+    // Cloudflare Web Analytics site token (cookieless). Empty = no beacon
+    // rendered. Set it in the Workers Builds environment; see the note in
+    // src/app/layout.tsx.
+    NEXT_PUBLIC_CF_BEACON_TOKEN: process.env.NEXT_PUBLIC_CF_BEACON_TOKEN ?? "",
   },
   async headers() {
     return [

@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 // it inheriting the root layout's canonical "/".
 export const metadata: Metadata = {
   title: "Your statistics",
+  description: "Your Nerf Chess statistics: rating history, win rates by mode, and the cards you play best with.",
   robots: { index: false, follow: true },
   alternates: { canonical: "/stats" },
 };

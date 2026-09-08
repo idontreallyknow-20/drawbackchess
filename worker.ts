@@ -9005,9 +9005,36 @@ async function handleLobbyEdge(url: URL, env: Env, ctx: ExecutionContext): Promi
   return new Response(body, { status: 200, headers: clientHeaders });
 }
 
+// Canonical origin. Cloudflare's custom domains already terminate TLS and the
+// HSTS header in next.config.mjs pins browsers to https, but a plain-http hit
+// (an old bookmark, a pasted link) and the www alias both still reach here as
+// distinct origins: crawlers index them separately and a session cookie set on
+// one is invisible on the other. One 301 folds them onto https://nerfchess.com.
+// Method-agnostic on purpose (a 308 would replay POST bodies onto the redirect
+// target, which no caller wants); the health probe is exempt so uptime checks
+// against the bare worker hostname keep answering.
+const CANONICAL_HOST = "nerfchess.com";
+const ALIAS_HOSTS = new Set([`www.${CANONICAL_HOST}`]);
+
+function canonicalRedirect(url: URL): Response | null {
+  if (url.pathname === "/healthz") return null;
+  const alias = ALIAS_HOSTS.has(url.hostname);
+  // Only the production hostnames are folded: localhost (`wrangler dev`,
+  // `npm run preview`) and a *.workers.dev preview stay reachable over http.
+  if (!alias && url.hostname !== CANONICAL_HOST) return null;
+  const insecure = url.protocol === "http:";
+  if (!insecure && !alias) return null;
+  const target = new URL(url.toString());
+  target.protocol = "https:";
+  if (alias) target.hostname = CANONICAL_HOST;
+  return Response.redirect(target.toString(), 301);
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const redirect = canonicalRedirect(url);
+    if (redirect) return redirect;
     if (url.pathname === "/api/lobby" && request.method === "GET") {
       return await handleLobbyEdge(url, env, ctx);
     }
